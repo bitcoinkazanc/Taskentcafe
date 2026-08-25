@@ -3,6 +3,26 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 
+type Customer = {
+  id: string;
+  name: string | null;
+  phone: string | null;
+  email: string | null;
+  points: number;
+  level: string;
+  created_at: string;
+  updated_at: string;
+  auth_user_id: string | null;
+};
+
+type LoyaltyTransaction = {
+  id: string;
+  points: number;
+  type: string;
+  description: string;
+  created_at: string;
+};
+
 const rewards = [
   {
     id: 1,
@@ -27,19 +47,12 @@ const rewards = [
   },
 ];
 
-type Customer = {
-  id: string;
-  name: string | null;
-  auth_user_id: string | null;
-  points: number;
-  level: string;
-  created_at: string;
-  updated_at: string;
-};
-
 export default function LoyaltyPage() {
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [points, setPoints] = useState(0);
+  const [transactions, setTransactions] = useState<
+    LoyaltyTransaction[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -88,59 +101,153 @@ export default function LoyaltyPage() {
 
       const userId = session.user.id;
 
-      const {
+      let {
         data: existingCustomer,
-        error: customerSelectError,
+        error: customerError,
       } = await supabase
         .from("customers")
         .select(
-          "id, name, auth_user_id, points, level, created_at, updated_at"
+          "id, name, phone, email, points, level, created_at, updated_at, auth_user_id"
         )
         .eq("auth_user_id", userId)
         .maybeSingle();
 
-      if (customerSelectError) {
+      if (customerError) {
         throw new Error(
-          `Müşteri bilgisi alınamadı: ${customerSelectError.message}`
+          `Müşteri bilgisi alınamadı: ${customerError.message}`
         );
       }
 
-      if (existingCustomer) {
-        setCustomer(existingCustomer as Customer);
-        setPoints(existingCustomer.points ?? 0);
-        return;
+      if (!existingCustomer) {
+        const {
+          data: newCustomer,
+          error: insertError,
+        } = await supabase
+          .from("customers")
+          .insert({
+            name: "Misafir",
+            auth_user_id: userId,
+            points: 0,
+            level: "Bronz",
+          })
+          .select(
+            "id, name, phone, email, points, level, created_at, updated_at, auth_user_id"
+          )
+          .single();
+
+        if (insertError) {
+          throw new Error(
+            `Müşteri kaydı oluşturulamadı: ${insertError.message}`
+          );
+        }
+
+        existingCustomer = newCustomer;
       }
+
+      if (!existingCustomer) {
+        throw new Error(
+          "Müşteri kaydı oluşturulamadı."
+        );
+      }
+
+      setCustomer(existingCustomer as Customer);
+      setPoints(existingCustomer.points ?? 0);
 
       const {
-        data: newCustomer,
-        error: customerInsertError,
+        data: existingTransactions,
+        error: transactionsError,
       } = await supabase
-        .from("customers")
-        .insert({
-          name: "Misafir",
-          auth_user_id: userId,
-          points: 0,
-          level: "Bronz",
-        })
+        .from("loyalty_transactions")
         .select(
-          "id, name, auth_user_id, points, level, created_at, updated_at"
+          "id, points, type, description, created_at"
         )
-        .single();
+        .eq("customer_id", existingCustomer.id)
+        .order("created_at", {
+          ascending: false,
+        });
 
-      if (customerInsertError) {
+      if (transactionsError) {
         throw new Error(
-          `Müşteri kaydı oluşturulamadı: ${customerInsertError.message}`
+          `Puan geçmişi alınamadı: ${transactionsError.message}`
         );
       }
 
-      if (!newCustomer) {
-        throw new Error(
-          "Müşteri kaydı oluşturuldu ancak bilgiler alınamadı."
-        );
-      }
+      const loadedTransactions =
+        (existingTransactions ?? []) as LoyaltyTransaction[];
 
-      setCustomer(newCustomer as Customer);
-      setPoints(newCustomer.points ?? 0);
+      setTransactions(loadedTransactions);
+
+      const hasWelcomeTransaction =
+        loadedTransactions.some(
+          (transaction) =>
+            transaction.type === "welcome"
+        );
+
+      if (!hasWelcomeTransaction) {
+        const welcomePoints = 500;
+
+        const {
+          error: welcomeInsertError,
+        } = await supabase
+          .from("loyalty_transactions")
+          .insert({
+            customer_id: existingCustomer.id,
+            points: welcomePoints,
+            type: "welcome",
+            description: "Hoş geldin puanı",
+          });
+
+        if (welcomeInsertError) {
+          throw new Error(
+            `Hoş geldin puanı eklenemedi: ${welcomeInsertError.message}`
+          );
+        }
+
+        const newTotal =
+          (existingCustomer.points ?? 0) +
+          welcomePoints;
+
+        const {
+          data: updatedCustomer,
+          error: updateError,
+        } = await supabase
+          .from("customers")
+          .update({
+            points: newTotal,
+            level:
+              newTotal >= 2000
+                ? "Altın"
+                : newTotal >= 1000
+                  ? "Gümüş"
+                  : "Bronz",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", existingCustomer.id)
+          .select(
+            "id, name, phone, email, points, level, created_at, updated_at, auth_user_id"
+          )
+          .single();
+
+        if (updateError) {
+          throw new Error(
+            `Puan güncellenemedi: ${updateError.message}`
+          );
+        }
+
+        setCustomer(updatedCustomer as Customer);
+        setPoints(newTotal);
+
+        setTransactions([
+          {
+            id: crypto.randomUUID(),
+            points: welcomePoints,
+            type: "welcome",
+            description: "Hoş geldin puanı",
+            created_at: new Date().toISOString(),
+          },
+          ...loadedTransactions,
+        ]);
+      }
     } catch (err) {
       console.error("LOYALTY ERROR:", err);
 
@@ -154,25 +261,6 @@ export default function LoyaltyPage() {
       setLoading(false);
     }
   };
-
-  const nextLevel = 1000;
-
-  const progress = Math.min(
-    (points / nextLevel) * 100,
-    100
-  );
-
-  const remaining = Math.max(
-    nextLevel - points,
-    0
-  );
-
-  const level =
-    points >= 2000
-      ? "Altın"
-      : points >= 1000
-        ? "Gümüş"
-        : "Bronz";
 
   const redeemReward = async (
     rewardName: string,
@@ -194,48 +282,165 @@ export default function LoyaltyPage() {
       return;
     }
 
-    const newPoints = points - rewardPoints;
+    try {
+      setMessage("");
 
-    const {
-      error: updateError,
-    } = await supabase
-      .from("customers")
-      .update({
-        points: newPoints,
-        level:
-          newPoints >= 2000
-            ? "Altın"
-            : newPoints >= 1000
-              ? "Gümüş"
-              : "Bronz",
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", customer.id);
+      const newPoints =
+        points - rewardPoints;
 
-    if (updateError) {
+      const {
+        error: transactionError,
+      } = await supabase
+        .from("loyalty_transactions")
+        .insert({
+          customer_id: customer.id,
+          points: -rewardPoints,
+          type: "reward",
+          description: rewardName,
+        });
+
+      if (transactionError) {
+        throw new Error(
+          `Ödül işlemi kaydedilemedi: ${transactionError.message}`
+        );
+      }
+
+      const {
+        data: updatedCustomer,
+        error: updateError,
+      } = await supabase
+        .from("customers")
+        .update({
+          points: newPoints,
+          level:
+            newPoints >= 2000
+              ? "Altın"
+              : newPoints >= 1000
+                ? "Gümüş"
+                : "Bronz",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", customer.id)
+        .select(
+          "id, name, phone, email, points, level, created_at, updated_at, auth_user_id"
+        )
+        .single();
+
+      if (updateError) {
+        throw new Error(
+          `Puan güncellenemedi: ${updateError.message}`
+        );
+      }
+
+      setCustomer(updatedCustomer as Customer);
+      setPoints(newPoints);
+
+      setTransactions((current) => [
+        {
+          id: crypto.randomUUID(),
+          points: -rewardPoints,
+          type: "reward",
+          description: rewardName,
+          created_at: new Date().toISOString(),
+        },
+        ...current,
+      ]);
+
       setMessage(
-        `Ödül kullanılamadı: ${updateError.message}`
+        `${rewardName} ödülü başarıyla kullanıldı.`
       );
-      return;
+    } catch (err) {
+      console.error("REWARD ERROR:", err);
+
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : "Ödül kullanılırken bir hata oluştu.";
+
+      setMessage(errorMessage);
+    }
+  };
+
+  const formatDate = (date: string) => {
+    return new Intl.DateTimeFormat(
+      "tr-TR",
+      {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      }
+    ).format(new Date(date));
+  };
+
+  const formatShortDate = (date: string) => {
+    const today = new Date();
+
+    const transactionDate =
+      new Date(date);
+
+    const todayStart = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate()
+    );
+
+    const transactionStart = new Date(
+      transactionDate.getFullYear(),
+      transactionDate.getMonth(),
+      transactionDate.getDate()
+    );
+
+    const difference =
+      todayStart.getTime() -
+      transactionStart.getTime();
+
+    if (difference === 0) {
+      return "Bugün";
     }
 
-    setPoints(newPoints);
+    if (difference === 86400000) {
+      return "Dün";
+    }
 
-    setCustomer({
-      ...customer,
-      points: newPoints,
-      level:
-        newPoints >= 2000
-          ? "Altın"
-          : newPoints >= 1000
-            ? "Gümüş"
-            : "Bronz",
-    });
-
-    setMessage(
-      `${rewardName} ödülü başarıyla kullanıldı.`
-    );
+    return formatDate(date);
   };
+
+  const level =
+    points >= 2000
+      ? "Altın"
+      : points >= 1000
+        ? "Gümüş"
+        : "Bronz";
+
+  const nextLevel =
+    points >= 2000
+      ? 2000
+      : points >= 1000
+        ? 2000
+        : 1000;
+
+  const previousLevel =
+    points >= 2000
+      ? 1000
+      : points >= 1000
+        ? 1000
+        : 0;
+
+  const progress =
+    nextLevel === previousLevel
+      ? 100
+      : Math.min(
+          ((points - previousLevel) /
+            (nextLevel - previousLevel)) *
+            100,
+          100
+        );
+
+  const remaining =
+    Math.max(
+      nextLevel - points,
+      0
+    );
 
   if (loading) {
     return (
@@ -254,14 +459,22 @@ export default function LoyaltyPage() {
 
       <header className="header">
 
-        <a href="/" className="brand">
+        <a
+          href="/"
+          className="brand"
+        >
           <div className="logo">
             ☕
           </div>
 
           <div>
-            <h1>Taşkent Cafe</h1>
-            <span>Sadakat Kulübü</span>
+            <h1>
+              Taşkent Cafe
+            </h1>
+
+            <span>
+              Sadakat Kulübü
+            </span>
           </div>
         </a>
 
@@ -283,7 +496,9 @@ export default function LoyaltyPage() {
               Sadakat hesabı oluşturulamadı
             </strong>
 
-            <p>{error}</p>
+            <p>
+              {error}
+            </p>
           </div>
         )}
 
@@ -294,6 +509,7 @@ export default function LoyaltyPage() {
           </div>
 
           <div>
+
             <span className="eyebrow">
               HOŞ GELDİN
             </span>
@@ -305,6 +521,7 @@ export default function LoyaltyPage() {
             <p>
               Sadakat Kulübü üyesi
             </p>
+
           </div>
 
         </div>
@@ -314,8 +531,13 @@ export default function LoyaltyPage() {
           <div className="points-top">
 
             <div>
-              <span>TOPLAM PUAN</span>
-              <strong>{points}</strong>
+              <span>
+                TOPLAM PUAN
+              </span>
+
+              <strong>
+                {points}
+              </strong>
             </div>
 
             <div className="level">
@@ -329,7 +551,7 @@ export default function LoyaltyPage() {
             <div className="progress-label">
 
               <span>
-                Bronz
+                {level}
               </span>
 
               <span>
@@ -352,9 +574,15 @@ export default function LoyaltyPage() {
             </div>
 
             <div className="progress-levels">
-              <span>0</span>
-              <span>1.000</span>
-              <span>2.000</span>
+
+              <span>
+                {previousLevel}
+              </span>
+
+              <span>
+                {nextLevel}
+              </span>
+
             </div>
 
           </div>
@@ -372,6 +600,7 @@ export default function LoyaltyPage() {
           <div className="loyalty-heading">
 
             <div>
+
               <span className="eyebrow">
                 ÖDÜLLER
               </span>
@@ -379,6 +608,7 @@ export default function LoyaltyPage() {
               <h2>
                 Puanlarını kullan
               </h2>
+
             </div>
 
           </div>
@@ -418,7 +648,11 @@ export default function LoyaltyPage() {
                           reward.points
                         )
                       }
-                      disabled={!customer}
+                      disabled={
+                        !customer ||
+                        points <
+                          reward.points
+                      }
                     >
                       Kullan
                     </button>
@@ -439,6 +673,7 @@ export default function LoyaltyPage() {
           <div className="loyalty-heading">
 
             <div>
+
               <span className="eyebrow">
                 HAREKETLER
               </span>
@@ -446,77 +681,74 @@ export default function LoyaltyPage() {
               <h2>
                 Puan geçmişi
               </h2>
+
             </div>
 
           </div>
 
           <div className="history-card">
 
-            <div className="history-row">
+            {transactions.length === 0 ? (
 
-              <div className="history-icon">
-                ☕
+              <div className="history-row">
+
+                <div className="history-icon">
+                  ⭐
+                </div>
+
+                <div>
+                  <strong>
+                    Henüz puan hareketi yok
+                  </strong>
+
+                  <small>
+                    Puan kazandıkça burada görünecek.
+                  </small>
+                </div>
+
               </div>
 
-              <div>
-                <strong>
-                  Kahve alışverişi
-                </strong>
+            ) : (
 
-                <small>
-                  Bugün
-                </small>
-              </div>
+              transactions.map(
+                (transaction) => (
+                  <div
+                    className="history-row"
+                    key={transaction.id}
+                  >
 
-              <b>
-                +80
-              </b>
+                    <div className="history-icon">
+                      {transaction.type ===
+                      "reward"
+                        ? "🎁"
+                        : "⭐"}
+                    </div>
 
-            </div>
+                    <div>
 
-            <div className="history-row">
+                      <strong>
+                        {transaction.description}
+                      </strong>
 
-              <div className="history-icon">
-                🍰
-              </div>
+                      <small>
+                        {formatShortDate(
+                          transaction.created_at
+                        )}
+                      </small>
 
-              <div>
-                <strong>
-                  Tatlı alışverişi
-                </strong>
+                    </div>
 
-                <small>
-                  Dün
-                </small>
-              </div>
+                    <b>
+                      {transaction.points > 0
+                        ? `+${transaction.points}`
+                        : transaction.points}
+                    </b>
 
-              <b>
-                +120
-              </b>
+                  </div>
+                )
+              )
 
-            </div>
-
-            <div className="history-row">
-
-              <div className="history-icon">
-                ⭐
-              </div>
-
-              <div>
-                <strong>
-                  Hoş geldin puanı
-                </strong>
-
-                <small>
-                  25 Ağustos 2026
-                </small>
-              </div>
-
-              <b>
-                +500
-              </b>
-
-            </div>
+            )}
 
           </div>
 
