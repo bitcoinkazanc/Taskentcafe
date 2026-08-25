@@ -12,25 +12,13 @@ type Customer = {
   level: string;
 };
 
-type StaffUser = {
-  id: string;
-  auth_user_id: string;
-  role: string;
-};
-
 export default function AdminLoyaltyPage() {
   const [authorized, setAuthorized] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const [customers, setCustomers] = useState<Customer[]>(
-    []
-  );
-
-  const [selectedCustomer, setSelectedCustomer] =
-    useState("");
-
-  const [points, setPoints] = useState("");
-
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [selectedCustomer, setSelectedCustomer] = useState("");
+  const [purchaseAmount, setPurchaseAmount] = useState("");
   const [description, setDescription] =
     useState("Alışveriş puanı");
 
@@ -47,9 +35,7 @@ export default function AdminLoyaltyPage() {
       setError("");
 
       const {
-        data: {
-          user,
-        },
+        data: { user },
         error: userError,
       } = await supabase.auth.getUser();
 
@@ -69,13 +55,8 @@ export default function AdminLoyaltyPage() {
         error: staffError,
       } = await supabase
         .from("staff_users")
-        .select(
-          "id, auth_user_id, role"
-        )
-        .eq(
-          "auth_user_id",
-          user.id
-        )
+        .select("id, auth_user_id, role")
+        .eq("auth_user_id", user.id)
         .maybeSingle();
 
       if (staffError) {
@@ -93,10 +74,7 @@ export default function AdminLoyaltyPage() {
 
       await loadCustomers();
     } catch (err) {
-      console.error(
-        "STAFF CHECK ERROR:",
-        err
-      );
+      console.error("STAFF CHECK ERROR:", err);
 
       setError(
         err instanceof Error
@@ -117,12 +95,9 @@ export default function AdminLoyaltyPage() {
       .select(
         "id, name, phone, email, points, level"
       )
-      .order(
-        "created_at",
-        {
-          ascending: false,
-        }
-      );
+      .order("created_at", {
+        ascending: false,
+      });
 
     if (customersError) {
       throw new Error(
@@ -135,7 +110,22 @@ export default function AdminLoyaltyPage() {
     );
   };
 
-  const addPoints = async () => {
+  const calculatePoints = () => {
+    const amount = Number(
+      purchaseAmount.replace(",", ".")
+    );
+
+    if (
+      !Number.isFinite(amount) ||
+      amount <= 0
+    ) {
+      return 0;
+    }
+
+    return Math.floor(amount / 10);
+  };
+
+  const addPurchasePoints = async () => {
     setMessage("");
     setError("");
 
@@ -146,17 +136,26 @@ export default function AdminLoyaltyPage() {
       return;
     }
 
-    const pointsNumber =
-      Number(points);
+    const amount = Number(
+      purchaseAmount.replace(",", ".")
+    );
 
     if (
-      !Number.isInteger(
-        pointsNumber
-      ) ||
-      pointsNumber <= 0
+      !Number.isFinite(amount) ||
+      amount <= 0
     ) {
       setError(
-        "Geçerli bir puan miktarı girin."
+        "Geçerli bir alışveriş tutarı girin."
+      );
+      return;
+    }
+
+    const calculatedPoints =
+      calculatePoints();
+
+    if (calculatedPoints <= 0) {
+      setError(
+        "Bu alışveriş için kazanılacak puan 0."
       );
       return;
     }
@@ -172,13 +171,12 @@ export default function AdminLoyaltyPage() {
       const {
         error: rpcError,
       } = await supabase.rpc(
-        "add_loyalty_points",
+        "add_purchase_points",
         {
           target_customer_id:
             selectedCustomer,
 
-          points_to_add:
-            pointsNumber,
+          purchase_amount: amount,
 
           purchase_description:
             description.trim(),
@@ -192,10 +190,12 @@ export default function AdminLoyaltyPage() {
       }
 
       setMessage(
-        `${pointsNumber} puan başarıyla eklendi.`
+        `${amount.toFixed(
+          2
+        )} ₺ alışveriş için ${calculatedPoints} puan eklendi.`
       );
 
-      setPoints("");
+      setPurchaseAmount("");
       setDescription(
         "Alışveriş puanı"
       );
@@ -203,7 +203,7 @@ export default function AdminLoyaltyPage() {
       await loadCustomers();
     } catch (err) {
       console.error(
-        "ADD POINTS ERROR:",
+        "ADD PURCHASE POINTS ERROR:",
         err
       );
 
@@ -231,6 +231,7 @@ export default function AdminLoyaltyPage() {
     return (
       <main className="site">
         <section className="loyalty-page">
+
           <div className="loyalty-message">
             <strong>
               Yetkisiz erişim
@@ -249,10 +250,14 @@ export default function AdminLoyaltyPage() {
           >
             Ana Sayfaya Dön
           </a>
+
         </section>
       </main>
     );
   }
+
+  const previewPoints =
+    calculatePoints();
 
   return (
     <main className="site">
@@ -293,13 +298,15 @@ export default function AdminLoyaltyPage() {
         <div className="loyalty-heading">
 
           <div>
+
             <span className="eyebrow">
               PERSONEL
             </span>
 
             <h2>
-              Puan ekle
+              Alışveriş puanı ekle
             </h2>
+
           </div>
 
         </div>
@@ -325,6 +332,7 @@ export default function AdminLoyaltyPage() {
             </span>
 
             <div>
+
               <strong>
                 Müşteri
               </strong>
@@ -346,12 +354,8 @@ export default function AdminLoyaltyPage() {
                 {customers.map(
                   (customer) => (
                     <option
-                      key={
-                        customer.id
-                      }
-                      value={
-                        customer.id
-                      }
+                      key={customer.id}
+                      value={customer.id}
                     >
                       {customer.name ||
                         "Misafir"}{" "}
@@ -360,7 +364,40 @@ export default function AdminLoyaltyPage() {
                     </option>
                   )
                 )}
+
               </select>
+
+            </div>
+
+          </div>
+
+          <div className="info-row">
+
+            <span>
+              ₺
+            </span>
+
+            <div>
+
+              <strong>
+                Alışveriş tutarı
+              </strong>
+
+              <input
+                type="number"
+                min="0.01"
+                step="0.01"
+                value={
+                  purchaseAmount
+                }
+                onChange={(event) =>
+                  setPurchaseAmount(
+                    event.target.value
+                  )
+                }
+                placeholder="Örn. 450"
+              />
+
             </div>
 
           </div>
@@ -372,22 +409,17 @@ export default function AdminLoyaltyPage() {
             </span>
 
             <div>
+
               <strong>
-                Eklenecek puan
+                Kazanılacak puan
               </strong>
 
-              <input
-                type="number"
-                min="1"
-                step="1"
-                value={points}
-                onChange={(event) =>
-                  setPoints(
-                    event.target.value
-                  )
-                }
-                placeholder="Örn. 50"
-              />
+              <p>
+                {previewPoints > 0
+                  ? `${previewPoints} puan`
+                  : "Alışveriş tutarını girin"}
+              </p>
+
             </div>
 
           </div>
@@ -399,13 +431,16 @@ export default function AdminLoyaltyPage() {
             </span>
 
             <div>
+
               <strong>
                 Açıklama
               </strong>
 
               <input
                 type="text"
-                value={description}
+                value={
+                  description
+                }
                 onChange={(event) =>
                   setDescription(
                     event.target.value
@@ -413,6 +448,7 @@ export default function AdminLoyaltyPage() {
                 }
                 placeholder="Alışveriş puanı"
               />
+
             </div>
 
           </div>
@@ -421,9 +457,17 @@ export default function AdminLoyaltyPage() {
 
         <button
           className="loyalty-button"
-          onClick={addPoints}
+          onClick={
+            addPurchasePoints
+          }
+          disabled={
+            !selectedCustomer ||
+            previewPoints <= 0
+          }
         >
-          ⭐ Puan Ekle
+          ⭐ {previewPoints > 0
+            ? `${previewPoints} Puan Ekle`
+            : "Puan Ekle"}
         </button>
 
         <section className="history">
@@ -431,6 +475,7 @@ export default function AdminLoyaltyPage() {
           <div className="loyalty-heading">
 
             <div>
+
               <span className="eyebrow">
                 MÜŞTERİLER
               </span>
@@ -438,6 +483,7 @@ export default function AdminLoyaltyPage() {
               <h2>
                 Müşteri listesi
               </h2>
+
             </div>
 
           </div>
@@ -447,9 +493,11 @@ export default function AdminLoyaltyPage() {
             {customers.length === 0 ? (
 
               <div className="history-row">
+
                 <div>
                   Henüz müşteri yok.
                 </div>
+
               </div>
 
             ) : (
@@ -468,6 +516,7 @@ export default function AdminLoyaltyPage() {
                     </div>
 
                     <div>
+
                       <strong>
                         {customer.name ||
                           "Misafir"}
@@ -476,6 +525,7 @@ export default function AdminLoyaltyPage() {
                       <small>
                         {customer.level}
                       </small>
+
                     </div>
 
                     <b>
