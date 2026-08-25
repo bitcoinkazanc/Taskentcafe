@@ -1,4 +1,4 @@
- "use client";
+"use client";
 
 import { useState } from "react";
 
@@ -63,7 +63,9 @@ export default function HomePage() {
   const filteredProducts =
     category === "Tümü"
       ? products
-      : products.filter((product) => product.category === category);
+      : products.filter(
+          (product) => product.category === category
+        );
 
   return (
     <main className="site">
@@ -85,7 +87,9 @@ export default function HomePage() {
 
       <section className="hero">
         <div className="hero-overlay">
-          <span className="location-label">📍 Mardin Kale</span>
+          <span className="location-label">
+            📍 Mardin Kale
+          </span>
 
           <h2>
             Kahveni al,
@@ -105,13 +109,14 @@ export default function HomePage() {
       </section>
 
       <section className="quick-links">
+
         <a href="#menu" className="quick-card">
           <span>📖</span>
           <strong>Menü</strong>
           <small>Tüm ürünler</small>
         </a>
 
-        <a href="#loyalty" className="quick-card">
+        <a href="/loyalty" className="quick-card">
           <span>⭐</span>
           <strong>Sadakat</strong>
           <small>Puan kazan</small>
@@ -122,13 +127,17 @@ export default function HomePage() {
           <strong>Konum</strong>
           <small>Bizi bul</small>
         </a>
+
       </section>
 
       <section className="section" id="menu">
 
         <div className="section-heading">
           <div>
-            <span className="eyebrow">TAŞKENT CAFE</span>
+            <span className="eyebrow">
+              TAŞKENT CAFE
+            </span>
+
             <h2>Menümüz</h2>
           </div>
 
@@ -175,6 +184,7 @@ export default function HomePage() {
                 </div>
 
                 <div className="product-bottom">
+
                   <strong>{product.price}</strong>
 
                   <button
@@ -183,6 +193,7 @@ export default function HomePage() {
                   >
                     +
                   </button>
+
                 </div>
 
               </div>
@@ -213,9 +224,12 @@ export default function HomePage() {
             tadını çıkar.
           </p>
 
-          <button className="loyalty-button">
+          <a
+            href="/loyalty"
+            className="loyalty-button"
+          >
             Sadakat Kulübüne Katıl
-          </button>
+          </a>
 
         </div>
 
@@ -225,7 +239,10 @@ export default function HomePage() {
 
       </section>
 
-      <section className="info-section" id="location">
+      <section
+        className="info-section"
+        id="location"
+      >
 
         <div className="section-heading">
           <div>
@@ -282,8 +299,14 @@ export default function HomePage() {
 
         <div className="footer-links">
           <a href="#menu">Menü</a>
-          <a href="#loyalty">Sadakat</a>
-          <a href="#location">Konum</a>
+
+          <a href="/loyalty">
+            Sadakat
+          </a>
+
+          <a href="#location">
+            Konum
+          </a>
         </div>
 
         <small>
@@ -294,22 +317,34 @@ export default function HomePage() {
 
       <nav className="bottom-nav">
 
-        <a href="#" className="nav-item active">
+        <a
+          href="#"
+          className="nav-item active"
+        >
           <span>⌂</span>
           Ana Sayfa
         </a>
 
-        <a href="#menu" className="nav-item">
+        <a
+          href="#menu"
+          className="nav-item"
+        >
           <span>☕</span>
           Menü
         </a>
 
-        <a href="#loyalty" className="nav-item">
+        <a
+          href="/loyalty"
+          className="nav-item"
+        >
           <span>⭐</span>
           Sadakat
         </a>
 
-        <a href="#location" className="nav-item">
+        <a
+          href="#location"
+          className="nav-item"
+        >
           <span>📍</span>
           Konum
         </a>
