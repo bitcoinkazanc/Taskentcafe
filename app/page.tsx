@@ -344,41 +344,136 @@ export default function HomePage() {
       <section
         className="hero"
         style={{
+          width: "50%",
+          minWidth: "320px",
+          marginLeft: "auto",
+          marginRight: "auto",
           backgroundImage: `linear-gradient(
             180deg,
             rgba(25, 18, 13, 0.18) 0%,
-            rgba(25, 18, 13, 0.78) 100%
+            rgba(25, 18, 13, 0.88) 100%
           ), url("${mardinImageUrl}")`,
         }}
       >
 
-        <div className="hero-overlay">
+        <div
+          className="hero-overlay"
+          style={{
+            top: "22px",
+            bottom: "auto",
+          }}
+        >
 
-          <div className="antique-welcome-frame">
+          <div
+            className="antique-welcome-frame"
+            style={{
+              position: "relative",
+              padding: "18px 22px",
+              border: "2px solid rgba(218, 177, 130, 0.9)",
+              outline:
+                "1px solid rgba(218, 177, 130, 0.45)",
+              outlineOffset: "-7px",
+              background:
+                "rgba(38, 25, 16, 0.28)",
+              boxShadow:
+                "0 5px 18px rgba(0, 0, 0, 0.18)",
+            }}
+          >
 
-            <div className="antique-corner top-left">
+            <span
+              style={{
+                position: "absolute",
+                top: "-10px",
+                left: "10px",
+                fontSize: "22px",
+                color: "#dfb98d",
+              }}
+            >
               ❦
-            </div>
+            </span>
 
-            <div className="antique-corner top-right">
+            <span
+              style={{
+                position: "absolute",
+                top: "-10px",
+                right: "10px",
+                fontSize: "22px",
+                color: "#dfb98d",
+              }}
+            >
               ❦
-            </div>
+            </span>
 
-            <div className="antique-corner bottom-left">
+            <span
+              style={{
+                position: "absolute",
+                bottom: "-10px",
+                left: "10px",
+                fontSize: "22px",
+                color: "#dfb98d",
+              }}
+            >
               ❦
-            </div>
+            </span>
 
-            <div className="antique-corner bottom-right">
+            <span
+              style={{
+                position: "absolute",
+                bottom: "-10px",
+                right: "10px",
+                fontSize: "22px",
+                color: "#dfb98d",
+              }}
+            >
               ❦
-            </div>
+            </span>
 
-            <h2>
+            <h2
+              style={{
+                margin: 0,
+                color: "#fff8ef",
+                fontSize: "26px",
+                lineHeight: "1.12",
+                textAlign: "center",
+              }}
+            >
               Mardin Taşkent Cafe’ye
               <br />
-              hoşgeldiniz
+              Hoşgeldiniz
             </h2>
 
           </div>
+
+          <p>
+            Mardin’in tarihi dokusuyla
+            iç içe, eşsiz bir atmosferde
+            hizmet veren Taşkent Cafe,
+            misafirlerine hem geleneksel
+            hem de modern lezzetleri bir
+            arada sunar.
+          </p>
+
+          <p>
+            Şehrin büyüleyici manzarasına
+            karşı keyifli vakit
+            geçirebileceğiniz mekanımız,
+            sıcak ortamı ve güler yüzlü
+            hizmetiyle öne çıkar. Özenle
+            hazırlanan kahvelerimiz, taze
+            içeceklerimiz ve lezzetli
+            menümüzle ister
+            arkadaşlarınızla buluşun ister
+            tek başınıza huzurlu bir mola
+            verin.
+          </p>
+
+          <p>
+            Taşkent Cafe, Mardin’de lezzet
+            ve samimiyetin buluştuğu özel
+            bir noktadır. Her ziyaretinizde
+            kendinizi evinizde hissedeceğiniz
+            Taşkent Cafe’ye bekliyoruz.
+          </p>
 
         </div>
 
