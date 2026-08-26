@@ -346,7 +346,7 @@ export default function HomePage() {
         style={{
           backgroundImage: `linear-gradient(
             180deg,
-            rgba(25, 18, 13, 0.18) 10%,
+            rgba(25, 18, 13, 0.12) 10%,
             rgba(25, 18, 13, 0.88) 100%
           ), url("${mardinImageUrl}")`,
         }}
@@ -359,25 +359,24 @@ export default function HomePage() {
           </span>
 
           <h2>
-            Taşkent Cafe
+            Kahveni al,
+            <br />
+            keyfini yaşa.
           </h2>
 
           <p>
-            Mardin’in tarihi dokusuyla iç içe,
-            eşsiz bir atmosferde geleneksel ve
-            modern lezzetleri bir arada sunuyoruz.
-            Şehrin büyüleyici manzarasına karşı
-            kahvenizi yudumlayıp güzel sohbetlerin
-            tadını çıkarabileceğiniz sıcak bir
-            ortam sizi bekliyor.
+            Mardin’in tarihi dokusuyla
+            iç içe, eşsiz bir atmosferde
+            geleneksel ve modern
+            lezzetleri bir arada sunuyoruz.
           </p>
 
           <p>
-            Özenle hazırlanan kahvelerimiz,
-            taze içeceklerimiz ve lezzetli
-            menümüzle Taşkent Cafe,
-            Mardin’de lezzet ve samimiyetin
-            buluştuğu özel bir noktadır.
+            Şehrin büyüleyici manzarasına
+            karşı kahvenizi yudumlayıp
+            güzel sohbetlerin tadını
+            çıkarabileceğiniz sıcak bir
+            ortam sizi bekliyor.
           </p>
 
         </div>
@@ -483,126 +482,58 @@ export default function HomePage() {
 
       </section>
 
-      <section className="social-section">
+      <section
+        className="contact-section"
+        id="contact"
+      >
 
-        <div className="social-logo">
-
-          <img
-            src={logoUrl}
-            alt="Taşkent Cafe"
-          />
-
-        </div>
+        <span className="eyebrow">
+          İLETİŞİM
+        </span>
 
         <h2>
           Taşkent Cafe
         </h2>
 
         <p>
-          Kahve, lezzet ve güzel sohbet.
+          Bize ulaşmak ve daha fazla
+          bilgi almak için iletişim
+          bilgilerimizi kullanabilirsiniz.
         </p>
 
-        <div className="social-links">
-
-          <a
-            href="#"
-            className="social-link"
-            aria-label="Instagram"
-          >
-            ◎
-          </a>
-
-          <a
-            href="#"
-            className="social-link"
-            aria-label="Facebook"
-          >
-            f
-          </a>
-
-          <a
-            href="#"
-            className="social-link"
-            aria-label="WhatsApp"
-          >
-            ☎
-          </a>
-
-        </div>
-
         <a
-          href="#contact"
-          className="contact-link"
+          href="tel:+905XXXXXXXXX"
+          className="contact-button"
         >
-          İletişim
+          📞 İletişim
         </a>
 
       </section>
 
       <footer className="footer">
 
-        <div className="footer-brand">
+        <div className="footer-logo">
 
           <img
             src={logoUrl}
             alt="Taşkent Cafe"
           />
 
-          <strong>
-            Taşkent Cafe
-          </strong>
-
         </div>
+
+        <strong>
+          Taşkent Cafe
+        </strong>
+
+        <p>
+          Kahve, lezzet ve güzel sohbet.
+        </p>
 
         <small>
           © 2026 Taşkent Cafe
         </small>
 
       </footer>
-
-      <nav className="bottom-nav">
-
-        <a
-          href="#"
-          className="nav-item active"
-        >
-          <span>
-            ⌂
-          </span>
-          Ana Sayfa
-        </a>
-
-        <a
-          href="#menu"
-          className="nav-item"
-        >
-          <span>
-            ☕
-          </span>
-          Menü
-        </a>
-
-        <a
-          href="/loyalty"
-          className="nav-item"
-        >
-          <span>
-            ⭐
-          </span>
-          Sadakat
-        </a>
-
-        <a
-          href="#contact"
-          className="nav-item"
-        >
-          <span>
-            ☎
-          </span>
-          İletişim
-        </a>
-
-      </nav>
 
     </main>
   );
