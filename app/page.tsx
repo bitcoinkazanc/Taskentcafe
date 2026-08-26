@@ -350,7 +350,7 @@ export default function HomePage() {
           marginRight: "auto",
           backgroundImage: `linear-gradient(
             180deg,
-            rgba(25, 18, 13, 0.18) 0%,
+            rgba(25, 18, 13, 0.12) 10%,
             rgba(25, 18, 13, 0.88) 100%
           ), url("${mardinImageUrl}")`,
         }}
@@ -432,8 +432,8 @@ export default function HomePage() {
               style={{
                 margin: 0,
                 color: "#fff8ef",
-                fontSize: "26px",
-                lineHeight: "1.12",
+                fontSize: "8px",
+                lineHeight: "1.2",
                 textAlign: "center",
               }}
             >
