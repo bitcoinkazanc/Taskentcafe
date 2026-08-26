@@ -250,6 +250,15 @@ export default function LoyaltyPage() {
     }
   };
 
+  const Logo = () => (
+    <div className="logo">
+      <img
+        src="/taskent-logo.png"
+        alt="Taşkent Cafe"
+      />
+    </div>
+  );
+
   if (loading) {
     return (
       <main className="site">
@@ -272,18 +281,7 @@ export default function LoyaltyPage() {
             href="/"
             className="brand"
           >
-            <div className="logo">
-              <img
-                src="/taskent-logo.png"
-                alt="Taşkent Cafe"
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "cover",
-                  borderRadius: "inherit",
-                }}
-              />
-            </div>
+            <Logo />
 
             <div>
               <h1>
@@ -298,18 +296,10 @@ export default function LoyaltyPage() {
 
           <a
             href="/"
-            className="icon-button"
+            className="back-button"
             aria-label="Ana sayfaya dön"
           >
-            <span
-              style={{
-                fontSize: "24px",
-                lineHeight: 1,
-                transform: "translateX(-1px)",
-              }}
-            >
-              ‹
-            </span>
+            <span>‹</span>
           </a>
 
         </header>
@@ -385,18 +375,7 @@ export default function LoyaltyPage() {
           href="/"
           className="brand"
         >
-          <div className="logo">
-            <img
-              src="/taskent-logo.png"
-              alt="Taşkent Cafe"
-              style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-                borderRadius: "inherit",
-              }}
-            />
-          </div>
+          <Logo />
 
           <div>
             <h1>
@@ -411,18 +390,10 @@ export default function LoyaltyPage() {
 
         <a
           href="/"
-          className="icon-button"
+          className="back-button"
           aria-label="Ana sayfaya dön"
         >
-          <span
-            style={{
-              fontSize: "24px",
-              lineHeight: 1,
-              transform: "translateX(-1px)",
-            }}
-          >
-            ‹
-          </span>
+          <span>‹</span>
         </a>
 
       </header>
