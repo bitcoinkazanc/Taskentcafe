@@ -63,122 +63,61 @@ const waiterImageUrl =
   "https://images.unsplash.com/photo-1556911220-bff31c812dba?auto=format&fit=crop&w=300&q=85";
 
 export default function HomePage() {
-  const [category, setCategory] =
-    useState("Sıcak İçecekler");
+  const [category, setCategory] = useState("Sıcak İçecekler");
 
-  const [waiterOpen, setWaiterOpen] =
-    useState(false);
-
-  const filteredProducts =
-    products.filter(
-      (product) =>
-        product.category === category
-    );
+  const filteredProducts = products.filter(
+    (product) => product.category === category
+  );
 
   return (
-    <main className="site">
+    <>
+      <main className="site">
+        <header className="header">
+          <div className="brand">
+            <div className="logo">
+              <img src={logoUrl} alt="Taşkent Cafe" />
+            </div>
 
-      {/* =========================
-          ÜST ALAN
-      ========================= */}
-
-      <header className="header">
-
-        <div className="brand">
-
-          <div className="logo">
-            <img
-              src={logoUrl}
-              alt="Taşkent Cafe"
-            />
+            <div>
+              <h1>Taşkent Cafe</h1>
+              <span>Cafe & Restaurant</span>
+            </div>
           </div>
+        </header>
 
-          <div>
-            <h1>
-              TAŞKENT CAFE
-            </h1>
-
-            <span>
-              Lezzetin, samimiyetin adresi.
-            </span>
-          </div>
-
-        </div>
-
-      </header>
-
-
-      {/* =========================
-          SADAKAT KULÜBÜ
-      ========================= */}
-
-      <section className="loyalty">
-
-        <div className="loyalty-content">
-
-          <span className="eyebrow">
-            TAŞKENT SADAKAT KULÜBÜ
-          </span>
-
-          <h2>
-            Her ziyaretiniz
-            <br />
-            size kazandırsın.
-          </h2>
-
-          <p>
-            Sadakat kulübüne katılın,
-            alışverişlerinizden puan
-            kazanın ve özel fırsatlardan
-            yararlanın.
-          </p>
-
-          <button
-            type="button"
-            className="loyalty-button"
-          >
-            Sadakat Kulübüne Katıl
-          </button>
-
-        </div>
-
-        <div className="loyalty-icon">
-          ★
-        </div>
-
-      </section>
-
-
-      {/* =========================
-          MENÜ
-      ========================= */}
-
-      <section
-        className="menu-section"
-        id="menu"
-      >
-
-        <div className="section-heading">
-
-          <div>
-
-            <span className="eyebrow">
-              LEZZETLERİMİZ
+        <section className="loyalty">
+          <div className="loyalty-content">
+            <span className="loyalty-label">
+              TAŞKENT SADAKAT KULÜBÜ
             </span>
 
             <h2>
-              Menü
+              Her ziyaretiniz
+              <br />
+              size kazandırsın.
             </h2>
 
+            <p>
+              Sadakat kulübüne katılın, alışverişlerinizden
+              puan kazanın ve özel fırsatlardan yararlanın.
+            </p>
+
+            <button className="loyalty-button">
+              Sadakat Kulübüne Katıl
+            </button>
           </div>
 
-        </div>
+          <div className="loyalty-icon">★</div>
+        </section>
 
+        <section className="menu-section" id="menu">
+          <div className="menu-title">
+            <span>LEZZETLERİMİZ</span>
+            <h2>Menü</h2>
+          </div>
 
-        <div className="categories">
-
-          {categories.map(
-            (item) => (
+          <div className="categories">
+            {categories.map((item) => (
               <button
                 key={item}
                 type="button"
@@ -187,232 +126,127 @@ export default function HomePage() {
                     ? "category active"
                     : "category"
                 }
-                onClick={() =>
-                  setCategory(item)
-                }
+                onClick={() => setCategory(item)}
               >
                 {item}
               </button>
-            )
-          )}
+            ))}
+          </div>
 
-        </div>
-
-
-        <div className="products">
-
-          {filteredProducts.map(
-            (product) => (
+          <div className="products">
+            {filteredProducts.map((product) => (
               <article
                 className="product-card"
                 key={product.name}
               >
-
                 <div className="product-image">
-                  {product.icon}
+                  <span>{product.icon}</span>
                 </div>
 
                 <div className="product-content">
+                  <h3>{product.name}</h3>
 
-                  <h3>
-                    {product.name}
-                  </h3>
-
-                  <p>
-                    {product.description}
-                  </p>
+                  <p>{product.description}</p>
 
                   <div className="product-bottom">
-
-                    <strong>
-                      {product.price}
-                    </strong>
+                    <strong>{product.price}</strong>
 
                     <button
                       type="button"
-                      className="plus"
+                      className="plus-button"
                     >
                       +
                     </button>
-
                   </div>
-
                 </div>
-
               </article>
-            )
-          )}
-
-        </div>
-
-      </section>
-
-
-      {/* =========================
-          İLETİŞİM / SOSYAL MEDYA
-      ========================= */}
-
-      <section className="contact">
-
-        <span className="eyebrow">
-          BİZİ TAKİP EDİN
-        </span>
-
-        <h2>
-          Taşkent Cafe
-        </h2>
-
-        <p>
-          Sosyal medya hesaplarımız
-        </p>
-
-        <div className="socials">
-
-          <a
-            href="#"
-            className="social"
-            aria-label="Facebook"
-          >
-            f
-          </a>
-
-          <a
-            href="#"
-            className="social"
-            aria-label="Instagram"
-          >
-            ◎
-          </a>
-
-          <a
-            href="#"
-            className="social"
-            aria-label="YouTube"
-          >
-            ▶
-          </a>
-
-          <a
-            href="#"
-            className="social"
-            aria-label="TikTok"
-          >
-            ♪
-          </a>
-
-        </div>
-
-      </section>
-
-
-      {/* =========================
-          ALT BİLGİ
-      ========================= */}
-
-      <footer className="footer">
-
-        <div className="footer-logo">
-          <img
-            src={logoUrl}
-            alt="Taşkent Cafe"
-          />
-        </div>
-
-        <strong>
-          Taşkent Cafe
-        </strong>
-
-        <small>
-          © 2026 Taşkent Cafe
-        </small>
-
-      </footer>
-
-
-      {/* =========================
-          ALT SABİT MENÜ
-      ========================= */}
-
-      <nav className="bottom-nav">
-
-        <a
-          href="#"
-          className="nav-item active"
-        >
-          <span>⌂</span>
-          <small>
-            Ana Sayfa
-          </small>
-        </a>
-
-        <a
-          href="#menu"
-          className="nav-item"
-        >
-          <span>☕</span>
-          <small>
-            Menü
-          </small>
-        </a>
-
-        <a
-          href="#loyalty"
-          className="nav-item"
-        >
-          <span>★</span>
-          <small>
-            Sadakat
-          </small>
-        </a>
-
-        <a
-          href="#contact"
-          className="nav-item"
-        >
-          <span>☎</span>
-          <small>
-            İletişim
-          </small>
-        </a>
-
-      </nav>
-
-
-      {/* =========================
-          GARSON ÇAĞIR
-      ========================= */}
-
-      <div className="waiter-widget">
-
-        {waiterOpen && (
-          <div className="waiter-label-box">
-            Garsonu Çağır
+            ))}
           </div>
-        )}
+        </section>
 
-        <button
-          type="button"
-          className="waiter-button"
-          onClick={() =>
-            setWaiterOpen(!waiterOpen)
-          }
-          aria-label="Garsonu Çağır"
-        >
+        <section className="contact" id="contact">
+          <span>BİZE ULAŞIN</span>
 
-          <span className="waiter-ring"></span>
+          <h2>Taşkent Cafe</h2>
 
+          <p>
+            Bizi sosyal medyada takip edin.
+          </p>
+
+          <div className="socials">
+            <a href="#" aria-label="Facebook">
+              f
+            </a>
+
+            <a href="#" aria-label="Instagram">
+              ◎
+            </a>
+
+            <a href="#" aria-label="YouTube">
+              ▶
+            </a>
+
+            <a href="#" aria-label="TikTok">
+              ♪
+            </a>
+          </div>
+        </section>
+
+        <footer className="footer">
+          <div className="footer-logo">
+            <img src={logoUrl} alt="Taşkent Cafe" />
+          </div>
+
+          <strong>Taşkent Cafe</strong>
+
+          <small>© 2026 Taşkent Cafe</small>
+        </footer>
+      </main>
+
+      {/* SOL ALT GARSON ÇAĞIRMA */}
+      <button
+        type="button"
+        className="waiter-button"
+        aria-label="Garson Çağır"
+      >
+        <span className="waiter-pulse" />
+
+        <span className="waiter-image">
           <img
             src={waiterImageUrl}
             alt="Garson"
           />
+        </span>
 
-        </button>
+        <span className="waiter-text">
+          Garson Çağır
+        </span>
+      </button>
 
-      </div>
+      {/* ALT SABİT MENÜ */}
+      <nav className="bottom-nav">
+        <a href="#" className="nav-item active">
+          <span>⌂</span>
+          <small>Ana Sayfa</small>
+        </a>
 
+        <a href="#menu" className="nav-item">
+          <span>☕</span>
+          <small>Menü</small>
+        </a>
+
+        <a href="#" className="nav-item">
+          <span>★</span>
+          <small>Sadakat</small>
+        </a>
+
+        <a href="#contact" className="nav-item">
+          <span>☎</span>
+          <small>İletişim</small>
+        </a>
+      </nav>
 
       <style jsx>{`
-
         * {
           box-sizing: border-box;
           margin: 0;
@@ -437,8 +271,8 @@ export default function HomePage() {
         }
 
         a {
-          color: inherit;
           text-decoration: none;
+          color: inherit;
         }
 
         .site {
@@ -451,15 +285,12 @@ export default function HomePage() {
           overflow-x: hidden;
         }
 
-
-        /* HEADER */
-
         .header {
           height: 76px;
           padding: 14px 18px;
           display: flex;
           align-items: center;
-          background: #fffaf5;
+          background: rgba(255, 250, 245, 0.97);
           border-bottom: 1px solid #f1e8df;
         }
 
@@ -476,8 +307,7 @@ export default function HomePage() {
           border-radius: 50%;
           overflow: hidden;
           background: #b96f38;
-          box-shadow:
-            0 7px 18px rgba(185,111,56,0.22);
+          box-shadow: 0 7px 18px rgba(185, 111, 56, 0.22);
         }
 
         .logo img {
@@ -485,36 +315,33 @@ export default function HomePage() {
           height: 100%;
           display: block;
           object-fit: cover;
-          border-radius: 50%;
         }
 
         .brand h1 {
           font-size: 17px;
           font-weight: 700;
-          letter-spacing: -0.3px;
         }
 
         .brand span {
           display: block;
-          margin-top: 4px;
+          margin-top: 3px;
           color: #9a8b7d;
           font-size: 10px;
         }
 
-
-        /* SADAKAT */
+        /* SADAKAT KARTI */
 
         .loyalty {
-          min-height: 205px;
-          margin: 20px 17px 0;
-          padding: 23px;
-          border-radius: 23px;
+          min-height: 230px;
+          margin: 18px 17px 0;
+          padding: 25px;
+          border-radius: 25px;
           position: relative;
           overflow: hidden;
           background:
             radial-gradient(
               circle at 90% 15%,
-              rgba(255,255,255,0.14),
+              rgba(255, 255, 255, 0.14),
               transparent 32%
             ),
             linear-gradient(
@@ -523,8 +350,17 @@ export default function HomePage() {
               #241b16
             );
           color: white;
-          box-shadow:
-            0 10px 28px rgba(50,34,24,0.12);
+        }
+
+        .loyalty::after {
+          content: "";
+          position: absolute;
+          width: 180px;
+          height: 180px;
+          right: -85px;
+          bottom: -95px;
+          border-radius: 50%;
+          border: 35px solid rgba(255, 255, 255, 0.05);
         }
 
         .loyalty-content {
@@ -532,38 +368,34 @@ export default function HomePage() {
           z-index: 2;
         }
 
-        .eyebrow {
-          color: #b56d38;
+        .loyalty-label {
+          color: #d49a6b;
           font-size: 9px;
           font-weight: 800;
-          letter-spacing: 1.4px;
-        }
-
-        .loyalty .eyebrow {
-          color: #d49a6b;
+          letter-spacing: 1.5px;
         }
 
         .loyalty h2 {
-          margin-top: 8px;
+          margin-top: 9px;
           font-family: Georgia, "Times New Roman", serif;
-          font-size: 25px;
-          line-height: 1.1;
+          font-size: 26px;
+          line-height: 1.08;
         }
 
         .loyalty p {
-          max-width: 300px;
-          margin-top: 9px;
+          max-width: 290px;
+          margin-top: 10px;
           color: #c9bdb3;
-          font-size: 10px;
-          line-height: 1.5;
+          font-size: 11px;
+          line-height: 1.55;
         }
 
         .loyalty-button {
-          height: 37px;
-          margin-top: 15px;
-          padding: 0 14px;
+          height: 39px;
+          margin-top: 17px;
+          padding: 0 15px;
           border: 0;
-          border-radius: 10px;
+          border-radius: 11px;
           background: #c17a41;
           color: white;
           font-size: 10px;
@@ -572,18 +404,17 @@ export default function HomePage() {
 
         .loyalty-icon {
           position: absolute;
-          top: 20px;
-          right: 19px;
-          width: 48px;
-          height: 48px;
-          border-radius: 15px;
+          right: 20px;
+          top: 22px;
+          width: 54px;
+          height: 54px;
+          border-radius: 17px;
+          background: rgba(255, 255, 255, 0.1);
           display: flex;
           align-items: center;
           justify-content: center;
-          background: rgba(255,255,255,0.09);
-          font-size: 24px;
+          font-size: 27px;
         }
-
 
         /* MENÜ */
 
@@ -592,11 +423,18 @@ export default function HomePage() {
           margin-top: 28px;
         }
 
-        .section-heading {
+        .menu-title {
           margin-bottom: 14px;
         }
 
-        .section-heading h2 {
+        .menu-title span {
+          color: #b56d38;
+          font-size: 9px;
+          font-weight: 800;
+          letter-spacing: 1.4px;
+        }
+
+        .menu-title h2 {
           margin-top: 4px;
           font-family: Georgia, "Times New Roman", serif;
           font-size: 25px;
@@ -618,7 +456,7 @@ export default function HomePage() {
           flex: 0 0 auto;
           height: 35px;
           padding: 0 13px;
-          border: 1px solid #eaded2;
+          border: 1px solid #eee4da;
           border-radius: 20px;
           background: white;
           color: #74675d;
@@ -631,43 +469,39 @@ export default function HomePage() {
           color: white;
         }
 
-
-        /* ÜRÜNLER */
-
         .products {
           display: grid;
           gap: 10px;
-          margin-top: 12px;
+          margin-top: 10px;
         }
 
         .product-card {
-          min-height: 100px;
+          min-height: 106px;
           padding: 10px;
           display: flex;
           gap: 12px;
           background: white;
-          border: 1px solid #f0e7de;
-          border-radius: 18px;
-          box-shadow:
-            0 5px 18px rgba(67,44,26,0.045);
+          border: 1px solid #f2ebe4;
+          border-radius: 19px;
+          box-shadow: 0 5px 18px rgba(67, 44, 26, 0.045);
         }
 
         .product-image {
-          width: 80px;
-          height: 80px;
-          flex: 0 0 80px;
-          border-radius: 14px;
+          width: 86px;
+          height: 86px;
+          flex: 0 0 86px;
+          border-radius: 15px;
           background: #eee1d4;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 30px;
+          font-size: 32px;
         }
 
         .product-content {
           flex: 1;
           min-width: 0;
-          padding: 3px 1px;
+          padding: 4px 2px;
         }
 
         .product-content h3 {
@@ -675,7 +509,7 @@ export default function HomePage() {
         }
 
         .product-content p {
-          margin-top: 5px;
+          margin-top: 4px;
           color: #998c81;
           font-size: 10px;
           line-height: 1.4;
@@ -685,7 +519,7 @@ export default function HomePage() {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          margin-top: 8px;
+          margin-top: 7px;
         }
 
         .product-bottom strong {
@@ -693,25 +527,31 @@ export default function HomePage() {
           font-size: 14px;
         }
 
-        .plus {
-          width: 29px;
-          height: 29px;
+        .plus-button {
+          width: 30px;
+          height: 30px;
           border: 0;
-          border-radius: 9px;
+          border-radius: 10px;
           background: #b96f38;
           color: white;
-          font-size: 19px;
+          font-size: 20px;
         }
-
 
         /* İLETİŞİM */
 
         .contact {
           margin: 28px 17px 0;
-          padding: 21px 15px;
+          padding: 20px 15px;
           text-align: center;
           border-radius: 20px;
           background: #f3e8dd;
+        }
+
+        .contact > span {
+          color: #b56d38;
+          font-size: 8px;
+          font-weight: 800;
+          letter-spacing: 1.4px;
         }
 
         .contact h2 {
@@ -733,7 +573,7 @@ export default function HomePage() {
           margin-top: 13px;
         }
 
-        .social {
+        .socials a {
           width: 39px;
           height: 39px;
           border: 1px solid #e5d8cc;
@@ -743,15 +583,14 @@ export default function HomePage() {
           align-items: center;
           justify-content: center;
           color: #6c5b4f;
-          font-size: 12px;
+          font-size: 11px;
           font-weight: 700;
         }
-
 
         /* FOOTER */
 
         .footer {
-          padding: 20px 15px 8px;
+          padding: 25px 20px 20px;
           text-align: center;
         }
 
@@ -769,18 +608,17 @@ export default function HomePage() {
           object-fit: cover;
         }
 
-        .footer strong {
+        .footer > strong {
           display: block;
           font-size: 14px;
         }
 
         .footer small {
           display: block;
-          margin-top: 7px;
-          color: #aaa098;
+          margin-top: 12px;
+          color: #b0a39a;
           font-size: 9px;
         }
-
 
         /* ALT SABİT MENÜ */
 
@@ -795,10 +633,12 @@ export default function HomePage() {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
           padding: 6px 8px;
-          background: rgba(255,250,245,0.97);
+          padding-bottom: calc(
+            6px + env(safe-area-inset-bottom)
+          );
+          background: rgba(255, 250, 245, 0.97);
           border-top: 1px solid #eadfd5;
-          box-shadow:
-            0 -6px 25px rgba(67,44,26,0.08);
+          box-shadow: 0 -6px 25px rgba(67, 44, 26, 0.08);
           backdrop-filter: blur(16px);
         }
 
@@ -829,83 +669,100 @@ export default function HomePage() {
           color: #b96f38;
         }
 
-
-        /* GARSON */
-
-        .waiter-widget {
-          position: fixed;
-          left: 18px;
-          bottom: 78px;
-          z-index: 1000;
-          display: flex;
-          align-items: center;
-          gap: 10px;
-        }
+        /* SOL ALT GARSON */
 
         .waiter-button {
-          position: relative;
-          width: 62px;
-          height: 62px;
-          border: 3px solid white;
-          border-radius: 50%;
-          overflow: visible;
-          padding: 0;
-          background: #8b5e3c;
+          position: fixed;
+          left: 15px;
+          bottom: 80px;
+          z-index: 1000;
+          height: 66px;
+          padding: 4px 15px 4px 4px;
+          display: flex;
+          align-items: center;
+          gap: 9px;
+          border: 2px solid white;
+          border-radius: 36px;
+          background: white;
+          color: #382a21;
           box-shadow:
-            0 8px 25px rgba(55,31,17,0.30),
-            0 2px 6px rgba(0,0,0,0.15);
+            0 8px 25px rgba(55, 31, 17, 0.22),
+            0 2px 7px rgba(0, 0, 0, 0.12);
         }
 
-        .waiter-button img {
+        .waiter-image {
+          position: relative;
+          width: 56px;
+          height: 56px;
+          flex: 0 0 56px;
+          border-radius: 50%;
+          overflow: hidden;
+          border: 2px solid #b96f38;
+        }
+
+        .waiter-image img {
           width: 100%;
           height: 100%;
           display: block;
           object-fit: cover;
-          border-radius: 50%;
         }
 
-        .waiter-ring {
+        .waiter-text {
+          padding-right: 2px;
+          font-size: 11px;
+          font-weight: 700;
+          white-space: nowrap;
+        }
+
+        .waiter-pulse {
           position: absolute;
-          inset: -7px;
-          border: 2px solid rgba(185,111,56,0.65);
+          inset: -6px;
+          border: 2px solid rgba(185, 111, 56, 0.45);
           border-radius: 50%;
           animation: pulse 1.8s infinite;
           pointer-events: none;
         }
 
-        .waiter-label-box {
-          padding: 9px 13px;
-          border-radius: 20px;
-          background: white;
-          color: #3a291f;
-          font-size: 11px;
-          font-weight: 700;
-          box-shadow:
-            0 5px 18px rgba(0,0,0,0.13);
-        }
-
         @keyframes pulse {
           0% {
-            transform: scale(0.88);
-            opacity: 0.9;
+            transform: scale(0.9);
+            opacity: 0.8;
           }
 
           70% {
-            transform: scale(1.12);
+            transform: scale(1.08);
             opacity: 0;
           }
 
           100% {
-            transform: scale(1.12);
+            transform: scale(1.08);
             opacity: 0;
           }
         }
 
+        @media (min-width: 700px) {
+          body {
+            padding: 20px 0;
+          }
 
-        /* TELEFON */
+          .site {
+            border-radius: 30px;
+            box-shadow: 0 15px 60px rgba(50, 35, 25, 0.1);
+          }
+
+          .bottom-nav {
+            width: 560px;
+            bottom: 20px;
+            border-radius: 18px;
+          }
+
+          .waiter-button {
+            left: calc(50% - 265px);
+            bottom: 96px;
+          }
+        }
 
         @media (max-width: 380px) {
-
           .loyalty {
             margin-left: 14px;
             margin-right: 14px;
@@ -916,48 +773,12 @@ export default function HomePage() {
             padding-right: 14px;
           }
 
-          .contact {
-            margin-left: 14px;
-            margin-right: 14px;
+          .waiter-button {
+            left: 12px;
+            bottom: 74px;
           }
-
-          .waiter-widget {
-            left: 14px;
-          }
-
         }
-
-
-        /* MASAÜSTÜ */
-
-        @media (min-width: 700px) {
-
-          body {
-            padding: 20px 0;
-          }
-
-          .site {
-            border-radius: 30px;
-            box-shadow:
-              0 15px 60px rgba(50,35,25,0.10);
-          }
-
-          .bottom-nav {
-            width: 560px;
-            bottom: 20px;
-            border-radius: 18px;
-            border: 1px solid #eadfd5;
-          }
-
-          .waiter-widget {
-            left: calc(50% - 262px);
-            bottom: 96px;
-          }
-
-        }
-
       `}</style>
-
-    </main>
+    </>
   );
 }
