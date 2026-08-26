@@ -52,33 +52,26 @@ button {
 .brand {
   display: flex;
   align-items: center;
-  gap: 11px;
+  gap: 10px;
 }
 
 .logo {
-  width: 46px;
-  height: 46px;
-  min-width: 46px;
+  width: 45px;
+  height: 45px;
   border-radius: 50%;
   overflow: hidden;
-  background: #f1e4d7;
+  background: #f1e6da;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 7px 18px rgba(70, 43, 25, 0.16);
-  border: 2px solid #ffffff;
-  position: relative;
-  font-size: 0;
+  box-shadow: 0 7px 18px rgba(185, 111, 56, 0.18);
 }
 
-.logo::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-image: url("https://raw.githubusercontent.com/bitcoinkazanc/Taskentcafe/main/taskent-logo.png");
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: cover;
+.logo img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
 }
 
 .brand h1 {
@@ -94,43 +87,37 @@ button {
   font-size: 10px;
 }
 
-/* HEADER ACTION / GERİ BUTONU */
+/* GERI DON BUTONU */
 
 .icon-button {
-  width: 42px;
-  height: 42px;
-  flex: 0 0 42px;
+  width: auto;
+  min-width: 88px;
+  height: 40px;
+  padding: 0 14px;
   border: 1px solid #eadfd5;
-  border-radius: 50%;
+  border-radius: 12px;
   background: #fffaf5;
-  color: #4a392e;
+  color: #493a30;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0;
-  box-shadow: 0 4px 12px rgba(67, 44, 26, 0.08);
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(67, 44, 26, 0.07);
   transition:
-    transform 0.2s ease,
-    background 0.2s ease,
-    box-shadow 0.2s ease;
-}
-
-.icon-button::before {
-  content: "‹";
-  display: block;
-  font-size: 31px;
-  font-weight: 300;
-  line-height: 1;
-  transform: translate(-1px, -1px);
+    transform 0.15s ease,
+    background 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .icon-button:hover {
-  background: #f5e9de;
-  box-shadow: 0 6px 16px rgba(67, 44, 26, 0.12);
+  background: #f5ebe1;
+  box-shadow: 0 5px 15px rgba(67, 44, 26, 0.1);
 }
 
 .icon-button:active {
-  transform: scale(0.94);
+  transform: scale(0.97);
 }
 
 /* HERO */
@@ -476,7 +463,7 @@ button {
 .profile-avatar {
   width: 52px;
   height: 52px;
-  border-radius: 50%;
+  border-radius: 17px;
   background: #b96f38;
   color: white;
   display: flex;
@@ -656,9 +643,12 @@ button {
 }
 
 .reward-bottom button:disabled {
-  opacity: 0.5;
+  background: #d8cec5;
+  color: #897b70;
   cursor: not-allowed;
 }
+
+/* HISTORY */
 
 .history-card {
   padding: 5px 14px;
@@ -711,6 +701,8 @@ button {
   color: #4f8a55;
   font-size: 11px;
 }
+
+/* LOYALTY INFO */
 
 .loyalty-info {
   display: flex;
