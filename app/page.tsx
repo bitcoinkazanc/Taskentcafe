@@ -65,45 +65,33 @@ type CafeTable = {
   active: boolean;
 };
 
+const logoUrl =
+  "https://raw.githubusercontent.com/bitcoinkazanc/Taskentcafe/main/Taskent-logo.jpg";
+
 export default function HomePage() {
   const [category, setCategory] = useState("Tümü");
-
-  const [table, setTable] =
-    useState<CafeTable | null>(null);
-
-  const [tableLoading, setTableLoading] =
-    useState(false);
-
-  const [waiterLoading, setWaiterLoading] =
-    useState(false);
-
-  const [waiterMessage, setWaiterMessage] =
-    useState("");
-
-  const [waiterError, setWaiterError] =
-    useState("");
-
-  const [waiterOpen, setWaiterOpen] =
-    useState(false);
+  const [table, setTable] = useState<CafeTable | null>(null);
+  const [tableLoading, setTableLoading] = useState(false);
+  const [waiterLoading, setWaiterLoading] = useState(false);
+  const [waiterMessage, setWaiterMessage] = useState("");
+  const [waiterError, setWaiterError] = useState("");
+  const [waiterOpen, setWaiterOpen] = useState(false);
 
   const filteredProducts =
     category === "Tümü"
       ? products
       : products.filter(
-          (product) =>
-            product.category === category
+          (product) => product.category === category
         );
 
   useEffect(() => {
     const loadTable = async () => {
       try {
-        const params =
-          new URLSearchParams(
-            window.location.search
-          );
+        const params = new URLSearchParams(
+          window.location.search
+        );
 
-        const qrToken =
-          params.get("table");
+        const qrToken = params.get("table");
 
         if (!qrToken) {
           return;
@@ -111,14 +99,10 @@ export default function HomePage() {
 
         setTableLoading(true);
 
-        const {
-          data,
-          error,
-        } = await supabase.rpc(
+        const { data, error } = await supabase.rpc(
           "get_cafe_table",
           {
-            requested_qr_token:
-              qrToken,
+            requested_qr_token: qrToken,
           }
         );
 
@@ -135,9 +119,7 @@ export default function HomePage() {
           return;
         }
 
-        setTable(
-          data as CafeTable
-        );
+        setTable(data as CafeTable);
       } catch (error) {
         console.error(
           "TABLE ERROR:",
@@ -187,24 +169,17 @@ export default function HomePage() {
           const longitude =
             position.coords.longitude;
 
-          const {
-            error,
-          } = await supabase.rpc(
+          const { error } = await supabase.rpc(
             "create_waiter_call",
             {
-              requested_table_id:
-                table.id,
-              user_latitude:
-                latitude,
-              user_longitude:
-                longitude,
+              requested_table_id: table.id,
+              user_latitude: latitude,
+              user_longitude: longitude,
             }
           );
 
           if (error) {
-            throw new Error(
-              error.message
-            );
+            throw new Error(error.message);
           }
 
           setWaiterMessage(
@@ -276,40 +251,27 @@ export default function HomePage() {
 
   return (
     <main className="site">
-
       <header className="header">
-
         <div className="brand">
-
           <div className="logo">
-            ☕
+            <img
+              src={logoUrl}
+              alt="Taşkent Cafe"
+            />
           </div>
 
           <div>
-            <h1>
-              Taşkent Cafe
-            </h1>
+            <h1>Taşkent Cafe</h1>
 
             <span>
               Keyif burada başlar
             </span>
           </div>
-
         </div>
-
-        <button
-          className="icon-button"
-          aria-label="Menü"
-        >
-          ☰
-        </button>
-
       </header>
 
       <section className="hero">
-
         <div className="hero-overlay">
-
           <span className="location-label">
             📍 Mardin Kale
           </span>
@@ -331,22 +293,17 @@ export default function HomePage() {
           >
             Menüyü Gör
           </a>
-
         </div>
-
       </section>
 
       <section className="quick-links">
-
         <a
           href="#menu"
           className="quick-card"
         >
           <span>📖</span>
           <strong>Menü</strong>
-          <small>
-            Tüm ürünler
-          </small>
+          <small>Tüm ürünler</small>
         </a>
 
         <a
@@ -355,9 +312,7 @@ export default function HomePage() {
         >
           <span>⭐</span>
           <strong>Sadakat</strong>
-          <small>
-            Puan kazan
-          </small>
+          <small>Puan kazan</small>
         </a>
 
         <a
@@ -366,77 +321,59 @@ export default function HomePage() {
         >
           <span>📍</span>
           <strong>Konum</strong>
-          <small>
-            Bizi bul
-          </small>
+          <small>Bizi bul</small>
         </a>
-
       </section>
 
       <section
         className="section"
         id="menu"
       >
-
         <div className="section-heading">
-
           <div>
-
             <span className="eyebrow">
               TAŞKENT CAFE
             </span>
 
-            <h2>
-              Menümüz
-            </h2>
-
+            <h2>Menümüz</h2>
           </div>
 
           <span className="menu-count">
             {filteredProducts.length} ürün
           </span>
-
         </div>
 
         <div className="categories">
-
-          {categories.map(
-            (item) => (
-              <button
-                key={item}
-                className={
-                  category === item
-                    ? "category active"
-                    : "category"
-                }
-                onClick={() =>
-                  setCategory(item)
-                }
-              >
-                {item}
-              </button>
-            )
-          )}
-
+          {categories.map((item) => (
+            <button
+              key={item}
+              className={
+                category === item
+                  ? "category active"
+                  : "category"
+              }
+              onClick={() =>
+                setCategory(item)
+              }
+            >
+              {item}
+            </button>
+          ))}
         </div>
 
         <div className="products">
-
           {filteredProducts.map(
             (product) => (
               <article
                 className="product-card"
                 key={product.name}
               >
-
                 <div className="product-image">
                   {product.icon}
                 </div>
 
                 <div className="product-content">
-
                   <div>
-
                     <h3>
                       {product.name}
                     </h3>
@@ -444,11 +381,9 @@ export default function HomePage() {
                     <p>
                       {product.description}
                     </p>
-
                   </div>
 
                   <div className="product-bottom">
-
                     <strong>
                       {product.price}
                     </strong>
@@ -459,26 +394,19 @@ export default function HomePage() {
                     >
                       +
                     </button>
-
                   </div>
-
                 </div>
-
               </article>
             )
           )}
-
         </div>
-
       </section>
 
       <section
         className="loyalty"
         id="loyalty"
       >
-
         <div className="loyalty-content">
-
           <span className="eyebrow light">
             SADAKAT KULÜBÜ
           </span>
@@ -501,66 +429,41 @@ export default function HomePage() {
           >
             Sadakat Kulübüne Katıl
           </a>
-
         </div>
 
         <div className="loyalty-icon">
           ⭐
         </div>
-
       </section>
 
       <section
         className="info-section"
         id="location"
       >
-
         <div className="section-heading">
-
           <div>
-
             <span className="eyebrow">
               BİZİ ZİYARET ET
             </span>
 
-            <h2>
-              Taşkent Cafe
-            </h2>
-
+            <h2>Taşkent Cafe</h2>
           </div>
-
         </div>
 
         <div className="info-card">
-
           <div className="info-row">
-
-            <span>
-              📍
-            </span>
+            <span>📍</span>
 
             <div>
-
-              <strong>
-                Konum
-              </strong>
-
-              <p>
-                Mardin Kale
-              </p>
-
+              <strong>Konum</strong>
+              <p>Mardin Kale</p>
             </div>
-
           </div>
 
           <div className="info-row">
-
-            <span>
-              🕐
-            </span>
+            <span>🕐</span>
 
             <div>
-
               <strong>
                 Çalışma Saatleri
               </strong>
@@ -568,39 +471,30 @@ export default function HomePage() {
               <p>
                 Her gün 09:00 – 00:00
               </p>
-
             </div>
-
           </div>
 
           <div className="info-row">
-
-            <span>
-              📞
-            </span>
+            <span>📞</span>
 
             <div>
-
-              <strong>
-                İletişim
-              </strong>
-
-              <p>
-                05XX XXX XX XX
-              </p>
-
+              <strong>İletişim</strong>
+              <p>05XX XXX XX XX</p>
             </div>
-
           </div>
-
         </div>
-
       </section>
 
       <footer className="footer">
-
         <div className="footer-logo">
-          ☕ Taşkent Cafe
+          <img
+            src={logoUrl}
+            alt="Taşkent Cafe"
+          />
+
+          <span>
+            Taşkent Cafe
+          </span>
         </div>
 
         <p>
@@ -608,36 +502,22 @@ export default function HomePage() {
         </p>
 
         <div className="footer-links">
-
-          <a href="#menu">
-            Menü
-          </a>
-
-          <a href="#loyalty">
-            Sadakat
-          </a>
-
-          <a href="#location">
-            Konum
-          </a>
-
+          <a href="#menu">Menü</a>
+          <a href="#loyalty">Sadakat</a>
+          <a href="#location">Konum</a>
         </div>
 
         <small>
           © 2026 Taşkent Cafe
         </small>
-
       </footer>
 
       <nav className="bottom-nav">
-
         <a
           href="#"
           className="nav-item active"
         >
-          <span>
-            ⌂
-          </span>
+          <span>⌂</span>
           Ana Sayfa
         </a>
 
@@ -645,9 +525,7 @@ export default function HomePage() {
           href="#menu"
           className="nav-item"
         >
-          <span>
-            ☕
-          </span>
+          <span>☕</span>
           Menü
         </a>
 
@@ -655,9 +533,7 @@ export default function HomePage() {
           href="#loyalty"
           className="nav-item"
         >
-          <span>
-            ⭐
-          </span>
+          <span>⭐</span>
           Sadakat
         </a>
 
@@ -665,21 +541,15 @@ export default function HomePage() {
           href="#location"
           className="nav-item"
         >
-          <span>
-            📍
-          </span>
+          <span>📍</span>
           Konum
         </a>
-
       </nav>
 
       <div className="waiter-widget">
-
         {waiterOpen && (
           <div className="waiter-panel">
-
             <div className="waiter-panel-header">
-
               <div className="waiter-avatar-small">
                 👩🏻‍🍳
               </div>
@@ -704,11 +574,9 @@ export default function HomePage() {
               >
                 ×
               </button>
-
             </div>
 
             <div className="waiter-panel-body">
-
               {table ? (
                 <>
                   <div className="waiter-table-info">
@@ -733,7 +601,8 @@ export default function HomePage() {
                         </strong>
 
                         <p>
-                          Masa {table.table_number}
+                          Masa{" "}
+                          {table.table_number}{" "}
                           için çağrınız
                           alındı.
                         </p>
@@ -756,9 +625,7 @@ export default function HomePage() {
                       <button
                         type="button"
                         className="waiter-call-button"
-                        onClick={
-                          callWaiter
-                        }
+                        onClick={callWaiter}
                         disabled={
                           waiterLoading
                         }
@@ -770,15 +637,14 @@ export default function HomePage() {
                         </span>
 
                         {!waiterLoading && (
-                          <span>
-                            →
-                          </span>
+                          <span>→</span>
                         )}
                       </button>
 
                       <small className="waiter-location-note">
-                        📍 Cafe içinde olduğunuz
-                        konum kontrolüyle
+                        📍 Cafe içinde
+                        olduğunuz konum
+                        kontrolüyle
                         doğrulanır.
                       </small>
                     </>
@@ -796,9 +662,10 @@ export default function HomePage() {
                     </strong>
 
                     <p>
-                      Garson çağırabilmek için
-                      masanızdaki QR kodu
-                      okutmanız gerekiyor.
+                      Garson çağırabilmek
+                      için masanızdaki QR
+                      kodu okutmanız
+                      gerekiyor.
                     </p>
                   </div>
 
@@ -809,9 +676,7 @@ export default function HomePage() {
                   )}
                 </>
               )}
-
             </div>
-
           </div>
         )}
 
@@ -829,7 +694,6 @@ export default function HomePage() {
           }
           aria-label="Garson çağır"
         >
-
           <span className="waiter-floating-icon">
             {waiterMessage
               ? "✓"
@@ -846,12 +710,56 @@ export default function HomePage() {
             !waiterMessage && (
               <span className="waiter-pulse" />
             )}
-
         </button>
-
       </div>
 
       <style jsx global>{`
+        .header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+
+        .brand {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .logo {
+          width: 52px;
+          height: 52px;
+          min-width: 52px;
+          border-radius: 50%;
+          overflow: hidden;
+          background: #ffffff;
+          border: 2px solid rgba(91, 57, 35, 0.12);
+          box-shadow:
+            0 4px 14px
+              rgba(45, 28, 18, 0.12);
+        }
+
+        .logo img {
+          width: 100%;
+          height: 100%;
+          display: block;
+          object-fit: cover;
+          border-radius: 50%;
+        }
+
+        .footer-logo {
+          display: flex;
+          align-items: center;
+          gap: 9px;
+        }
+
+        .footer-logo img {
+          width: 38px;
+          height: 38px;
+          border-radius: 50%;
+          object-fit: cover;
+          display: block;
+        }
 
         .waiter-widget {
           position: fixed;
@@ -1250,9 +1158,7 @@ export default function HomePage() {
             display: none !important;
           }
         }
-
       `}</style>
-
     </main>
   );
 }
