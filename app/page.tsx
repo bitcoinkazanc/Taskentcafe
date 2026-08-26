@@ -66,7 +66,7 @@ type CafeTable = {
 };
 
 const logoUrl =
-  "https://raw.githubusercontent.com/bitcoinkazanc/Taskentcafe/main/Taskent-logo.jpg";
+  "https://raw.githubusercontent.com/bitcoinkazanc/Taskentcafe/main/taskent-logo.png";
 
 export default function HomePage() {
   const [category, setCategory] = useState("Tümü");
