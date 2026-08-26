@@ -68,23 +68,43 @@ type CafeTable = {
 const logoUrl =
   "https://raw.githubusercontent.com/bitcoinkazanc/Taskentcafe/main/taskent-logo.png";
 
-const mardinImageUrl =
-  "https://raw.githubusercontent.com/bitcoinkazanc/Taskentcafe/main/mardin-1.jpeg";
+/*
+ * Hero görseli.
+ *
+ * Eğer projede kendi görsel dosyan varsa yalnızca bu URL'yi
+ * kendi görsel URL'n ile değiştirmek yeterlidir.
+ *
+ * Şimdilik güvenilir uzak görsel kullanıyoruz; <img> olarak
+ * render edildiği için CSS background-image kaybolması problemi yok.
+ */
+const heroImageUrl =
+  "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=1200&q=85";
 
 export default function HomePage() {
   const [category, setCategory] = useState("Tümü");
   const [table, setTable] = useState<CafeTable | null>(null);
-  const [tableLoading, setTableLoading] = useState(false);
-  const [waiterLoading, setWaiterLoading] = useState(false);
-  const [waiterMessage, setWaiterMessage] = useState("");
-  const [waiterError, setWaiterError] = useState("");
-  const [waiterOpen, setWaiterOpen] = useState(false);
+
+  const [tableLoading, setTableLoading] =
+    useState(false);
+
+  const [waiterLoading, setWaiterLoading] =
+    useState(false);
+
+  const [waiterMessage, setWaiterMessage] =
+    useState("");
+
+  const [waiterError, setWaiterError] =
+    useState("");
+
+  const [waiterOpen, setWaiterOpen] =
+    useState(false);
 
   const filteredProducts =
     category === "Tümü"
       ? products
       : products.filter(
-          (product) => product.category === category
+          (product) =>
+            product.category === category
         );
 
   useEffect(() => {
@@ -102,12 +122,13 @@ export default function HomePage() {
 
         setTableLoading(true);
 
-        const { data, error } = await supabase.rpc(
-          "get_cafe_table",
-          {
-            requested_qr_token: qrToken,
-          }
-        );
+        const { data, error } =
+          await supabase.rpc(
+            "get_cafe_table",
+            {
+              requested_qr_token: qrToken,
+            }
+          );
 
         if (error) {
           console.error(
@@ -172,14 +193,15 @@ export default function HomePage() {
           const longitude =
             position.coords.longitude;
 
-          const { error } = await supabase.rpc(
-            "create_waiter_call",
-            {
-              requested_table_id: table.id,
-              user_latitude: latitude,
-              user_longitude: longitude,
-            }
-          );
+          const { error } =
+            await supabase.rpc(
+              "create_waiter_call",
+              {
+                requested_table_id: table.id,
+                user_latitude: latitude,
+                user_longitude: longitude,
+              }
+            );
 
           if (error) {
             throw new Error(error.message);
@@ -255,9 +277,9 @@ export default function HomePage() {
   return (
     <main className="site">
 
+      {/* HEADER */}
       <header className="header">
         <div className="brand">
-
           <div className="logo">
             <img
               src={logoUrl}
@@ -272,131 +294,95 @@ export default function HomePage() {
               Keyif burada başlar
             </span>
           </div>
-
         </div>
       </header>
 
-      {table && (
-        <section className="waiter-bar">
+      {/* HERO */}
+      <section className="hero">
+        <img
+          className="hero-image"
+          src={heroImageUrl}
+          alt="Taşkent Cafe"
+        />
 
-          <div>
-            <span>MASA</span>
-
-            <strong>
-              {table.table_number}
-            </strong>
-          </div>
-
-          <button
-            type="button"
-            onClick={callWaiter}
-            disabled={waiterLoading}
-          >
-            {waiterLoading
-              ? "Konum kontrol ediliyor..."
-              : "📣 Garson Çağır"}
-          </button>
-
-        </section>
-      )}
-
-      {(waiterMessage || waiterError) && (
-        <section className="waiter-status">
-
-          {waiterMessage && (
-            <div className="waiter-success">
-              ✅ {waiterMessage}
-            </div>
-          )}
-
-          {waiterError && (
-            <div className="waiter-error">
-              ⚠️ {waiterError}
-            </div>
-          )}
-
-        </section>
-      )}
-
-      <section
-        className="hero"
-        style={{
-          backgroundImage: `linear-gradient(
-            180deg,
-            rgba(25, 18, 13, 0.18) 0%,
-            rgba(25, 18, 13, 0.82) 100%
-          ), url("${mardinImageUrl}")`,
-        }}
-      >
+        <div className="hero-dark-overlay" />
 
         <div className="hero-overlay">
+          <span className="location-label">
+            📍 Mardin Kale
+          </span>
 
-          <h2
-            style={{
-              fontSize: "37px",
-              lineHeight: "1.08",
-              whiteSpace: "nowrap",
-              letterSpacing: "-1px",
-              marginTop: 0,
-            }}
-          >
-            Mardin Taşkent Cafe'ye Hoşgeldiniz
+          <h2>
+            Kahveni al,
+            <br />
+            keyfini yaşa.
           </h2>
 
           <p>
-            Mardin’in tarihi dokusuyla iç içe,
-            eşsiz bir atmosferde hizmet veren
-            Taşkent Cafe, misafirlerine hem
-            geleneksel hem de modern lezzetleri
-            bir arada sunar.
+            Lezzet, sohbet ve güzel
+            manzara için Taşkent Cafe.
           </p>
-
-          <p>
-            Şehrin büyüleyici manzarasına karşı
-            keyifli vakit geçirebileceğiniz
-            mekanımız, sıcak ortamı ve güler
-            yüzlü hizmetiyle öne çıkar.
-          </p>
-
-          <p>
-            Özenle hazırlanan kahvelerimiz,
-            taze içeceklerimiz ve lezzetli
-            menümüzle ister arkadaşlarınızla
-            buluşun ister tek başınıza huzurlu
-            bir mola verin.
-          </p>
-
         </div>
       </section>
 
+      {/* GARSON BAR */}
+      <div className="waiter-bar">
+        <div>
+          <span>
+            TAŞKENT CAFE
+          </span>
+
+          <strong>
+            {tableLoading
+              ? "Masa kontrol ediliyor..."
+              : table
+              ? `Masa ${table.table_number}`
+              : "Garson Hizmeti"}
+          </strong>
+        </div>
+
+        <button
+          type="button"
+          onClick={() =>
+            setWaiterOpen(true)
+          }
+        >
+          👩🏻‍🍳 Garson
+        </button>
+      </div>
+
+      {waiterMessage && (
+        <div className="waiter-status">
+          <div className="waiter-success">
+            ✓ {waiterMessage}
+          </div>
+        </div>
+      )}
+
+      {/* MENU */}
       <section
         className="section"
         id="menu"
       >
-
         <div className="section-heading">
-
           <div>
             <span className="eyebrow">
               TAŞKENT CAFE
             </span>
 
-            <h2>
-              Menümüz
-            </h2>
+            <h2>Menümüz</h2>
           </div>
 
           <span className="menu-count">
             {filteredProducts.length} ürün
           </span>
-
         </div>
 
         <div className="categories">
-
           {categories.map((item) => (
             <button
               key={item}
+              type="button"
               className={
                 category === item
                   ? "category active"
@@ -409,26 +395,21 @@ export default function HomePage() {
               {item}
             </button>
           ))}
-
         </div>
 
         <div className="products">
-
           {filteredProducts.map(
             (product) => (
               <article
                 className="product-card"
                 key={product.name}
               >
-
                 <div className="product-image">
                   {product.icon}
                 </div>
 
                 <div className="product-content">
-
                   <div>
-
                     <h3>
                       {product.name}
                     </h3>
@@ -436,41 +417,34 @@ export default function HomePage() {
                     <p>
                       {product.description}
                     </p>
-
                   </div>
 
                   <div className="product-bottom">
-
                     <strong>
                       {product.price}
                     </strong>
 
                     <button
+                      type="button"
                       className="plus-button"
                       aria-label={`${product.name} detay`}
                     >
                       +
                     </button>
-
                   </div>
-
                 </div>
-
               </article>
             )
           )}
-
         </div>
-
       </section>
 
+      {/* SADAKAT KARTI */}
       <section
         className="loyalty"
         id="loyalty"
       >
-
         <div className="loyalty-content">
-
           <span className="eyebrow light">
             SADAKAT KULÜBÜ
           </span>
@@ -493,44 +467,33 @@ export default function HomePage() {
           >
             Sadakat Kulübüne Katıl
           </a>
-
         </div>
 
         <div className="loyalty-icon">
           ⭐
         </div>
-
       </section>
 
+      {/* KONUM */}
       <section
         className="info-section"
         id="location"
       >
-
         <div className="section-heading">
-
           <div>
-
             <span className="eyebrow">
               BİZİ ZİYARET ET
             </span>
 
-            <h2>
-              Taşkent Cafe
-            </h2>
-
+            <h2>Taşkent Cafe</h2>
           </div>
-
         </div>
 
         <div className="info-card">
-
           <div className="info-row">
-
             <span>📍</span>
 
             <div>
-
               <strong>
                 Konum
               </strong>
@@ -538,17 +501,13 @@ export default function HomePage() {
               <p>
                 Mardin Kale
               </p>
-
             </div>
-
           </div>
 
           <div className="info-row">
-
             <span>🕐</span>
 
             <div>
-
               <strong>
                 Çalışma Saatleri
               </strong>
@@ -556,17 +515,13 @@ export default function HomePage() {
               <p>
                 Her gün 09:00 – 00:00
               </p>
-
             </div>
-
           </div>
 
           <div className="info-row">
-
             <span>📞</span>
 
             <div>
-
               <strong>
                 İletişim
               </strong>
@@ -574,24 +529,18 @@ export default function HomePage() {
               <p>
                 05XX XXX XX XX
               </p>
-
             </div>
-
           </div>
-
         </div>
-
       </section>
 
+      {/* FOOTER */}
       <footer className="footer">
-
         <div className="footer-logo">
-
           <img
             src={logoUrl}
             alt="Taşkent Cafe"
           />
-
         </div>
 
         <strong>
@@ -605,22 +554,55 @@ export default function HomePage() {
         <small>
           © 2026 Taşkent Cafe
         </small>
-
       </footer>
 
+      {/* ALT SABİT MENÜ */}
+      <nav className="bottom-nav">
+        <a
+          href="#"
+          className="nav-item active"
+        >
+          <span>⌂</span>
+          <small>Ana Sayfa</small>
+        </a>
+
+        <a
+          href="#menu"
+          className="nav-item"
+        >
+          <span>☕</span>
+          <small>Menü</small>
+        </a>
+
+        <a
+          href="/loyalty"
+          className="nav-item"
+        >
+          <span>⭐</span>
+          <small>Sadakat</small>
+        </a>
+
+        <a
+          href="#location"
+          className="nav-item"
+        >
+          <span>📍</span>
+          <small>Konum</small>
+        </a>
+      </nav>
+
+      {/* GARSON WIDGET */}
       <div className="waiter-widget">
 
         {waiterOpen && (
           <div className="waiter-panel">
 
             <div className="waiter-panel-header">
-
               <div className="waiter-avatar-small">
                 👩🏻‍🍳
               </div>
 
               <div>
-
                 <strong>
                   Garson Hizmeti
                 </strong>
@@ -628,7 +610,6 @@ export default function HomePage() {
                 <span>
                   Size nasıl yardımcı olabiliriz?
                 </span>
-
               </div>
 
               <button
@@ -641,16 +622,13 @@ export default function HomePage() {
               >
                 ×
               </button>
-
             </div>
 
             <div className="waiter-panel-body">
 
               {table ? (
                 <>
-
                   <div className="waiter-table-info">
-
                     <span>
                       Masanız
                     </span>
@@ -658,19 +636,15 @@ export default function HomePage() {
                     <strong>
                       Masa {table.table_number}
                     </strong>
-
                   </div>
 
                   {waiterMessage ? (
-
                     <div className="waiter-success-box">
-
                       <div className="waiter-success-icon">
                         ✓
                       </div>
 
                       <div>
-
                         <strong>
                           Garsonunuz geliyor
                         </strong>
@@ -681,15 +655,10 @@ export default function HomePage() {
                           için çağrınız
                           alındı.
                         </p>
-
                       </div>
-
                     </div>
-
                   ) : (
-
                     <>
-
                       <p className="waiter-panel-text">
                         Masanıza bir garson
                         göndermemizi ister
@@ -706,9 +675,10 @@ export default function HomePage() {
                         type="button"
                         className="waiter-call-button"
                         onClick={callWaiter}
-                        disabled={waiterLoading}
+                        disabled={
+                          waiterLoading
+                        }
                       >
-
                         <span>
                           {waiterLoading
                             ? "Konum kontrol ediliyor..."
@@ -718,7 +688,6 @@ export default function HomePage() {
                         {!waiterLoading && (
                           <span>→</span>
                         )}
-
                       </button>
 
                       <small className="waiter-location-note">
@@ -727,19 +696,12 @@ export default function HomePage() {
                         kontrolüyle
                         doğrulanır.
                       </small>
-
                     </>
-
                   )}
-
                 </>
-
               ) : (
-
                 <>
-
                   <div className="waiter-panel-empty">
-
                     <div className="waiter-empty-icon">
                       📱
                     </div>
@@ -754,7 +716,6 @@ export default function HomePage() {
                       kodu okutmanız
                       gerekiyor.
                     </p>
-
                   </div>
 
                   {waiterError && (
@@ -762,13 +723,10 @@ export default function HomePage() {
                       ⚠️ {waiterError}
                     </div>
                   )}
-
                 </>
-
               )}
 
             </div>
-
           </div>
         )}
 
@@ -780,11 +738,12 @@ export default function HomePage() {
               : "waiter-floating-button"
           }
           onClick={() =>
-            setWaiterOpen(!waiterOpen)
+            setWaiterOpen(
+              !waiterOpen
+            )
           }
           aria-label="Garson çağır"
         >
-
           <span className="waiter-floating-icon">
             {waiterMessage
               ? "✓"
@@ -801,9 +760,7 @@ export default function HomePage() {
             !waiterMessage && (
               <span className="waiter-pulse" />
             )}
-
         </button>
-
       </div>
 
     </main>
