@@ -346,38 +346,39 @@ export default function HomePage() {
         style={{
           backgroundImage: `linear-gradient(
             180deg,
-            rgba(25, 18, 13, 0.12) 10%,
-            rgba(25, 18, 13, 0.88) 100%
+            rgba(25, 18, 13, 0.18) 0%,
+            rgba(25, 18, 13, 0.78) 100%
           ), url("${mardinImageUrl}")`,
         }}
       >
 
         <div className="hero-overlay">
 
-          <span className="location-label">
-            📍 Mardin Kale
-          </span>
+          <div className="antique-welcome-frame">
 
-          <h2>
-            Kahveni al,
-            <br />
-            keyfini yaşa.
-          </h2>
+            <div className="antique-corner top-left">
+              ❦
+            </div>
 
-          <p>
-            Mardin’in tarihi dokusuyla
-            iç içe, eşsiz bir atmosferde
-            geleneksel ve modern
-            lezzetleri bir arada sunuyoruz.
-          </p>
+            <div className="antique-corner top-right">
+              ❦
+            </div>
 
-          <p>
-            Şehrin büyüleyici manzarasına
-            karşı kahvenizi yudumlayıp
-            güzel sohbetlerin tadını
-            çıkarabileceğiniz sıcak bir
-            ortam sizi bekliyor.
-          </p>
+            <div className="antique-corner bottom-left">
+              ❦
+            </div>
+
+            <div className="antique-corner bottom-right">
+              ❦
+            </div>
+
+            <h2>
+              Mardin Taşkent Cafe’ye
+              <br />
+              hoşgeldiniz
+            </h2>
+
+          </div>
 
         </div>
 
