@@ -151,6 +151,47 @@ export default function HomePage() {
       </header>
 
 
+      {/* SADAKAT KARTI - MENÜNÜN ÜSTÜNDE */}
+
+      <section
+        className="loyalty"
+        id="loyalty"
+      >
+
+        <div className="loyalty-content">
+
+          <span className="eyebrow light">
+            SADAKAT KULÜBÜ
+          </span>
+
+          <h2>
+            Her kahvede
+            <br />
+            daha fazla kazanın.
+          </h2>
+
+          <p>
+            Alışverişlerinden puan
+            biriktir, özel ödüllerin ve
+            avantajların tadını çıkar.
+          </p>
+
+          <a
+            href="/loyalty"
+            className="loyalty-button"
+          >
+            Sadakat Kulübüne Katıl
+          </a>
+
+        </div>
+
+        <div className="loyalty-icon">
+          ⭐
+        </div>
+
+      </section>
+
+
       {/* MENÜ */}
 
       <section
@@ -256,47 +297,6 @@ export default function HomePage() {
             )
           )}
 
-        </div>
-
-      </section>
-
-
-      {/* SADAKAT KARTI */}
-
-      <section
-        className="loyalty"
-        id="loyalty"
-      >
-
-        <div className="loyalty-content">
-
-          <span className="eyebrow light">
-            SADAKAT KULÜBÜ
-          </span>
-
-          <h2>
-            Her kahvede
-            <br />
-            daha fazla kazanın.
-          </h2>
-
-          <p>
-            Alışverişlerinden puan
-            biriktir, özel ödüllerin ve
-            avantajların tadını çıkar.
-          </p>
-
-          <a
-            href="/loyalty"
-            className="loyalty-button"
-          >
-            Sadakat Kulübüne Katıl
-          </a>
-
-        </div>
-
-        <div className="loyalty-icon">
-          ⭐
         </div>
 
       </section>
