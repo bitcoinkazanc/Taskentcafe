@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { supabase } from "../lib/supabase";
 
 const categories = [
+  "Tümü",
   "Sıcak İçecekler",
   "Soğuk İçecekler",
   "Kahvaltı",
@@ -56,729 +58,1201 @@ const products = [
   },
 ];
 
-const logoUrl =
-  "https://raw.githubusercontent.com/bitcoinkazanc/Taskentcafe/main/taskent-logo.png";
-
-const waiterImageUrl =
-  "https://images.unsplash.com/photo-1556911220-bff31c812dba?auto=format&fit=crop&w=300&q=85";
+type CafeTable = {
+  id: string;
+  table_number: string;
+  qr_token: string;
+  active: boolean;
+};
 
 export default function HomePage() {
-  const [category, setCategory] = useState("Sıcak İçecekler");
+  const [category, setCategory] = useState("Tümü");
 
-  const filteredProducts = products.filter(
-    (product) => product.category === category
-  );
+  const [table, setTable] =
+    useState<CafeTable | null>(null);
+
+  const [tableLoading, setTableLoading] =
+    useState(false);
+
+  const [waiterLoading, setWaiterLoading] =
+    useState(false);
+
+  const [waiterMessage, setWaiterMessage] =
+    useState("");
+
+  const [waiterError, setWaiterError] =
+    useState("");
+
+  const [waiterOpen, setWaiterOpen] =
+    useState(false);
+
+  const filteredProducts =
+    category === "Tümü"
+      ? products
+      : products.filter(
+          (product) =>
+            product.category === category
+        );
+
+  useEffect(() => {
+    const loadTable = async () => {
+      try {
+        const params =
+          new URLSearchParams(
+            window.location.search
+          );
+
+        const qrToken =
+          params.get("table");
+
+        if (!qrToken) {
+          return;
+        }
+
+        setTableLoading(true);
+
+        const {
+          data,
+          error,
+        } = await supabase.rpc(
+          "get_cafe_table",
+          {
+            requested_qr_token:
+              qrToken,
+          }
+        );
+
+        if (error) {
+          console.error(
+            "TABLE LOAD ERROR:",
+            error
+          );
+
+          setWaiterError(
+            "Masa bilgisi alınamadı."
+          );
+
+          return;
+        }
+
+        setTable(
+          data as CafeTable
+        );
+      } catch (error) {
+        console.error(
+          "TABLE ERROR:",
+          error
+        );
+
+        setWaiterError(
+          "Masa bilgisi alınamadı."
+        );
+      } finally {
+        setTableLoading(false);
+      }
+    };
+
+    loadTable();
+  }, []);
+
+  const callWaiter = () => {
+    if (!table) {
+      setWaiterError(
+        "Garson çağırmak için masanıza ait QR koddan giriş yapmalısınız."
+      );
+
+      setWaiterMessage("");
+      return;
+    }
+
+    if (!navigator.geolocation) {
+      setWaiterError(
+        "Cihazınız konum özelliğini desteklemiyor."
+      );
+
+      setWaiterMessage("");
+      return;
+    }
+
+    setWaiterLoading(true);
+    setWaiterMessage("");
+    setWaiterError("");
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const latitude =
+            position.coords.latitude;
+
+          const longitude =
+            position.coords.longitude;
+
+          const {
+            error,
+          } = await supabase.rpc(
+            "create_waiter_call",
+            {
+              requested_table_id:
+                table.id,
+              user_latitude:
+                latitude,
+              user_longitude:
+                longitude,
+            }
+          );
+
+          if (error) {
+            throw new Error(
+              error.message
+            );
+          }
+
+          setWaiterMessage(
+            `Garsonunuz Masa ${table.table_number} için çağrıldı.`
+          );
+
+          setWaiterError("");
+        } catch (error) {
+          console.error(
+            "WAITER CALL ERROR:",
+            error
+          );
+
+          setWaiterError(
+            error instanceof Error
+              ? error.message
+              : "Garson çağrısı gönderilemedi."
+          );
+
+          setWaiterMessage("");
+        } finally {
+          setWaiterLoading(false);
+        }
+      },
+      (error) => {
+        console.error(
+          "LOCATION ERROR:",
+          error
+        );
+
+        let message =
+          "Konumunuz alınamadı.";
+
+        if (
+          error.code ===
+          error.PERMISSION_DENIED
+        ) {
+          message =
+            "Garson çağırmak için konum izni vermelisiniz.";
+        }
+
+        if (
+          error.code ===
+          error.POSITION_UNAVAILABLE
+        ) {
+          message =
+            "Konumunuz belirlenemedi. Lütfen GPS'i açıp tekrar deneyin.";
+        }
+
+        if (
+          error.code ===
+          error.TIMEOUT
+        ) {
+          message =
+            "Konum alınırken zaman aşımı oluştu. Lütfen tekrar deneyin.";
+        }
+
+        setWaiterError(message);
+        setWaiterMessage("");
+        setWaiterLoading(false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      }
+    );
+  };
 
   return (
-    <>
-      <main className="site">
-        <header className="header">
-          <div className="brand">
-            <div className="logo">
-              <img src={logoUrl} alt="Taşkent Cafe" />
-            </div>
+    <main className="site">
 
-            <div>
-              <h1>Taşkent Cafe</h1>
-              <span>Cafe & Restaurant</span>
-            </div>
+      <header className="header">
+
+        <div className="brand">
+
+          <div className="logo">
+            ☕
           </div>
-        </header>
 
-        <section className="loyalty">
-          <div className="loyalty-content">
-            <span className="loyalty-label">
-              TAŞKENT SADAKAT KULÜBÜ
+          <div>
+            <h1>
+              Taşkent Cafe
+            </h1>
+
+            <span>
+              Keyif burada başlar
+            </span>
+          </div>
+
+        </div>
+
+        <button
+          className="icon-button"
+          aria-label="Menü"
+        >
+          ☰
+        </button>
+
+      </header>
+
+      <section className="hero">
+
+        <div className="hero-overlay">
+
+          <span className="location-label">
+            📍 Mardin Kale
+          </span>
+
+          <h2>
+            Kahveni al,
+            <br />
+            keyfini yaşa.
+          </h2>
+
+          <p>
+            Lezzet, sohbet ve güzel
+            manzara için Taşkent Cafe.
+          </p>
+
+          <a
+            href="#menu"
+            className="hero-button"
+          >
+            Menüyü Gör
+          </a>
+
+        </div>
+
+      </section>
+
+      <section className="quick-links">
+
+        <a
+          href="#menu"
+          className="quick-card"
+        >
+          <span>📖</span>
+          <strong>Menü</strong>
+          <small>
+            Tüm ürünler
+          </small>
+        </a>
+
+        <a
+          href="#loyalty"
+          className="quick-card"
+        >
+          <span>⭐</span>
+          <strong>Sadakat</strong>
+          <small>
+            Puan kazan
+          </small>
+        </a>
+
+        <a
+          href="#location"
+          className="quick-card"
+        >
+          <span>📍</span>
+          <strong>Konum</strong>
+          <small>
+            Bizi bul
+          </small>
+        </a>
+
+      </section>
+
+      <section
+        className="section"
+        id="menu"
+      >
+
+        <div className="section-heading">
+
+          <div>
+
+            <span className="eyebrow">
+              TAŞKENT CAFE
             </span>
 
             <h2>
-              Her ziyaretiniz
-              <br />
-              size kazandırsın.
+              Menümüz
             </h2>
 
-            <p>
-              Sadakat kulübüne katılın, alışverişlerinizden
-              puan kazanın ve özel fırsatlardan yararlanın.
-            </p>
-
-            <button className="loyalty-button">
-              Sadakat Kulübüne Katıl
-            </button>
           </div>
 
-          <div className="loyalty-icon">★</div>
-        </section>
+          <span className="menu-count">
+            {filteredProducts.length} ürün
+          </span>
 
-        <section className="menu-section" id="menu">
-          <div className="menu-title">
-            <span>LEZZETLERİMİZ</span>
-            <h2>Menü</h2>
-          </div>
+        </div>
 
-          <div className="categories">
-            {categories.map((item) => (
+        <div className="categories">
+
+          {categories.map(
+            (item) => (
               <button
                 key={item}
-                type="button"
                 className={
                   category === item
                     ? "category active"
                     : "category"
                 }
-                onClick={() => setCategory(item)}
+                onClick={() =>
+                  setCategory(item)
+                }
               >
                 {item}
               </button>
-            ))}
-          </div>
+            )
+          )}
 
-          <div className="products">
-            {filteredProducts.map((product) => (
+        </div>
+
+        <div className="products">
+
+          {filteredProducts.map(
+            (product) => (
               <article
                 className="product-card"
                 key={product.name}
               >
+
                 <div className="product-image">
-                  <span>{product.icon}</span>
+                  {product.icon}
                 </div>
 
                 <div className="product-content">
-                  <h3>{product.name}</h3>
 
-                  <p>{product.description}</p>
+                  <div>
+
+                    <h3>
+                      {product.name}
+                    </h3>
+
+                    <p>
+                      {product.description}
+                    </p>
+
+                  </div>
 
                   <div className="product-bottom">
-                    <strong>{product.price}</strong>
+
+                    <strong>
+                      {product.price}
+                    </strong>
 
                     <button
-                      type="button"
                       className="plus-button"
+                      aria-label={`${product.name} detay`}
                     >
                       +
                     </button>
+
                   </div>
+
                 </div>
+
               </article>
-            ))}
-          </div>
-        </section>
+            )
+          )}
 
-        <section className="contact" id="contact">
-          <span>BİZE ULAŞIN</span>
+        </div>
 
-          <h2>Taşkent Cafe</h2>
+      </section>
+
+      <section
+        className="loyalty"
+        id="loyalty"
+      >
+
+        <div className="loyalty-content">
+
+          <span className="eyebrow light">
+            SADAKAT KULÜBÜ
+          </span>
+
+          <h2>
+            Her kahvede
+            <br />
+            daha fazla kazanın.
+          </h2>
 
           <p>
-            Bizi sosyal medyada takip edin.
+            Alışverişlerinden puan
+            biriktir, özel ödüllerin ve
+            avantajların tadını çıkar.
           </p>
 
-          <div className="socials">
-            <a href="#" aria-label="Facebook">
-              f
-            </a>
+          <a
+            href="/loyalty"
+            className="loyalty-button"
+          >
+            Sadakat Kulübüne Katıl
+          </a>
 
-            <a href="#" aria-label="Instagram">
-              ◎
-            </a>
+        </div>
 
-            <a href="#" aria-label="YouTube">
-              ▶
-            </a>
+        <div className="loyalty-icon">
+          ⭐
+        </div>
 
-            <a href="#" aria-label="TikTok">
-              ♪
-            </a>
-          </div>
-        </section>
+      </section>
 
-        <footer className="footer">
-          <div className="footer-logo">
-            <img src={logoUrl} alt="Taşkent Cafe" />
-          </div>
-
-          <strong>Taşkent Cafe</strong>
-
-          <small>© 2026 Taşkent Cafe</small>
-        </footer>
-      </main>
-
-      {/* SOL ALT GARSON ÇAĞIRMA */}
-      <button
-        type="button"
-        className="waiter-button"
-        aria-label="Garson Çağır"
+      <section
+        className="info-section"
+        id="location"
       >
-        <span className="waiter-pulse" />
 
-        <span className="waiter-image">
-          <img
-            src={waiterImageUrl}
-            alt="Garson"
-          />
-        </span>
+        <div className="section-heading">
 
-        <span className="waiter-text">
-          Garson Çağır
-        </span>
-      </button>
+          <div>
 
-      {/* ALT SABİT MENÜ */}
+            <span className="eyebrow">
+              BİZİ ZİYARET ET
+            </span>
+
+            <h2>
+              Taşkent Cafe
+            </h2>
+
+          </div>
+
+        </div>
+
+        <div className="info-card">
+
+          <div className="info-row">
+
+            <span>
+              📍
+            </span>
+
+            <div>
+
+              <strong>
+                Konum
+              </strong>
+
+              <p>
+                Mardin Kale
+              </p>
+
+            </div>
+
+          </div>
+
+          <div className="info-row">
+
+            <span>
+              🕐
+            </span>
+
+            <div>
+
+              <strong>
+                Çalışma Saatleri
+              </strong>
+
+              <p>
+                Her gün 09:00 – 00:00
+              </p>
+
+            </div>
+
+          </div>
+
+          <div className="info-row">
+
+            <span>
+              📞
+            </span>
+
+            <div>
+
+              <strong>
+                İletişim
+              </strong>
+
+              <p>
+                05XX XXX XX XX
+              </p>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
+
+      <footer className="footer">
+
+        <div className="footer-logo">
+          ☕ Taşkent Cafe
+        </div>
+
+        <p>
+          Kahve, lezzet ve güzel sohbet.
+        </p>
+
+        <div className="footer-links">
+
+          <a href="#menu">
+            Menü
+          </a>
+
+          <a href="#loyalty">
+            Sadakat
+          </a>
+
+          <a href="#location">
+            Konum
+          </a>
+
+        </div>
+
+        <small>
+          © 2026 Taşkent Cafe
+        </small>
+
+      </footer>
+
       <nav className="bottom-nav">
-        <a href="#" className="nav-item active">
-          <span>⌂</span>
-          <small>Ana Sayfa</small>
+
+        <a
+          href="#"
+          className="nav-item active"
+        >
+          <span>
+            ⌂
+          </span>
+          Ana Sayfa
         </a>
 
-        <a href="#menu" className="nav-item">
-          <span>☕</span>
-          <small>Menü</small>
+        <a
+          href="#menu"
+          className="nav-item"
+        >
+          <span>
+            ☕
+          </span>
+          Menü
         </a>
 
-        <a href="#" className="nav-item">
-          <span>★</span>
-          <small>Sadakat</small>
+        <a
+          href="#loyalty"
+          className="nav-item"
+        >
+          <span>
+            ⭐
+          </span>
+          Sadakat
         </a>
 
-        <a href="#contact" className="nav-item">
-          <span>☎</span>
-          <small>İletişim</small>
+        <a
+          href="#location"
+          className="nav-item"
+        >
+          <span>
+            📍
+          </span>
+          Konum
         </a>
+
       </nav>
 
-      <style jsx>{`
-        * {
-          box-sizing: border-box;
-          margin: 0;
-          padding: 0;
-        }
+      <div className="waiter-widget">
 
-        html {
-          scroll-behavior: smooth;
-          scroll-padding-bottom: 80px;
-        }
+        {waiterOpen && (
+          <div className="waiter-panel">
 
-        body {
-          background: #f5efe8;
-          color: #30261f;
-          font-family: Arial, Helvetica, sans-serif;
-        }
+            <div className="waiter-panel-header">
 
-        button,
-        a {
-          font: inherit;
-          cursor: pointer;
-        }
+              <div className="waiter-avatar-small">
+                👩🏻‍🍳
+              </div>
 
-        a {
-          text-decoration: none;
-          color: inherit;
-        }
+              <div>
+                <strong>
+                  Garson Hizmeti
+                </strong>
 
-        .site {
-          width: 100%;
-          max-width: 560px;
-          min-height: 100vh;
-          margin: 0 auto;
-          background: #fffaf5;
-          padding-bottom: 82px;
-          overflow-x: hidden;
-        }
+                <span>
+                  Size nasıl yardımcı olabiliriz?
+                </span>
+              </div>
 
-        .header {
-          height: 76px;
-          padding: 14px 18px;
-          display: flex;
-          align-items: center;
-          background: rgba(255, 250, 245, 0.97);
-          border-bottom: 1px solid #f1e8df;
-        }
+              <button
+                type="button"
+                className="waiter-close"
+                onClick={() =>
+                  setWaiterOpen(false)
+                }
+                aria-label="Kapat"
+              >
+                ×
+              </button>
 
-        .brand {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-        }
+            </div>
 
-        .logo {
-          width: 45px;
-          height: 45px;
-          min-width: 45px;
-          border-radius: 50%;
-          overflow: hidden;
-          background: #b96f38;
-          box-shadow: 0 7px 18px rgba(185, 111, 56, 0.22);
-        }
+            <div className="waiter-panel-body">
 
-        .logo img {
-          width: 100%;
-          height: 100%;
-          display: block;
-          object-fit: cover;
-        }
+              {table ? (
+                <>
+                  <div className="waiter-table-info">
+                    <span>
+                      Masanız
+                    </span>
 
-        .brand h1 {
-          font-size: 17px;
-          font-weight: 700;
-        }
+                    <strong>
+                      Masa {table.table_number}
+                    </strong>
+                  </div>
 
-        .brand span {
-          display: block;
-          margin-top: 3px;
-          color: #9a8b7d;
-          font-size: 10px;
-        }
+                  {waiterMessage ? (
+                    <div className="waiter-success-box">
+                      <div className="waiter-success-icon">
+                        ✓
+                      </div>
 
-        /* SADAKAT KARTI */
+                      <div>
+                        <strong>
+                          Garsonunuz geliyor
+                        </strong>
 
-        .loyalty {
-          min-height: 230px;
-          margin: 18px 17px 0;
-          padding: 25px;
-          border-radius: 25px;
-          position: relative;
-          overflow: hidden;
-          background:
-            radial-gradient(
-              circle at 90% 15%,
-              rgba(255, 255, 255, 0.14),
-              transparent 32%
-            ),
-            linear-gradient(
-              145deg,
-              #382a21,
-              #241b16
-            );
-          color: white;
-        }
+                        <p>
+                          Masa {table.table_number}
+                          için çağrınız
+                          alındı.
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="waiter-panel-text">
+                        Masanıza bir garson
+                        göndermemizi ister
+                        misiniz?
+                      </p>
 
-        .loyalty::after {
-          content: "";
-          position: absolute;
-          width: 180px;
-          height: 180px;
-          right: -85px;
-          bottom: -95px;
-          border-radius: 50%;
-          border: 35px solid rgba(255, 255, 255, 0.05);
-        }
+                      {waiterError && (
+                        <div className="waiter-error-box">
+                          ⚠️ {waiterError}
+                        </div>
+                      )}
 
-        .loyalty-content {
-          position: relative;
-          z-index: 2;
-        }
+                      <button
+                        type="button"
+                        className="waiter-call-button"
+                        onClick={
+                          callWaiter
+                        }
+                        disabled={
+                          waiterLoading
+                        }
+                      >
+                        <span>
+                          {waiterLoading
+                            ? "Konum kontrol ediliyor..."
+                            : "📣 Garson Çağır"}
+                        </span>
 
-        .loyalty-label {
-          color: #d49a6b;
-          font-size: 9px;
-          font-weight: 800;
-          letter-spacing: 1.5px;
-        }
+                        {!waiterLoading && (
+                          <span>
+                            →
+                          </span>
+                        )}
+                      </button>
 
-        .loyalty h2 {
-          margin-top: 9px;
-          font-family: Georgia, "Times New Roman", serif;
-          font-size: 26px;
-          line-height: 1.08;
-        }
+                      <small className="waiter-location-note">
+                        📍 Cafe içinde olduğunuz
+                        konum kontrolüyle
+                        doğrulanır.
+                      </small>
+                    </>
+                  )}
+                </>
+              ) : (
+                <>
+                  <div className="waiter-panel-empty">
+                    <div className="waiter-empty-icon">
+                      📱
+                    </div>
 
-        .loyalty p {
-          max-width: 290px;
-          margin-top: 10px;
-          color: #c9bdb3;
-          font-size: 11px;
-          line-height: 1.55;
-        }
+                    <strong>
+                      Masanızı tanıyamadık
+                    </strong>
 
-        .loyalty-button {
-          height: 39px;
-          margin-top: 17px;
-          padding: 0 15px;
-          border: 0;
-          border-radius: 11px;
-          background: #c17a41;
-          color: white;
-          font-size: 10px;
-          font-weight: 700;
-        }
+                    <p>
+                      Garson çağırabilmek için
+                      masanızdaki QR kodu
+                      okutmanız gerekiyor.
+                    </p>
+                  </div>
 
-        .loyalty-icon {
-          position: absolute;
-          right: 20px;
-          top: 22px;
-          width: 54px;
-          height: 54px;
-          border-radius: 17px;
-          background: rgba(255, 255, 255, 0.1);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 27px;
-        }
+                  {waiterError && (
+                    <div className="waiter-error-box">
+                      ⚠️ {waiterError}
+                    </div>
+                  )}
+                </>
+              )}
 
-        /* MENÜ */
+            </div>
 
-        .menu-section {
-          padding: 0 17px;
-          margin-top: 28px;
-        }
+          </div>
+        )}
 
-        .menu-title {
-          margin-bottom: 14px;
-        }
+        <button
+          type="button"
+          className={
+            waiterMessage
+              ? "waiter-floating-button success"
+              : "waiter-floating-button"
+          }
+          onClick={() =>
+            setWaiterOpen(
+              !waiterOpen
+            )
+          }
+          aria-label="Garson çağır"
+        >
 
-        .menu-title span {
-          color: #b56d38;
-          font-size: 9px;
-          font-weight: 800;
-          letter-spacing: 1.4px;
-        }
+          <span className="waiter-floating-icon">
+            {waiterMessage
+              ? "✓"
+              : "👩🏻‍🍳"}
+          </span>
 
-        .menu-title h2 {
-          margin-top: 4px;
-          font-family: Georgia, "Times New Roman", serif;
-          font-size: 25px;
-        }
+          <span className="waiter-floating-label">
+            {waiterMessage
+              ? "Garson geliyor"
+              : "Garson"}
+          </span>
 
-        .categories {
-          display: flex;
-          gap: 8px;
-          overflow-x: auto;
-          padding-bottom: 8px;
-          scrollbar-width: none;
-        }
+          {!waiterOpen &&
+            !waiterMessage && (
+              <span className="waiter-pulse" />
+            )}
 
-        .categories::-webkit-scrollbar {
-          display: none;
-        }
+        </button>
 
-        .category {
-          flex: 0 0 auto;
-          height: 35px;
-          padding: 0 13px;
-          border: 1px solid #eee4da;
-          border-radius: 20px;
-          background: white;
-          color: #74675d;
-          font-size: 10px;
-        }
+      </div>
 
-        .category.active {
-          border-color: #b96f38;
-          background: #b96f38;
-          color: white;
-        }
+      <style jsx global>{`
 
-        .products {
-          display: grid;
-          gap: 10px;
-          margin-top: 10px;
-        }
-
-        .product-card {
-          min-height: 106px;
-          padding: 10px;
-          display: flex;
-          gap: 12px;
-          background: white;
-          border: 1px solid #f2ebe4;
-          border-radius: 19px;
-          box-shadow: 0 5px 18px rgba(67, 44, 26, 0.045);
-        }
-
-        .product-image {
-          width: 86px;
-          height: 86px;
-          flex: 0 0 86px;
-          border-radius: 15px;
-          background: #eee1d4;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 32px;
-        }
-
-        .product-content {
-          flex: 1;
-          min-width: 0;
-          padding: 4px 2px;
-        }
-
-        .product-content h3 {
-          font-size: 14px;
-        }
-
-        .product-content p {
-          margin-top: 4px;
-          color: #998c81;
-          font-size: 10px;
-          line-height: 1.4;
-        }
-
-        .product-bottom {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          margin-top: 7px;
-        }
-
-        .product-bottom strong {
-          color: #b56d38;
-          font-size: 14px;
-        }
-
-        .plus-button {
-          width: 30px;
-          height: 30px;
-          border: 0;
-          border-radius: 10px;
-          background: #b96f38;
-          color: white;
-          font-size: 20px;
-        }
-
-        /* İLETİŞİM */
-
-        .contact {
-          margin: 28px 17px 0;
-          padding: 20px 15px;
-          text-align: center;
-          border-radius: 20px;
-          background: #f3e8dd;
-        }
-
-        .contact > span {
-          color: #b56d38;
-          font-size: 8px;
-          font-weight: 800;
-          letter-spacing: 1.4px;
-        }
-
-        .contact h2 {
-          margin-top: 5px;
-          font-family: Georgia, "Times New Roman", serif;
-          font-size: 21px;
-        }
-
-        .contact p {
-          margin-top: 6px;
-          color: #8f8176;
-          font-size: 9px;
-        }
-
-        .socials {
-          display: flex;
-          justify-content: center;
-          gap: 8px;
-          margin-top: 13px;
-        }
-
-        .socials a {
-          width: 39px;
-          height: 39px;
-          border: 1px solid #e5d8cc;
-          border-radius: 11px;
-          background: white;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: #6c5b4f;
-          font-size: 11px;
-          font-weight: 700;
-        }
-
-        /* FOOTER */
-
-        .footer {
-          padding: 25px 20px 20px;
-          text-align: center;
-        }
-
-        .footer-logo {
-          width: 42px;
-          height: 42px;
-          margin: 0 auto 7px;
-          border-radius: 50%;
-          overflow: hidden;
-        }
-
-        .footer-logo img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-        }
-
-        .footer > strong {
-          display: block;
-          font-size: 14px;
-        }
-
-        .footer small {
-          display: block;
-          margin-top: 12px;
-          color: #b0a39a;
-          font-size: 9px;
-        }
-
-        /* ALT SABİT MENÜ */
-
-        .bottom-nav {
+        .waiter-widget {
           position: fixed;
-          left: 50%;
-          bottom: 0;
-          z-index: 900;
-          width: min(560px, 100%);
-          height: 64px;
-          transform: translateX(-50%);
-          display: grid;
-          grid-template-columns: repeat(4, 1fr);
-          padding: 6px 8px;
-          padding-bottom: calc(
-            6px + env(safe-area-inset-bottom)
-          );
-          background: rgba(255, 250, 245, 0.97);
-          border-top: 1px solid #eadfd5;
-          box-shadow: 0 -6px 25px rgba(67, 44, 26, 0.08);
-          backdrop-filter: blur(16px);
-        }
-
-        .nav-item {
+          right: 18px;
+          bottom: 82px;
+          z-index: 1000;
           display: flex;
           flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          gap: 3px;
-          color: #9b8d82;
-          font-size: 9px;
-          font-weight: 600;
+          align-items: flex-end;
+          gap: 12px;
+          pointer-events: none;
         }
 
-        .nav-item span {
-          height: 23px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 20px;
+        .waiter-floating-button,
+        .waiter-panel {
+          pointer-events: auto;
         }
 
-        .nav-item small {
-          font-size: 9px;
-        }
-
-        .nav-item.active {
-          color: #b96f38;
-        }
-
-        /* SOL ALT GARSON */
-
-        .waiter-button {
-          position: fixed;
-          left: 15px;
-          bottom: 80px;
-          z-index: 1000;
-          height: 66px;
-          padding: 4px 15px 4px 4px;
-          display: flex;
-          align-items: center;
-          gap: 9px;
-          border: 2px solid white;
-          border-radius: 36px;
-          background: white;
-          color: #382a21;
-          box-shadow:
-            0 8px 25px rgba(55, 31, 17, 0.22),
-            0 2px 7px rgba(0, 0, 0, 0.12);
-        }
-
-        .waiter-image {
+        .waiter-floating-button {
           position: relative;
-          width: 56px;
-          height: 56px;
-          flex: 0 0 56px;
+          width: 68px;
+          height: 68px;
+          border: 0;
           border-radius: 50%;
-          overflow: hidden;
-          border: 2px solid #b96f38;
+          background: linear-gradient(
+            145deg,
+            #8b5e3c,
+            #5d3823
+          );
+          color: #ffffff;
+          box-shadow:
+            0 8px 25px
+              rgba(55, 31, 17, 0.30),
+            0 2px 6px
+              rgba(0, 0, 0, 0.15);
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition:
+            transform 0.2s ease,
+            box-shadow 0.2s ease;
         }
 
-        .waiter-image img {
-          width: 100%;
-          height: 100%;
-          display: block;
-          object-fit: cover;
+        .waiter-floating-button:hover {
+          transform: translateY(-2px);
+          box-shadow:
+            0 12px 30px
+              rgba(55, 31, 17, 0.35),
+            0 3px 8px
+              rgba(0, 0, 0, 0.16);
         }
 
-        .waiter-text {
-          padding-right: 2px;
-          font-size: 11px;
-          font-weight: 700;
+        .waiter-floating-button:active {
+          transform: scale(0.94);
+        }
+
+        .waiter-floating-button.success {
+          background: linear-gradient(
+            145deg,
+            #4d9364,
+            #28633c
+          );
+        }
+
+        .waiter-floating-icon {
+          font-size: 30px;
+          line-height: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .waiter-floating-label {
+          position: absolute;
+          right: 74px;
           white-space: nowrap;
+          background: #ffffff;
+          color: #3a291f;
+          font-size: 12px;
+          font-weight: 700;
+          padding: 7px 11px;
+          border-radius: 20px;
+          box-shadow:
+            0 4px 16px
+              rgba(0, 0, 0, 0.12);
+          opacity: 0;
+          transform: translateX(6px);
+          transition:
+            opacity 0.2s ease,
+            transform 0.2s ease;
+          pointer-events: none;
+        }
+
+        .waiter-floating-button:hover
+          .waiter-floating-label {
+          opacity: 1;
+          transform: translateX(0);
         }
 
         .waiter-pulse {
           position: absolute;
-          inset: -6px;
-          border: 2px solid rgba(185, 111, 56, 0.45);
+          inset: -5px;
           border-radius: 50%;
-          animation: pulse 1.8s infinite;
+          border: 2px solid
+            rgba(139, 94, 60, 0.35);
+          animation:
+            waiterPulse 2.2s
+            infinite;
           pointer-events: none;
         }
 
-        @keyframes pulse {
+        @keyframes waiterPulse {
           0% {
-            transform: scale(0.9);
+            transform: scale(0.95);
             opacity: 0.8;
           }
 
           70% {
-            transform: scale(1.08);
+            transform: scale(1.18);
             opacity: 0;
           }
 
           100% {
-            transform: scale(1.08);
+            transform: scale(1.18);
             opacity: 0;
           }
         }
 
-        @media (min-width: 700px) {
-          body {
-            padding: 20px 0;
+        .waiter-panel {
+          width: 340px;
+          max-width: calc(100vw - 32px);
+          background: #ffffff;
+          border-radius: 22px;
+          overflow: hidden;
+          box-shadow:
+            0 18px 50px
+              rgba(35, 22, 14, 0.22),
+            0 3px 12px
+              rgba(0, 0, 0, 0.10);
+          animation:
+            waiterPanelIn
+            0.22s ease-out;
+        }
+
+        @keyframes waiterPanelIn {
+          from {
+            opacity: 0;
+            transform:
+              translateY(12px)
+              scale(0.96);
           }
 
-          .site {
-            border-radius: 30px;
-            box-shadow: 0 15px 60px rgba(50, 35, 25, 0.1);
-          }
-
-          .bottom-nav {
-            width: 560px;
-            bottom: 20px;
-            border-radius: 18px;
-          }
-
-          .waiter-button {
-            left: calc(50% - 265px);
-            bottom: 96px;
+          to {
+            opacity: 1;
+            transform:
+              translateY(0)
+              scale(1);
           }
         }
 
-        @media (max-width: 380px) {
-          .loyalty {
-            margin-left: 14px;
-            margin-right: 14px;
+        .waiter-panel-header {
+          display: flex;
+          align-items: center;
+          gap: 11px;
+          padding: 16px;
+          background: linear-gradient(
+            135deg,
+            #7b5135,
+            #51301f
+          );
+          color: #ffffff;
+        }
+
+        .waiter-avatar-small {
+          width: 44px;
+          height: 44px;
+          flex-shrink: 0;
+          border-radius: 50%;
+          background: #ffffff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 24px;
+          box-shadow:
+            0 3px 10px
+              rgba(0, 0, 0, 0.18);
+        }
+
+        .waiter-panel-header > div:nth-child(2) {
+          min-width: 0;
+          flex: 1;
+        }
+
+        .waiter-panel-header strong {
+          display: block;
+          font-size: 15px;
+          margin-bottom: 3px;
+        }
+
+        .waiter-panel-header span {
+          display: block;
+          font-size: 11px;
+          opacity: 0.78;
+        }
+
+        .waiter-close {
+          width: 30px;
+          height: 30px;
+          border: 0;
+          border-radius: 50%;
+          background:
+            rgba(255, 255, 255, 0.12);
+          color: #ffffff;
+          font-size: 23px;
+          line-height: 1;
+          cursor: pointer;
+        }
+
+        .waiter-panel-body {
+          padding: 18px;
+        }
+
+        .waiter-table-info {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          background: #f8f4ef;
+          border-radius: 13px;
+          padding: 12px 14px;
+          margin-bottom: 15px;
+        }
+
+        .waiter-table-info span {
+          font-size: 12px;
+          color: #806f63;
+        }
+
+        .waiter-table-info strong {
+          font-size: 15px;
+          color: #4d3324;
+        }
+
+        .waiter-panel-text {
+          margin: 0 0 16px;
+          color: #5e5149;
+          font-size: 14px;
+          line-height: 1.5;
+        }
+
+        .waiter-call-button {
+          width: 100%;
+          border: 0;
+          border-radius: 13px;
+          padding: 14px 16px;
+          background: linear-gradient(
+            135deg,
+            #8b5e3c,
+            #654027
+          );
+          color: #ffffff;
+          font-size: 14px;
+          font-weight: 700;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          cursor: pointer;
+          transition:
+            transform 0.15s ease,
+            opacity 0.15s ease;
+        }
+
+        .waiter-call-button:active {
+          transform: scale(0.98);
+        }
+
+        .waiter-call-button:disabled {
+          opacity: 0.65;
+          cursor: wait;
+        }
+
+        .waiter-location-note {
+          display: block;
+          margin-top: 11px;
+          color: #8a7d74;
+          font-size: 10px;
+          line-height: 1.4;
+          text-align: center;
+        }
+
+        .waiter-success-box {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 14px;
+          border-radius: 14px;
+          background: #eef8f1;
+          color: #275f38;
+        }
+
+        .waiter-success-icon {
+          width: 38px;
+          height: 38px;
+          flex-shrink: 0;
+          border-radius: 50%;
+          background: #4d9364;
+          color: #ffffff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 21px;
+          font-weight: 800;
+        }
+
+        .waiter-success-box strong {
+          display: block;
+          font-size: 14px;
+          margin-bottom: 3px;
+        }
+
+        .waiter-success-box p {
+          margin: 0;
+          font-size: 11px;
+          line-height: 1.4;
+          color: #527260;
+        }
+
+        .waiter-error-box {
+          margin-bottom: 12px;
+          padding: 11px 12px;
+          border-radius: 11px;
+          background: #fff2f0;
+          color: #a23a2d;
+          font-size: 11px;
+          line-height: 1.4;
+        }
+
+        .waiter-panel-empty {
+          text-align: center;
+          padding: 8px 4px 16px;
+        }
+
+        .waiter-empty-icon {
+          width: 52px;
+          height: 52px;
+          margin: 0 auto 10px;
+          border-radius: 50%;
+          background: #f7f2ed;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 25px;
+        }
+
+        .waiter-panel-empty strong {
+          display: block;
+          color: #463329;
+          font-size: 15px;
+          margin-bottom: 7px;
+        }
+
+        .waiter-panel-empty p {
+          margin: 0;
+          color: #796b62;
+          font-size: 12px;
+          line-height: 1.5;
+        }
+
+        @media (max-width: 600px) {
+          .waiter-widget {
+            right: 14px;
+            bottom: 78px;
           }
 
-          .menu-section {
-            padding-left: 14px;
-            padding-right: 14px;
+          .waiter-floating-button {
+            width: 62px;
+            height: 62px;
           }
 
-          .waiter-button {
-            left: 12px;
-            bottom: 74px;
+          .waiter-floating-icon {
+            font-size: 27px;
+          }
+
+          .waiter-panel {
+            width: 320px;
+            max-width: calc(100vw - 28px);
+          }
+
+          .waiter-floating-label {
+            display: none;
           }
         }
+
+        @media print {
+          .waiter-widget {
+            display: none !important;
+          }
+        }
+
       `}</style>
-    </>
+
+    </main>
   );
 }
