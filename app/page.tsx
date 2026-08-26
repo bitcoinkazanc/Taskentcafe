@@ -1,7 +1,62 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "../../../lib/supabase";
+import { supabase } from "../lib/supabase";
+
+const categories = [
+  "Tümü",
+  "Sıcak İçecekler",
+  "Soğuk İçecekler",
+  "Kahvaltı",
+  "Yemek",
+  "Tatlı",
+  "Çerez",
+];
+
+const products = [
+  {
+    name: "Türk Kahvesi",
+    category: "Sıcak İçecekler",
+    description: "Geleneksel Türk kahvesi.",
+    price: "120 ₺",
+    icon: "☕",
+  },
+  {
+    name: "Latte",
+    category: "Sıcak İçecekler",
+    description: "Espresso ve yumuşak süt köpüğü.",
+    price: "150 ₺",
+    icon: "☕",
+  },
+  {
+    name: "Soğuk Kahve",
+    category: "Soğuk İçecekler",
+    description: "Serinletici buzlu kahve.",
+    price: "160 ₺",
+    icon: "🧊",
+  },
+  {
+    name: "Serpme Kahvaltı",
+    category: "Kahvaltı",
+    description: "Zengin kahvaltı tabağı.",
+    price: "450 ₺",
+    icon: "🍳",
+  },
+  {
+    name: "Çikolatalı Pasta",
+    category: "Tatlı",
+    description: "Günlük hazırlanan özel pasta.",
+    price: "180 ₺",
+    icon: "🍰",
+  },
+  {
+    name: "Karışık Çerez",
+    category: "Çerez",
+    description: "Günün seçme çerezleri.",
+    price: "150 ₺",
+    icon: "🥜",
+  },
+];
 
 type CafeTable = {
   id: string;
@@ -10,205 +65,512 @@ type CafeTable = {
   active: boolean;
 };
 
-export default function TablesAdminPage() {
-  const [tables, setTables] = useState<CafeTable[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [siteUrl, setSiteUrl] = useState("");
+export default function HomePage() {
+  const [category, setCategory] = useState("Tümü");
+  const [table, setTable] = useState<CafeTable | null>(null);
+  const [tableLoading, setTableLoading] = useState(false);
+  const [waiterLoading, setWaiterLoading] = useState(false);
+  const [waiterMessage, setWaiterMessage] = useState("");
+  const [waiterError, setWaiterError] = useState("");
+
+  const filteredProducts =
+    category === "Tümü"
+      ? products
+      : products.filter(
+          (product) =>
+            product.category === category
+        );
 
   useEffect(() => {
-    setSiteUrl(window.location.origin);
-    loadTables();
+    const loadTable = async () => {
+      try {
+        const params = new URLSearchParams(
+          window.location.search
+        );
+
+        const qrToken = params.get("table");
+
+        if (!qrToken) {
+          return;
+        }
+
+        setTableLoading(true);
+
+        const {
+          data,
+          error,
+        } = await supabase.rpc(
+          "get_cafe_table",
+          {
+            requested_qr_token: qrToken,
+          }
+        );
+
+        if (error) {
+          console.error(
+            "TABLE LOAD ERROR:",
+            error
+          );
+
+          setWaiterError(
+            "Masa bilgisi alınamadı."
+          );
+
+          return;
+        }
+
+        setTable(data as CafeTable);
+      } catch (error) {
+        console.error(
+          "TABLE ERROR:",
+          error
+        );
+
+        setWaiterError(
+          "Masa bilgisi alınamadı."
+        );
+      } finally {
+        setTableLoading(false);
+      }
+    };
+
+    loadTable();
   }, []);
 
-  const loadTables = async () => {
-    try {
-      setLoading(true);
-      setError("");
-
-      const {
-        data: userData,
-        error: userError,
-      } = await supabase.auth.getUser();
-
-      if (userError || !userData.user) {
-        throw new Error(
-          "Bu sayfayı görmek için giriş yapmalısınız."
-        );
-      }
-
-      const {
-        data,
-        error: tableError,
-      } = await supabase.rpc("get_all_cafe_tables");
-
-      if (tableError) {
-        throw new Error(tableError.message);
-      }
-
-      setTables((data ?? []) as CafeTable[]);
-    } catch (err) {
-      console.error("TABLE ADMIN ERROR:", err);
-
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Masalar yüklenemedi."
+  const callWaiter = () => {
+    if (!table) {
+      setWaiterError(
+        "Garson çağırmak için masaya ait QR koddan giriş yapmalısınız."
       );
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  const getTableUrl = (qrToken: string) => {
-    if (!siteUrl) {
-      return "";
+      setWaiterMessage("");
+      return;
     }
 
-    return `${siteUrl}/?table=${encodeURIComponent(
-      qrToken
-    )}`;
-  };
+    if (!navigator.geolocation) {
+      setWaiterError(
+        "Cihazınız konum özelliğini desteklemiyor."
+      );
 
-  const getQrImageUrl = (tableUrl: string) => {
-    return `https://api.qrserver.com/v1/create-qr-code/?size=500x500&margin=10&data=${encodeURIComponent(
-      tableUrl
-    )}`;
-  };
+      setWaiterMessage("");
+      return;
+    }
 
-  const printTables = () => {
-    window.print();
-  };
+    setWaiterLoading(true);
+    setWaiterMessage("");
+    setWaiterError("");
 
-  if (loading) {
-    return (
-      <main className="site">
-        <section className="section">
-          <div className="loyalty-message">
-            Masalar yükleniyor...
-          </div>
-        </section>
-      </main>
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const latitude =
+            position.coords.latitude;
+
+          const longitude =
+            position.coords.longitude;
+
+          const {
+            error,
+          } = await supabase.rpc(
+            "create_waiter_call",
+            {
+              requested_table_id: table.id,
+              user_latitude: latitude,
+              user_longitude: longitude,
+            }
+          );
+
+          if (error) {
+            throw new Error(
+              error.message
+            );
+          }
+
+          setWaiterMessage(
+            `Garson çağrınız alındı. Masa ${table.table_number} için personel bilgilendirildi.`
+          );
+        } catch (error) {
+          console.error(
+            "WAITER CALL ERROR:",
+            error
+          );
+
+          setWaiterError(
+            error instanceof Error
+              ? error.message
+              : "Garson çağrısı gönderilemedi."
+          );
+        } finally {
+          setWaiterLoading(false);
+        }
+      },
+      (error) => {
+        console.error(
+          "LOCATION ERROR:",
+          error
+        );
+
+        let message =
+          "Konumunuz alınamadı.";
+
+        if (
+          error.code ===
+          error.PERMISSION_DENIED
+        ) {
+          message =
+            "Garson çağırmak için konum izni vermelisiniz.";
+        }
+
+        if (
+          error.code ===
+          error.POSITION_UNAVAILABLE
+        ) {
+          message =
+            "Konumunuz belirlenemedi. Lütfen GPS'i açıp tekrar deneyin.";
+        }
+
+        if (
+          error.code ===
+          error.TIMEOUT
+        ) {
+          message =
+            "Konum alınırken zaman aşımı oluştu. Lütfen tekrar deneyin.";
+        }
+
+        setWaiterError(message);
+        setWaiterLoading(false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      }
     );
-  }
-
-  if (error) {
-    return (
-      <main className="site">
-        <section className="section">
-          <div className="loyalty-message">
-            ⚠️ {error}
-          </div>
-
-          <button
-            type="button"
-            className="loyalty-button"
-            onClick={loadTables}
-          >
-            Tekrar Dene
-          </button>
-        </section>
-      </main>
-    );
-  }
+  };
 
   return (
     <main className="site">
 
       <header className="header">
+
         <div className="brand">
+
           <div className="logo">
             ☕
           </div>
 
           <div>
-            <h1>
-              Taşkent Cafe
-            </h1>
+            <h1>Taşkent Cafe</h1>
 
             <span>
-              Masa QR Yönetimi
+              Keyif burada başlar
             </span>
           </div>
+
         </div>
 
-        <a
-          href="/"
+        <button
           className="icon-button"
-          aria-label="Ana sayfa"
+          aria-label="Menü"
         >
-          ←
-        </a>
+          ☰
+        </button>
+
       </header>
 
-      <section className="section">
+      {table && (
+        <section className="waiter-bar">
+
+          <div>
+            <span>MASA</span>
+
+            <strong>
+              {table.table_number}
+            </strong>
+          </div>
+
+          <button
+            type="button"
+            onClick={callWaiter}
+            disabled={waiterLoading}
+          >
+            {waiterLoading
+              ? "Konum kontrol ediliyor..."
+              : "📣 Garson Çağır"}
+          </button>
+
+        </section>
+      )}
+
+      {(waiterMessage ||
+        waiterError) && (
+        <section className="waiter-status">
+
+          {waiterMessage && (
+            <div className="waiter-success">
+              ✅ {waiterMessage}
+            </div>
+          )}
+
+          {waiterError && (
+            <div className="waiter-error">
+              ⚠️ {waiterError}
+            </div>
+          )}
+
+        </section>
+      )}
+
+      <section className="hero">
+
+        <div className="hero-overlay">
+
+          <span className="location-label">
+            📍 Mardin Kale
+          </span>
+
+          <h2>
+            Kahveni al,
+            <br />
+            keyfini yaşa.
+          </h2>
+
+          <p>
+            Lezzet, sohbet ve güzel
+            manzara için Taşkent Cafe.
+          </p>
+
+          <a
+            href="#menu"
+            className="hero-button"
+          >
+            Menüyü Gör
+          </a>
+
+        </div>
+
+      </section>
+
+      <section className="quick-links">
+
+        <a
+          href="#menu"
+          className="quick-card"
+        >
+          <span>📖</span>
+          <strong>Menü</strong>
+          <small>Tüm ürünler</small>
+        </a>
+
+        <a
+          href="#loyalty"
+          className="quick-card"
+        >
+          <span>⭐</span>
+          <strong>Sadakat</strong>
+          <small>Puan kazan</small>
+        </a>
+
+        <a
+          href="#location"
+          className="quick-card"
+        >
+          <span>📍</span>
+          <strong>Konum</strong>
+          <small>Bizi bul</small>
+        </a>
+
+      </section>
+
+      <section
+        className="section"
+        id="menu"
+      >
 
         <div className="section-heading">
+
           <div>
             <span className="eyebrow">
-              YÖNETİM
+              TAŞKENT CAFE
             </span>
 
-            <h2>
-              Masa QR Kodları
-            </h2>
+            <h2>Menümüz</h2>
           </div>
 
           <span className="menu-count">
-            {tables.length} masa
+            {filteredProducts.length} ürün
           </span>
+
         </div>
 
-        <div className="qr-actions">
-          <button
-            type="button"
-            className="loyalty-button"
-            onClick={printTables}
-          >
-            🖨️ QR Kodlarını Yazdır
-          </button>
+        <div className="categories">
+
+          {categories.map((item) => (
+            <button
+              key={item}
+              className={
+                category === item
+                  ? "category active"
+                  : "category"
+              }
+              onClick={() =>
+                setCategory(item)
+              }
+            >
+              {item}
+            </button>
+          ))}
+
         </div>
 
-        <div className="table-qr-grid">
+        <div className="products">
 
-          {tables.map((table) => {
-            const tableUrl = getTableUrl(
-              table.qr_token
-            );
-
-            const qrImageUrl =
-              getQrImageUrl(tableUrl);
-
-            return (
+          {filteredProducts.map(
+            (product) => (
               <article
-                key={table.id}
-                className="table-qr-card"
+                className="product-card"
+                key={product.name}
               >
 
-                <div className="table-qr-title">
-                  Masa {table.table_number}
+                <div className="product-image">
+                  {product.icon}
                 </div>
 
-                <div className="table-qr-image">
-                  <img
-                    src={qrImageUrl}
-                    alt={`Masa ${table.table_number} QR kodu`}
-                  />
-                </div>
+                <div className="product-content">
 
-                <div className="table-qr-status">
-                  {table.active
-                    ? "🟢 Aktif"
-                    : "🔴 Pasif"}
-                </div>
+                  <div>
 
-                <div className="table-qr-url">
-                  {tableUrl}
+                    <h3>
+                      {product.name}
+                    </h3>
+
+                    <p>
+                      {product.description}
+                    </p>
+
+                  </div>
+
+                  <div className="product-bottom">
+
+                    <strong>
+                      {product.price}
+                    </strong>
+
+                    <button
+                      className="plus-button"
+                      aria-label={`${product.name} detay`}
+                    >
+                      +
+                    </button>
+
+                  </div>
+
                 </div>
 
               </article>
-            );
-          })}
+            )
+          )}
+
+        </div>
+
+      </section>
+
+      <section
+        className="loyalty"
+        id="loyalty"
+      >
+
+        <div className="loyalty-content">
+
+          <span className="eyebrow light">
+            SADAKAT KULÜBÜ
+          </span>
+
+          <h2>
+            Her kahvede
+            <br />
+            daha fazla kazanın.
+          </h2>
+
+          <p>
+            Alışverişlerinden puan
+            biriktir, özel ödüllerin ve
+            avantajların tadını çıkar.
+          </p>
+
+          <a
+            href="/loyalty"
+            className="loyalty-button"
+          >
+            Sadakat Kulübüne Katıl
+          </a>
+
+        </div>
+
+        <div className="loyalty-icon">
+          ⭐
+        </div>
+
+      </section>
+
+      <section
+        className="info-section"
+        id="location"
+      >
+
+        <div className="section-heading">
+
+          <div>
+
+            <span className="eyebrow">
+              BİZİ ZİYARET ET
+            </span>
+
+            <h2>Taşkent Cafe</h2>
+
+          </div>
+
+        </div>
+
+        <div className="info-card">
+
+          <div className="info-row">
+
+            <span>📍</span>
+
+            <div>
+              <strong>Konum</strong>
+              <p>Mardin Kale</p>
+            </div>
+
+          </div>
+
+          <div className="info-row">
+
+            <span>🕐</span>
+
+            <div>
+              <strong>
+                Çalışma Saatleri
+              </strong>
+
+              <p>
+                Her gün 09:00 – 00:00
+              </p>
+            </div>
+
+          </div>
+
+          <div className="info-row">
+
+            <span>📞</span>
+
+            <div>
+              <strong>İletişim</strong>
+              <p>05XX XXX XX XX</p>
+            </div>
+
+          </div>
 
         </div>
 
@@ -221,8 +583,16 @@ export default function TablesAdminPage() {
         </div>
 
         <p>
-          Masa QR yönetimi
+          Kahve, lezzet ve güzel sohbet.
         </p>
+
+        <div className="footer-links">
+
+          <a href="#menu">Menü</a>
+          <a href="#loyalty">Sadakat</a>
+          <a href="#location">Konum</a>
+
+        </div>
 
         <small>
           © 2026 Taşkent Cafe
@@ -230,130 +600,41 @@ export default function TablesAdminPage() {
 
       </footer>
 
-      <style jsx global>{`
-        .qr-actions {
-          margin-bottom: 24px;
-        }
+      <nav className="bottom-nav">
 
-        .table-qr-grid {
-          display: grid;
-          grid-template-columns:
-            repeat(auto-fit, minmax(220px, 1fr));
-          gap: 20px;
-        }
+        <a
+          href="#"
+          className="nav-item active"
+        >
+          <span>⌂</span>
+          Ana Sayfa
+        </a>
 
-        .table-qr-card {
-          background: #ffffff;
-          border-radius: 20px;
-          padding: 22px;
-          text-align: center;
-          box-shadow:
-            0 8px 30px rgba(0, 0, 0, 0.08);
-          border: 1px solid rgba(0, 0, 0, 0.06);
-          overflow: hidden;
-        }
+        <a
+          href="#menu"
+          className="nav-item"
+        >
+          <span>☕</span>
+          Menü
+        </a>
 
-        .table-qr-title {
-          font-size: 22px;
-          font-weight: 800;
-          margin-bottom: 16px;
-        }
+        <a
+          href="#loyalty"
+          className="nav-item"
+        >
+          <span>⭐</span>
+          Sadakat
+        </a>
 
-        .table-qr-image {
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          background: #ffffff;
-          border-radius: 14px;
-          padding: 10px;
-          margin-bottom: 14px;
-        }
+        <a
+          href="#location"
+          className="nav-item"
+        >
+          <span>📍</span>
+          Konum
+        </a>
 
-        .table-qr-image img {
-          display: block;
-          width: 180px;
-          height: 180px;
-          max-width: 100%;
-        }
-
-        .table-qr-status {
-          font-size: 14px;
-          font-weight: 700;
-          margin-bottom: 10px;
-        }
-
-        .table-qr-url {
-          font-size: 11px;
-          line-height: 1.4;
-          opacity: 0.55;
-          word-break: break-all;
-        }
-
-        @media (max-width: 600px) {
-          .table-qr-grid {
-            grid-template-columns:
-              repeat(2, minmax(0, 1fr));
-            gap: 12px;
-          }
-
-          .table-qr-card {
-            padding: 14px;
-            border-radius: 16px;
-          }
-
-          .table-qr-title {
-            font-size: 18px;
-          }
-
-          .table-qr-image img {
-            width: 140px;
-            height: 140px;
-          }
-
-          .table-qr-url {
-            display: none;
-          }
-        }
-
-        @media print {
-          body {
-            background: #ffffff !important;
-          }
-
-          .header,
-          .footer,
-          .bottom-nav,
-          .qr-actions,
-          button {
-            display: none !important;
-          }
-
-          .site {
-            padding: 0 !important;
-          }
-
-          .section {
-            padding: 10px !important;
-          }
-
-          .table-qr-grid {
-            grid-template-columns:
-              repeat(3, 1fr) !important;
-            gap: 12px !important;
-          }
-
-          .table-qr-card {
-            break-inside: avoid;
-            box-shadow: none !important;
-            border: 1px solid #cccccc !important;
-          }
-
-          .table-qr-image img {
-            width: 160px !important;
-            height: 160px !important;
-          }
-        }
-      `}</style>
+      </nav>
 
     </main>
   );
