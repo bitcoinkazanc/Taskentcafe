@@ -68,17 +68,8 @@ type CafeTable = {
 const logoUrl =
   "https://raw.githubusercontent.com/bitcoinkazanc/Taskentcafe/main/taskent-logo.png";
 
-/*
- * Hero görseli.
- *
- * Eğer projede kendi görsel dosyan varsa yalnızca bu URL'yi
- * kendi görsel URL'n ile değiştirmek yeterlidir.
- *
- * Şimdilik güvenilir uzak görsel kullanıyoruz; <img> olarak
- * render edildiği için CSS background-image kaybolması problemi yok.
- */
 const heroImageUrl =
-  "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=1200&q=85";
+  "https://raw.githubusercontent.com/bitcoinkazanc/Taskentcafe/main/mardin-1.jpeg";
 
 export default function HomePage() {
   const [category, setCategory] = useState("Tümü");
@@ -278,8 +269,10 @@ export default function HomePage() {
     <main className="site">
 
       {/* HEADER */}
+
       <header className="header">
         <div className="brand">
+
           <div className="logo">
             <img
               src={logoUrl}
@@ -288,46 +281,78 @@ export default function HomePage() {
           </div>
 
           <div>
-            <h1>Taşkent Cafe</h1>
+            <h1>
+              Taşkent Cafe
+            </h1>
 
             <span>
               Keyif burada başlar
             </span>
           </div>
+
         </div>
       </header>
 
+
       {/* HERO */}
+
       <section className="hero">
+
         <img
           className="hero-image"
           src={heroImageUrl}
-          alt="Taşkent Cafe"
+          alt="Mardin"
         />
 
         <div className="hero-dark-overlay" />
 
         <div className="hero-overlay">
-          <span className="location-label">
-            📍 Mardin Kale
-          </span>
 
-          <h2>
-            Kahveni al,
-            <br />
-            keyfini yaşa.
-          </h2>
+          <div className="welcome-frame">
 
-          <p>
-            Lezzet, sohbet ve güzel
-            manzara için Taşkent Cafe.
-          </p>
+            <span className="welcome-star">
+              ✦
+            </span>
+
+            <h2>
+              Taşkent Cafe
+              <br />
+              Mardin'e Hoş Geldiniz
+            </h2>
+
+            <p>
+              Mardin’in tarihi dokusuyla iç içe,
+              eşsiz bir atmosferde hizmet veren
+              Taşkent Cafe, misafirlerine hem
+              geleneksel hem de modern lezzetleri
+              bir arada sunar. Şehrin büyüleyici
+              manzarasına karşı keyifli vakit
+              geçirebileceğiniz mekanımız, sıcak
+              ortamı ve güler yüzlü hizmetiyle öne
+              çıkar. Özenle hazırlanan kahvelerimiz,
+              taze içeceklerimiz ve lezzetli
+              menümüzle ister arkadaşlarınızla
+              buluşun ister tek başınıza huzurlu
+              bir mola verin. Taşkent Cafe,
+              Mardin’de lezzet ve samimiyetin
+              buluştuğu özel bir noktadır. Her
+              ziyaretinizde kendinizi evinizde
+              hissedeceğiniz Taşkent Cafe’ye
+              bekliyoruz.
+            </p>
+
+          </div>
+
         </div>
       </section>
 
+
       {/* GARSON BAR */}
+
       <div className="waiter-bar">
+
         <div>
+
           <span>
             TAŞKENT CAFE
           </span>
@@ -339,6 +364,7 @@ export default function HomePage() {
               ? `Masa ${table.table_number}`
               : "Garson Hizmeti"}
           </strong>
+
         </div>
 
         <button
@@ -349,36 +375,51 @@ export default function HomePage() {
         >
           👩🏻‍🍳 Garson
         </button>
+
       </div>
+
 
       {waiterMessage && (
         <div className="waiter-status">
+
           <div className="waiter-success">
             ✓ {waiterMessage}
           </div>
+
         </div>
       )}
 
-      {/* MENU */}
+
+      {/* MENÜ */}
+
       <section
         className="section"
         id="menu"
       >
+
         <div className="section-heading">
+
           <div>
+
             <span className="eyebrow">
               TAŞKENT CAFE
             </span>
 
-            <h2>Menümüz</h2>
+            <h2>
+              Menümüz
+            </h2>
+
           </div>
 
           <span className="menu-count">
             {filteredProducts.length} ürün
           </span>
+
         </div>
 
+
         <div className="categories">
+
           {categories.map((item) => (
             <button
               key={item}
@@ -395,21 +436,27 @@ export default function HomePage() {
               {item}
             </button>
           ))}
+
         </div>
 
+
         <div className="products">
+
           {filteredProducts.map(
             (product) => (
               <article
                 className="product-card"
                 key={product.name}
               >
+
                 <div className="product-image">
                   {product.icon}
                 </div>
 
                 <div className="product-content">
+
                   <div>
+
                     <h3>
                       {product.name}
                     </h3>
@@ -417,9 +464,11 @@ export default function HomePage() {
                     <p>
                       {product.description}
                     </p>
+
                   </div>
 
                   <div className="product-bottom">
+
                     <strong>
                       {product.price}
                     </strong>
@@ -431,34 +480,43 @@ export default function HomePage() {
                     >
                       +
                     </button>
+
                   </div>
+
                 </div>
+
               </article>
             )
           )}
+
         </div>
+
       </section>
 
-      {/* SADAKAT KARTI */}
+
+      {/* SADAKAT KULÜBÜ */}
+
       <section
         className="loyalty"
         id="loyalty"
       >
+
         <div className="loyalty-content">
+
           <span className="eyebrow light">
-            SADAKAT KULÜBÜ
+            TAŞKENT SADAKAT KULÜBÜ
           </span>
 
           <h2>
-            Her kahvede
+            Her ziyaretiniz
             <br />
-            daha fazla kazanın.
+            size kazandırsın.
           </h2>
 
           <p>
-            Alışverişlerinden puan
-            biriktir, özel ödüllerin ve
-            avantajların tadını çıkar.
+            Sadakat kulübüne katılın,
+            alışverişlerinizden puan kazanın
+            ve özel fırsatlardan yararlanın.
           </p>
 
           <a
@@ -467,33 +525,50 @@ export default function HomePage() {
           >
             Sadakat Kulübüne Katıl
           </a>
+
         </div>
 
         <div className="loyalty-icon">
-          ⭐
+          ★
         </div>
+
       </section>
 
+
       {/* KONUM */}
+
       <section
         className="info-section"
         id="location"
       >
+
         <div className="section-heading">
+
           <div>
+
             <span className="eyebrow">
               BİZİ ZİYARET ET
             </span>
 
-            <h2>Taşkent Cafe</h2>
+            <h2>
+              Taşkent Cafe
+            </h2>
+
           </div>
+
         </div>
 
+
         <div className="info-card">
+
           <div className="info-row">
-            <span>📍</span>
+
+            <span>
+              📍
+            </span>
 
             <div>
+
               <strong>
                 Konum
               </strong>
@@ -501,13 +576,20 @@ export default function HomePage() {
               <p>
                 Mardin Kale
               </p>
+
             </div>
+
           </div>
 
+
           <div className="info-row">
-            <span>🕐</span>
+
+            <span>
+              🕐
+            </span>
 
             <div>
+
               <strong>
                 Çalışma Saatleri
               </strong>
@@ -515,13 +597,20 @@ export default function HomePage() {
               <p>
                 Her gün 09:00 – 00:00
               </p>
+
             </div>
+
           </div>
 
+
           <div className="info-row">
-            <span>📞</span>
+
+            <span>
+              📞
+            </span>
 
             <div>
+
               <strong>
                 İletişim
               </strong>
@@ -529,18 +618,27 @@ export default function HomePage() {
               <p>
                 05XX XXX XX XX
               </p>
+
             </div>
+
           </div>
+
         </div>
+
       </section>
 
+
       {/* FOOTER */}
+
       <footer className="footer">
+
         <div className="footer-logo">
+
           <img
             src={logoUrl}
             alt="Taşkent Cafe"
           />
+
         </div>
 
         <strong>
@@ -554,55 +652,88 @@ export default function HomePage() {
         <small>
           © 2026 Taşkent Cafe
         </small>
+
       </footer>
 
+
       {/* ALT SABİT MENÜ */}
+
       <nav className="bottom-nav">
+
         <a
           href="#"
           className="nav-item active"
         >
-          <span>⌂</span>
-          <small>Ana Sayfa</small>
+          <span>
+            ⌂
+          </span>
+
+          <small>
+            Ana Sayfa
+          </small>
         </a>
+
 
         <a
           href="#menu"
           className="nav-item"
         >
-          <span>☕</span>
-          <small>Menü</small>
+          <span>
+            ☕
+          </span>
+
+          <small>
+            Menü
+          </small>
         </a>
+
 
         <a
           href="/loyalty"
           className="nav-item"
         >
-          <span>⭐</span>
-          <small>Sadakat</small>
+          <span>
+            ⭐
+          </span>
+
+          <small>
+            Sadakat
+          </small>
         </a>
+
 
         <a
           href="#location"
           className="nav-item"
         >
-          <span>📍</span>
-          <small>Konum</small>
+          <span>
+            📍
+          </span>
+
+          <small>
+            Konum
+          </small>
         </a>
+
       </nav>
 
+
       {/* GARSON WIDGET */}
+
       <div className="waiter-widget">
 
         {waiterOpen && (
+
           <div className="waiter-panel">
 
             <div className="waiter-panel-header">
+
               <div className="waiter-avatar-small">
                 👩🏻‍🍳
               </div>
 
               <div>
+
                 <strong>
                   Garson Hizmeti
                 </strong>
@@ -610,6 +741,7 @@ export default function HomePage() {
                 <span>
                   Size nasıl yardımcı olabiliriz?
                 </span>
+
               </div>
 
               <button
@@ -622,13 +754,18 @@ export default function HomePage() {
               >
                 ×
               </button>
+
             </div>
+
 
             <div className="waiter-panel-body">
 
               {table ? (
+
                 <>
+
                   <div className="waiter-table-info">
+
                     <span>
                       Masanız
                     </span>
@@ -636,15 +773,20 @@ export default function HomePage() {
                     <strong>
                       Masa {table.table_number}
                     </strong>
+
                   </div>
 
+
                   {waiterMessage ? (
+
                     <div className="waiter-success-box">
+
                       <div className="waiter-success-icon">
                         ✓
                       </div>
 
                       <div>
+
                         <strong>
                           Garsonunuz geliyor
                         </strong>
@@ -655,21 +797,30 @@ export default function HomePage() {
                           için çağrınız
                           alındı.
                         </p>
+
                       </div>
+
                     </div>
+
                   ) : (
+
                     <>
+
                       <p className="waiter-panel-text">
                         Masanıza bir garson
                         göndermemizi ister
                         misiniz?
                       </p>
 
+
                       {waiterError && (
+
                         <div className="waiter-error-box">
                           ⚠️ {waiterError}
                         </div>
+
                       )}
+
 
                       <button
                         type="button"
@@ -679,6 +830,7 @@ export default function HomePage() {
                           waiterLoading
                         }
                       >
+
                         <span>
                           {waiterLoading
                             ? "Konum kontrol ediliyor..."
@@ -686,9 +838,13 @@ export default function HomePage() {
                         </span>
 
                         {!waiterLoading && (
-                          <span>→</span>
+                          <span>
+                            →
+                          </span>
                         )}
+
                       </button>
+
 
                       <small className="waiter-location-note">
                         📍 Cafe içinde
@@ -696,12 +852,19 @@ export default function HomePage() {
                         kontrolüyle
                         doğrulanır.
                       </small>
+
                     </>
+
                   )}
+
                 </>
+
               ) : (
+
                 <>
+
                   <div className="waiter-panel-empty">
+
                     <div className="waiter-empty-icon">
                       📱
                     </div>
@@ -716,19 +879,28 @@ export default function HomePage() {
                       kodu okutmanız
                       gerekiyor.
                     </p>
+
                   </div>
 
+
                   {waiterError && (
+
                     <div className="waiter-error-box">
                       ⚠️ {waiterError}
                     </div>
+
                   )}
+
                 </>
+
               )}
 
             </div>
+
           </div>
+
         )}
+
 
         <button
           type="button"
@@ -744,6 +916,7 @@ export default function HomePage() {
           }
           aria-label="Garson çağır"
         >
+
           <span className="waiter-floating-icon">
             {waiterMessage
               ? "✓"
@@ -760,7 +933,9 @@ export default function HomePage() {
             !waiterMessage && (
               <span className="waiter-pulse" />
             )}
+
         </button>
+
       </div>
 
     </main>
