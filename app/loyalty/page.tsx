@@ -250,13 +250,74 @@ export default function LoyaltyPage() {
     }
   };
 
-  const Logo = () => (
-    <div className="logo">
+  const logo = (
+    <div
+      className="logo"
+      style={{
+        width: "45px",
+        height: "45px",
+        minWidth: "45px",
+        minHeight: "45px",
+        borderRadius: "50%",
+        background: "#ffffff",
+        overflow: "hidden",
+        padding: 0,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        boxShadow:
+          "0 7px 18px rgba(185, 111, 56, 0.18)",
+      }}
+    >
       <img
         src="/taskent-logo.png"
         alt="Taşkent Cafe"
+        style={{
+          width: "100%",
+          height: "100%",
+          display: "block",
+          objectFit: "cover",
+          borderRadius: "50%",
+        }}
       />
     </div>
+  );
+
+  const backButton = (
+    <a
+      href="/"
+      className="icon-button"
+      aria-label="Ana sayfaya dön"
+      style={{
+        width: "42px",
+        height: "42px",
+        minWidth: "42px",
+        borderRadius: "50%",
+        background: "#f1e6da",
+        color: "#493a30",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        boxShadow:
+          "0 5px 14px rgba(67, 44, 26, 0.08)",
+      }}
+    >
+      <svg
+        width="19"
+        height="19"
+        viewBox="0 0 24 24"
+        fill="none"
+        aria-hidden="true"
+      >
+        <path
+          d="M15 18L9 12L15 6"
+          stroke="currentColor"
+          strokeWidth="2.2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </a>
   );
 
   if (loading) {
@@ -281,7 +342,7 @@ export default function LoyaltyPage() {
             href="/"
             className="brand"
           >
-            <Logo />
+            {logo}
 
             <div>
               <h1>
@@ -294,13 +355,7 @@ export default function LoyaltyPage() {
             </div>
           </a>
 
-          <a
-            href="/"
-            className="back-button"
-            aria-label="Ana sayfaya dön"
-          >
-            <span>‹</span>
-          </a>
+          {backButton}
 
         </header>
 
@@ -359,13 +414,6 @@ export default function LoyaltyPage() {
       ? 0
       : nextLevel - points;
 
-  const currentLevel =
-    points >= 2000
-      ? "Altın"
-      : points >= 1000
-        ? "Gümüş"
-        : "Bronz";
-
   return (
     <main className="site">
 
@@ -375,7 +423,7 @@ export default function LoyaltyPage() {
           href="/"
           className="brand"
         >
-          <Logo />
+          {logo}
 
           <div>
             <h1>
@@ -388,13 +436,7 @@ export default function LoyaltyPage() {
           </div>
         </a>
 
-        <a
-          href="/"
-          className="back-button"
-          aria-label="Ana sayfaya dön"
-        >
-          <span>‹</span>
-        </a>
+        {backButton}
 
       </header>
 
@@ -458,7 +500,11 @@ export default function LoyaltyPage() {
             <div className="progress-label">
 
               <span>
-                {currentLevel}
+                {points >= 2000
+                  ? "Altın"
+                  : points >= 1000
+                    ? "Gümüş"
+                    : "Bronz"}
               </span>
 
               <span>
@@ -686,7 +732,7 @@ export default function LoyaltyPage() {
                         color:
                           transaction.points <
                           0
-                            ? "#b45b4f"
+                            ? "#b35b4c"
                             : "#4f8a55",
                       }}
                     >
@@ -737,7 +783,7 @@ export default function LoyaltyPage() {
       <footer className="footer">
 
         <div className="footer-logo">
-          Taşkent Cafe
+          ☕ Taşkent Cafe
         </div>
 
         <p>
