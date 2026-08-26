@@ -35,7 +35,10 @@ button {
   overflow-x: hidden;
 }
 
-/* HEADER */
+
+/* =========================
+   HEADER
+========================= */
 
 .header {
   height: 76px;
@@ -91,7 +94,10 @@ button {
   font-size: 10px;
 }
 
-/* HERO */
+
+/* =========================
+   HERO
+========================= */
 
 .hero {
   width: calc(100% - 28px);
@@ -119,48 +125,59 @@ button {
   background:
     linear-gradient(
       180deg,
-      rgba(0, 0, 0, 0.12) 0%,
-      rgba(0, 0, 0, 0.10) 35%,
-      rgba(0, 0, 0, 0.62) 100%
+      rgba(35, 22, 15, 0.28),
+      rgba(35, 22, 15, 0.48)
     );
   z-index: 1;
 }
 
 .hero-overlay {
   position: absolute;
-  left: 23px;
-  right: 23px;
-  bottom: 24px;
+  top: 18px;
+  left: 17px;
+  right: 17px;
   z-index: 2;
   color: white;
 }
 
-.location-label {
+.welcome-frame {
   display: inline-block;
-  padding: 7px 10px;
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.16);
-  backdrop-filter: blur(8px);
-  font-size: 10px;
+  max-width: 355px;
+  padding: 12px 15px;
+  border: 1px solid rgba(245, 218, 181, 0.85);
+  outline: 1px solid rgba(245, 218, 181, 0.35);
+  outline-offset: 4px;
+  background: rgba(47, 31, 21, 0.30);
+  backdrop-filter: blur(4px);
 }
 
-.hero h2 {
-  margin-top: 12px;
-  max-width: 330px;
-  font-size: 34px;
-  line-height: 1.04;
-  letter-spacing: -1.2px;
-}
-
-.hero p {
-  max-width: 340px;
-  margin-top: 10px;
-  color: #eee7e0;
+.welcome-star {
+  display: block;
+  margin-bottom: 5px;
+  color: #e5b878;
   font-size: 11px;
+}
+
+.welcome-frame h2 {
+  color: #fffaf2;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 27px;
+  line-height: 1.08;
+  letter-spacing: -0.5px;
+}
+
+.welcome-frame p {
+  max-width: 330px;
+  margin-top: 9px;
+  color: #f0e4d5;
+  font-size: 10px;
   line-height: 1.5;
 }
 
-/* WAITER BAR */
+
+/* =========================
+   WAITER BAR
+========================= */
 
 .waiter-bar {
   margin: 10px 14px 0;
@@ -232,7 +249,10 @@ button {
   color: #8a5135;
 }
 
-/* GENERAL */
+
+/* =========================
+   GENERAL
+========================= */
 
 .section,
 .info-section {
@@ -268,7 +288,10 @@ button {
   font-size: 10px;
 }
 
-/* CATEGORIES */
+
+/* =========================
+   CATEGORIES
+========================= */
 
 .categories {
   display: flex;
@@ -300,7 +323,10 @@ button {
   color: white;
 }
 
-/* PRODUCTS */
+
+/* =========================
+   PRODUCTS
+========================= */
 
 .products {
   display: grid;
@@ -373,7 +399,10 @@ button {
   line-height: 1;
 }
 
-/* LOYALTY CARD */
+
+/* =========================
+   LOYALTY CARD
+========================= */
 
 .loyalty {
   min-height: 230px;
@@ -418,6 +447,7 @@ button {
 
 .loyalty h2 {
   margin-top: 9px;
+  font-family: Georgia, "Times New Roman", serif;
   font-size: 26px;
   line-height: 1.08;
   letter-spacing: -0.8px;
@@ -460,7 +490,10 @@ button {
   z-index: 2;
 }
 
-/* INFO */
+
+/* =========================
+   INFO
+========================= */
 
 .info-section {
   margin-top: 30px;
@@ -508,7 +541,10 @@ button {
   font-size: 10px;
 }
 
-/* FOOTER */
+
+/* =========================
+   FOOTER
+========================= */
 
 .footer {
   padding: 25px 20px 20px;
@@ -555,7 +591,10 @@ button {
   font-size: 9px;
 }
 
-/* ALT SABİT MENÜ */
+
+/* =========================
+   ALT SABİT MENÜ
+========================= */
 
 .bottom-nav {
   position: fixed;
@@ -604,7 +643,10 @@ button {
   color: #b96f38;
 }
 
-/* GARSON BUTONU */
+
+/* =========================
+   GARSON BUTONU
+========================= */
 
 .waiter-widget {
   position: fixed;
@@ -720,7 +762,10 @@ button {
   }
 }
 
-/* GARSON PANEL */
+
+/* =========================
+   GARSON PANEL
+========================= */
 
 .waiter-panel {
   width: 310px;
@@ -907,9 +952,13 @@ button {
   line-height: 1.5;
 }
 
-/* DESKTOP */
+
+/* =========================
+   DESKTOP
+========================= */
 
 @media (min-width: 700px) {
+
   body {
     padding: 20px 0;
   }
@@ -937,21 +986,33 @@ button {
   }
 }
 
-/* TELEFON */
+
+/* =========================
+   TELEFON
+========================= */
 
 @media (max-width: 380px) {
+
   .hero {
     height: 320px;
   }
 
   .hero-overlay {
+    top: 18px;
     left: 20px;
     right: 20px;
-    bottom: 20px;
   }
 
-  .hero h2 {
-    font-size: 28px;
+  .welcome-frame {
+    max-width: 315px;
+  }
+
+  .welcome-frame h2 {
+    font-size: 24px;
+  }
+
+  .welcome-frame p {
+    font-size: 9px;
   }
 
   .waiter-widget {
