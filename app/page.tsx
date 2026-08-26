@@ -195,10 +195,8 @@ export default function HomePage() {
             {
               requested_table_id:
                 table.id,
-
               user_latitude:
                 latitude,
-
               user_longitude:
                 longitude,
             }
@@ -343,7 +341,16 @@ export default function HomePage() {
         </section>
       )}
 
-      <section className="hero">
+      <section
+        className="hero"
+        style={{
+          backgroundImage: `linear-gradient(
+            180deg,
+            rgba(25, 18, 13, 0.18) 10%,
+            rgba(25, 18, 13, 0.88) 100%
+          ), url("${mardinImageUrl}")`,
+        }}
+      >
 
         <div className="hero-overlay">
 
@@ -352,14 +359,25 @@ export default function HomePage() {
           </span>
 
           <h2>
-            Kahveni al,
-            <br />
-            keyfini yaşa.
+            Taşkent Cafe
           </h2>
 
           <p>
-            Tarihi Mardin'in kalbinde,
-            kahve ve güzel sohbet.
+            Mardin’in tarihi dokusuyla iç içe,
+            eşsiz bir atmosferde geleneksel ve
+            modern lezzetleri bir arada sunuyoruz.
+            Şehrin büyüleyici manzarasına karşı
+            kahvenizi yudumlayıp güzel sohbetlerin
+            tadını çıkarabileceğiniz sıcak bir
+            ortam sizi bekliyor.
+          </p>
+
+          <p>
+            Özenle hazırlanan kahvelerimiz,
+            taze içeceklerimiz ve lezzetli
+            menümüzle Taşkent Cafe,
+            Mardin’de lezzet ve samimiyetin
+            buluştuğu özel bir noktadır.
           </p>
 
         </div>
@@ -374,6 +392,7 @@ export default function HomePage() {
         <div className="section-heading">
 
           <div>
+
             <span className="eyebrow">
               TAŞKENT CAFE
             </span>
@@ -381,6 +400,7 @@ export default function HomePage() {
             <h2>
               Menümüz
             </h2>
+
           </div>
 
           <span className="menu-count">
@@ -463,74 +483,59 @@ export default function HomePage() {
 
       </section>
 
-      <section
-        className="about-cafe"
-        style={{
-          backgroundImage: `linear-gradient(
-            180deg,
-            rgba(25, 18, 13, 0.30),
-            rgba(25, 18, 13, 0.82)
-          ), url("${mardinImageUrl}")`,
-        }}
-      >
+      <section className="social-section">
 
-        <div className="about-overlay">
+        <div className="social-logo">
 
-          <span className="eyebrow about-eyebrow">
-            TAŞKENT CAFE
-          </span>
-
-          <h2>
-            Mardin'in kalbinde
-            <br />
-            lezzet ve samimiyet.
-          </h2>
-
-          <p>
-            Tarihi dokuyla iç içe,
-            eşsiz Mardin manzarası
-            eşliğinde geleneksel ve
-            modern lezzetleri bir arada
-            sunuyoruz. Kahvenizi yudumlarken
-            güzel sohbetlerin ve sıcak
-            atmosferin tadını çıkarın.
-          </p>
-
-          <p>
-            Taşkent Cafe, Mardin'de
-            lezzet ve samimiyetin
-            buluştuğu özel bir noktadır.
-          </p>
-
-          <div className="social-links">
-
-            <a
-              href="#"
-              aria-label="Instagram"
-              className="social-link"
-            >
-              ◎
-            </a>
-
-            <a
-              href="#"
-              aria-label="Facebook"
-              className="social-link"
-            >
-              f
-            </a>
-
-            <a
-              href="#"
-              aria-label="WhatsApp"
-              className="social-link"
-            >
-              ☎
-            </a>
-
-          </div>
+          <img
+            src={logoUrl}
+            alt="Taşkent Cafe"
+          />
 
         </div>
+
+        <h2>
+          Taşkent Cafe
+        </h2>
+
+        <p>
+          Kahve, lezzet ve güzel sohbet.
+        </p>
+
+        <div className="social-links">
+
+          <a
+            href="#"
+            className="social-link"
+            aria-label="Instagram"
+          >
+            ◎
+          </a>
+
+          <a
+            href="#"
+            className="social-link"
+            aria-label="Facebook"
+          >
+            f
+          </a>
+
+          <a
+            href="#"
+            className="social-link"
+            aria-label="WhatsApp"
+          >
+            ☎
+          </a>
+
+        </div>
+
+        <a
+          href="#contact"
+          className="contact-link"
+        >
+          İletişim
+        </a>
 
       </section>
 
@@ -548,18 +553,6 @@ export default function HomePage() {
           </strong>
 
         </div>
-
-        <p>
-          Kahve, lezzet ve güzel sohbet.
-        </p>
-
-        <a
-          href="#contact"
-          className="contact-link"
-          id="contact"
-        >
-          İletişim
-        </a>
 
         <small>
           © 2026 Taşkent Cafe
