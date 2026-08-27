@@ -41,16 +41,14 @@ export default function AdminPage() {
         return;
       }
 
-      const {
-        data: staffUser,
-        error: staffError,
-      } = await supabase
-        .from("staff_users")
-        .select(
-          "id, auth_user_id, role, created_at"
-        )
-        .eq("auth_user_id", user.id)
-        .maybeSingle();
+      const { data: staffUser, error: staffError } =
+        await supabase
+          .from("staff_users")
+          .select(
+            "id, auth_user_id, role, created_at"
+          )
+          .eq("auth_user_id", user.id)
+          .maybeSingle();
 
       if (staffError) {
         throw new Error(
@@ -85,7 +83,6 @@ export default function AdminPage() {
 
   const signOut = async () => {
     await supabase.auth.signOut();
-
     window.location.href = "/";
   };
 
@@ -157,6 +154,9 @@ export default function AdminPage() {
       </main>
     );
   }
+
+  const isAdmin =
+    staff?.role === "admin";
 
   return (
     <main className="site">
@@ -289,47 +289,57 @@ export default function AdminPage() {
             </div>
           </a>
 
-          <div className="admin-card admin-card-disabled">
-            <div className="admin-card-icon">
-              👨‍🍳
-            </div>
+          {isAdmin && (
+            <a
+              href="/admin/staff"
+              className="admin-card"
+            >
+              <div className="admin-card-icon">
+                👨‍🍳
+              </div>
 
-            <div className="admin-card-content">
-              <strong>
-                Personel Yönetimi
-              </strong>
+              <div className="admin-card-content">
+                <strong>
+                  Personel Yönetimi
+                </strong>
 
-              <span>
-                Garson ve personel ekleme
-                sistemi hazırlanıyor.
-              </span>
-            </div>
+                <span>
+                  Garson ve personel ekle,
+                  rollerini ve yetkilerini yönet.
+                </span>
+              </div>
 
-            <div className="admin-card-badge">
-              Yakında
-            </div>
-          </div>
+              <div className="admin-card-arrow">
+                →
+              </div>
+            </a>
+          )}
 
-          <div className="admin-card admin-card-disabled">
-            <div className="admin-card-icon">
-              🔑
-            </div>
+          {isAdmin && (
+            <a
+              href="/admin/staff"
+              className="admin-card"
+            >
+              <div className="admin-card-icon">
+                🔑
+              </div>
 
-            <div className="admin-card-content">
-              <strong>
-                Yetki Yönetimi
-              </strong>
+              <div className="admin-card-content">
+                <strong>
+                  Yetki Yönetimi
+                </strong>
 
-              <span>
-                Personellere rol ve yönetim
-                yetkileri verme.
-              </span>
-            </div>
+                <span>
+                  Personellere admin veya staff
+                  rolü ver.
+                </span>
+              </div>
 
-            <div className="admin-card-badge">
-              Yakında
-            </div>
-          </div>
+              <div className="admin-card-arrow">
+                →
+              </div>
+            </a>
+          )}
         </div>
 
         <div className="admin-info-card">
@@ -430,9 +440,7 @@ export default function AdminPage() {
             box-shadow 0.2s ease;
         }
 
-        .admin-card:not(
-            .admin-card-disabled
-          ):hover {
+        .admin-card:hover {
           transform: translateY(-2px);
           box-shadow:
             0 9px 25px
@@ -475,23 +483,6 @@ export default function AdminPage() {
           color: #b56d38;
           font-size: 19px;
           font-weight: 700;
-        }
-
-        .admin-card-disabled {
-          cursor: default;
-          opacity: 0.65;
-        }
-
-        .admin-card-badge {
-          position: absolute;
-          top: 10px;
-          right: 10px;
-          padding: 4px 7px;
-          border-radius: 10px;
-          background: #eee8e2;
-          color: #8e8177;
-          font-size: 7px;
-          font-weight: 800;
         }
 
         .admin-info-card {
