@@ -1,104 +1,242 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 
 type StaffUser = {
   id: string;
   auth_user_id: string;
+  name: string | null;
+  username: string;
   role: string;
   created_at: string;
 };
 
 export default function AdminPage() {
   const [loading, setLoading] = useState(true);
-  const [authorized, setAuthorized] = useState(false);
-  const [staff, setStaff] = useState<StaffUser | null>(null);
+  const [loggingIn, setLoggingIn] = useState(false);
+
+  const [user, setUser] = useState<StaffUser | null>(null);
+
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
-    checkAdminAccess();
+    checkExistingSession();
   }, []);
 
-  const checkAdminAccess = async () => {
+  const checkExistingSession = async () => {
     try {
       setLoading(true);
       setError("");
 
       const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
 
-      if (userError) {
-        throw new Error(
-          `Kullanıcı bilgisi alınamadı: ${userError.message}`
-        );
+      if (sessionError) {
+        throw new Error(sessionError.message);
       }
 
-      if (!user) {
-        setAuthorized(false);
+      if (!session?.user) {
+        setUser(null);
         return;
       }
 
-      const { data: staffUser, error: staffError } =
-        await supabase
-          .from("staff_users")
-          .select(
-            "id, auth_user_id, role, created_at"
-          )
-          .eq("auth_user_id", user.id)
-          .maybeSingle();
-
-      if (staffError) {
-        throw new Error(
-          `Yetki kontrolü başarısız: ${staffError.message}`
-        );
-      }
-
-      if (!staffUser) {
-        setAuthorized(false);
-        return;
-      }
-
-      setStaff(staffUser as StaffUser);
-      setAuthorized(true);
+      await loadStaff(session.user.id);
     } catch (err) {
-      console.error(
-        "ADMIN ACCESS ERROR:",
-        err
-      );
+      console.error("ADMIN SESSION ERROR:", err);
+
+      setUser(null);
 
       setError(
         err instanceof Error
           ? err.message
-          : "Yetki kontrolü başarısız."
+          : "Oturum kontrol edilemedi."
       );
-
-      setAuthorized(false);
     } finally {
       setLoading(false);
     }
   };
 
+  const loadStaff = async (authUserId: string) => {
+    const {
+      data,
+      error: staffError,
+    } = await supabase
+      .from("staff_users")
+      .select(
+        "id, auth_user_id, name, username, role, created_at"
+      )
+      .eq("auth_user_id", authUserId)
+      .maybeSingle();
+
+    if (staffError) {
+      throw new Error(
+        `Personel bilgisi alınamadı: ${staffError.message}`
+      );
+    }
+
+    if (!data) {
+      await supabase.auth.signOut();
+
+      setUser(null);
+
+      throw new Error(
+        "Bu hesap personel olarak tanımlanmamış."
+      );
+    }
+
+    setUser(data as StaffUser);
+  };
+
+  const login = async (
+    event: FormEvent<HTMLFormElement>
+  ) => {
+    event.preventDefault();
+
+    setError("");
+    setMessage("");
+
+    const cleanUsername = username
+      .trim()
+      .toLowerCase();
+
+    if (!cleanUsername) {
+      setError("Kullanıcı adı girin.");
+      return;
+    }
+
+    if (!password) {
+      setError("Şifre girin.");
+      return;
+    }
+
+    try {
+      setLoggingIn(true);
+
+      /*
+       * Supabase Auth e-posta ile giriş yaptığı için
+       * kullanıcı adını staff_users üzerinden buluyoruz.
+       */
+      const {
+        data: staff,
+        error: staffError,
+      } = await supabase
+        .from("staff_users")
+        .select(
+          "id, auth_user_id, name, username, role, created_at"
+        )
+        .ilike("username", cleanUsername)
+        .maybeSingle();
+
+      if (staffError) {
+        throw new Error(
+          `Kullanıcı kontrolü başarısız: ${staffError.message}`
+        );
+      }
+
+      if (!staff) {
+        throw new Error(
+          "Kullanıcı adı veya şifre hatalı."
+        );
+      }
+
+      /*
+       * Auth hesabının e-posta adresini frontend'e
+       * çıkarmıyoruz.
+       *
+       * Bu yapı için Supabase Auth hesabının e-posta
+       * adresini staff_users içine ayrıca koymamız gerekiyor.
+       *
+       * Şimdilik auth_user_id üzerinden mevcut oturum
+       * kontrol ediliyor.
+       */
+
+      const {
+        data: currentSession,
+      } = await supabase.auth.getSession();
+
+      if (currentSession.session?.user) {
+        const currentUser =
+          currentSession.session.user;
+
+        if (
+          currentUser.id !==
+          staff.auth_user_id
+        ) {
+          await supabase.auth.signOut();
+        } else {
+          setUser(staff as StaffUser);
+          setMessage(
+            "Zaten giriş yapılmış."
+          );
+          return;
+        }
+      }
+
+      /*
+       * Kullanıcı adıyla doğrudan Supabase Auth
+       * signIn yapılamaz.
+       *
+       * Bu nedenle burada bilerek anlaşılır hata
+       * gösteriyoruz. Bir sonraki SQL/API adımında
+       * username → Auth email eşlemesini güvenli
+       * şekilde kuracağız.
+       */
+      throw new Error(
+        "Kullanıcı adı giriş sistemi için Auth eşlemesi henüz tamamlanmadı."
+      );
+    } catch (err) {
+      console.error("ADMIN LOGIN ERROR:", err);
+
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Giriş yapılamadı."
+      );
+    } finally {
+      setLoggingIn(false);
+    }
+  };
+
   const signOut = async () => {
+    setError("");
+    setMessage("");
+
     await supabase.auth.signOut();
-    window.location.href = "/";
+
+    setUser(null);
+    setUsername("");
+    setPassword("");
   };
 
   if (loading) {
     return (
       <main className="site">
         <section className="section">
-          <div className="loyalty-message">
-            Yönetim paneli yükleniyor...
+          <div className="admin-loading">
+            <div className="admin-loading-icon">
+              ☕
+            </div>
+
+            <p>
+              Yönetim paneli kontrol ediliyor...
+            </p>
           </div>
         </section>
       </main>
     );
   }
 
-  if (!authorized) {
+  /*
+   * GİRİŞ YAPILMAMIŞSA
+   */
+  if (!user) {
     return (
       <main className="site">
         <header className="header">
@@ -120,51 +258,273 @@ export default function AdminPage() {
               </span>
             </div>
           </a>
+
+          <a
+            href="/"
+            className="icon-button"
+            aria-label="Ana sayfa"
+          >
+            ←
+          </a>
         </header>
 
-        <section className="section">
-          <div className="admin-access-box">
-            <div className="admin-access-icon">
-              🔒
+        <section className="section admin-login-section">
+          <div className="admin-login-card">
+            <div className="admin-login-icon">
+              🔐
             </div>
 
+            <span className="eyebrow">
+              YÖNETİM
+            </span>
+
             <h2>
-              Yetkisiz erişim
+              Yönetim Paneli
             </h2>
 
-            <p>
-              Bu yönetim paneline yalnızca
-              yetkili personel erişebilir.
+            <p className="admin-login-description">
+              Yetkili personel hesabınızla
+              giriş yapın.
             </p>
 
             {error && (
-              <div className="loyalty-message">
+              <div className="admin-error">
                 ⚠️ {error}
               </div>
             )}
 
+            {message && (
+              <div className="admin-success">
+                ✅ {message}
+              </div>
+            )}
+
+            <form
+              onSubmit={login}
+              className="admin-login-form"
+            >
+              <label>
+                Kullanıcı adı
+                <input
+                  type="text"
+                  value={username}
+                  onChange={(event) =>
+                    setUsername(
+                      event.target.value
+                    )
+                  }
+                  placeholder="Örn. sezai47"
+                  autoComplete="username"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                />
+              </label>
+
+              <label>
+                Şifre
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(event) =>
+                    setPassword(
+                      event.target.value
+                    )
+                  }
+                  placeholder="Şifreniz"
+                  autoComplete="current-password"
+                />
+              </label>
+
+              <button
+                type="submit"
+                className="admin-login-button"
+                disabled={loggingIn}
+              >
+                {loggingIn
+                  ? "Giriş yapılıyor..."
+                  : "Giriş Yap"}
+              </button>
+            </form>
+
             <a
               href="/"
-              className="loyalty-button"
+              className="admin-back-home"
             >
-              Ana Sayfaya Dön
+              ← Ana Sayfaya Dön
             </a>
           </div>
         </section>
+
+        <footer className="footer">
+          <div className="footer-logo">
+            ☕ Taşkent Cafe
+          </div>
+
+          <p>
+            Yönetim paneli
+          </p>
+
+          <small>
+            © 2026 Taşkent Cafe
+          </small>
+        </footer>
+
+        <style jsx global>{`
+          .admin-login-section {
+            min-height: 65vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+
+          .admin-login-card {
+            width: 100%;
+            max-width: 390px;
+            padding: 30px 22px;
+            border-radius: 24px;
+            background: #ffffff;
+            border: 1px solid #eee4da;
+            box-shadow:
+              0 12px 35px
+                rgba(60, 39, 25, 0.08);
+            text-align: center;
+          }
+
+          .admin-login-icon {
+            width: 70px;
+            height: 70px;
+            margin: 0 auto 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 22px;
+            background: #f7eee7;
+            font-size: 30px;
+          }
+
+          .admin-login-card h2 {
+            margin-top: 7px;
+            color: #392a20;
+            font-size: 23px;
+          }
+
+          .admin-login-description {
+            margin-top: 8px;
+            color: #998c81;
+            font-size: 11px;
+            line-height: 1.5;
+          }
+
+          .admin-login-form {
+            display: grid;
+            gap: 14px;
+            margin-top: 23px;
+            text-align: left;
+          }
+
+          .admin-login-form label {
+            display: grid;
+            gap: 7px;
+            color: #493a30;
+            font-size: 10px;
+            font-weight: 800;
+          }
+
+          .admin-login-form input {
+            width: 100%;
+            height: 45px;
+            padding: 0 13px;
+            border: 1px solid #e5d9ce;
+            border-radius: 12px;
+            background: #fffaf5;
+            color: #30261f;
+            outline: none;
+            font-size: 12px;
+          }
+
+          .admin-login-form input:focus {
+            border-color: #b96f38;
+          }
+
+          .admin-login-button {
+            width: 100%;
+            height: 46px;
+            margin-top: 5px;
+            border: 0;
+            border-radius: 13px;
+            background: #b56d38;
+            color: #ffffff;
+            font-size: 11px;
+            font-weight: 800;
+            cursor: pointer;
+          }
+
+          .admin-login-button:disabled {
+            opacity: 0.6;
+            cursor: wait;
+          }
+
+          .admin-error,
+          .admin-success {
+            margin-top: 17px;
+            padding: 11px 12px;
+            border-radius: 11px;
+            font-size: 10px;
+            line-height: 1.5;
+            text-align: left;
+          }
+
+          .admin-error {
+            background: #fff1ef;
+            color: #a34b3e;
+            border: 1px solid #f0d4d0;
+          }
+
+          .admin-success {
+            background: #eff8ef;
+            color: #4f7b50;
+            border: 1px solid #d7e9d7;
+          }
+
+          .admin-back-home {
+            display: inline-block;
+            margin-top: 20px;
+            color: #8b6a54;
+            font-size: 10px;
+            font-weight: 700;
+            text-decoration: none;
+          }
+
+          .admin-loading {
+            min-height: 50vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #998c81;
+            text-align: center;
+          }
+
+          .admin-loading-icon {
+            font-size: 35px;
+            margin-bottom: 10px;
+          }
+
+          .admin-loading p {
+            font-size: 11px;
+          }
+        `}</style>
       </main>
     );
   }
 
-  const isAdmin =
-    staff?.role === "admin";
-
+  /*
+   * GİRİŞ YAPILMIŞSA
+   */
   return (
     <main className="site">
       <header className="header">
-        <a
-          href="/"
-          className="brand"
-        >
+        <div className="brand">
           <div className="logo">
             ☕
           </div>
@@ -178,7 +538,7 @@ export default function AdminPage() {
               Yönetim Paneli
             </span>
           </div>
-        </a>
+        </div>
 
         <button
           type="button"
@@ -198,22 +558,32 @@ export default function AdminPage() {
           </span>
 
           <h2>
-            Hoş geldiniz 👋
+            Hoş geldiniz
+            {user.name
+              ? `, ${user.name}`
+              : ""}{" "}
+            👋
           </h2>
 
           <p>
-            Taşkent Cafe yönetim işlemlerini
-            buradan gerçekleştirebilirsiniz.
+            Taşkent Cafe yönetim
+            işlemlerini buradan
+            gerçekleştirebilirsiniz.
           </p>
 
-          {staff && (
-            <div className="admin-role">
-              Yetki:{" "}
-              <strong>
-                {staff.role}
-              </strong>
-            </div>
-          )}
+          <div className="admin-role">
+            Kullanıcı:{" "}
+            <strong>
+              {user.username}
+            </strong>
+
+            {" • "}
+
+            Yetki:{" "}
+            <strong>
+              {user.role}
+            </strong>
+          </div>
         </div>
 
         <div className="admin-grid">
@@ -232,7 +602,7 @@ export default function AdminPage() {
 
               <span>
                 Ürün ekle, düzenle, sil,
-                fiyat ve resimlerini yönet.
+                fiyat ve resimleri yönet.
               </span>
             </div>
 
@@ -289,7 +659,7 @@ export default function AdminPage() {
             </div>
           </a>
 
-          {isAdmin && (
+          {user.role === "admin" && (
             <a
               href="/admin/staff"
               className="admin-card"
@@ -304,34 +674,9 @@ export default function AdminPage() {
                 </strong>
 
                 <span>
-                  Garson ve personel ekle,
-                  rollerini ve yetkilerini yönet.
-                </span>
-              </div>
-
-              <div className="admin-card-arrow">
-                →
-              </div>
-            </a>
-          )}
-
-          {isAdmin && (
-            <a
-              href="/admin/staff"
-              className="admin-card"
-            >
-              <div className="admin-card-icon">
-                🔑
-              </div>
-
-              <div className="admin-card-content">
-                <strong>
-                  Yetki Yönetimi
-                </strong>
-
-                <span>
-                  Personellere admin veya staff
-                  rolü ver.
+                  Personel ekle, kullanıcı
+                  adı, şifre ve rollerini
+                  yönet.
                 </span>
               </div>
 
@@ -354,8 +699,9 @@ export default function AdminPage() {
 
             <p>
               Menüye eklediğiniz aktif
-              ürünler ana sayfadaki menüde
-              otomatik olarak görüntülenir.
+              ürünler ana sayfadaki
+              menüde otomatik olarak
+              görüntülenir.
             </p>
           </div>
         </div>
@@ -523,45 +869,6 @@ export default function AdminPage() {
           font-size: 11px;
           font-weight: 800;
           cursor: pointer;
-        }
-
-        .admin-access-box {
-          padding: 30px 20px;
-          border-radius: 22px;
-          background: #ffffff;
-          border: 1px solid #eee4da;
-          text-align: center;
-        }
-
-        .admin-access-icon {
-          width: 65px;
-          height: 65px;
-          margin: 0 auto 15px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border-radius: 50%;
-          background: #f7eee7;
-          font-size: 28px;
-        }
-
-        .admin-access-box h2 {
-          margin: 0;
-          color: #392a20;
-          font-size: 20px;
-        }
-
-        .admin-access-box p {
-          margin: 8px auto 20px;
-          max-width: 320px;
-          color: #998c81;
-          font-size: 11px;
-          line-height: 1.6;
-        }
-
-        .admin-access-box
-          .loyalty-message {
-          margin-bottom: 15px;
         }
 
         @media (max-width: 600px) {
