@@ -12,6 +12,7 @@ type MenuItem = {
   image_url: string | null;
   active: boolean;
   sort_order: number;
+  created_at: string;
 };
 
 const categories = [
@@ -42,7 +43,7 @@ export default function MenuPage() {
       const { data, error: menuError } = await supabase
         .from("menu_items")
         .select(
-          "id, name, category, description, price, image_url, active, sort_order"
+          "id, name, category, description, price, image_url, active, sort_order, created_at"
         )
         .eq("active", true)
         .order("sort_order", {
@@ -54,12 +55,18 @@ export default function MenuPage() {
 
       if (menuError) {
         console.error("MENU LOAD ERROR:", menuError);
+
+        setProducts([]);
+
         throw new Error(
-          "Menü ürünleri yüklenemedi."
+          menuError.message ||
+            "Menü ürünleri yüklenemedi."
         );
       }
 
-      setProducts((data ?? []) as MenuItem[]);
+      setProducts(
+        (data ?? []) as MenuItem[]
+      );
     } catch (err) {
       console.error("MENU ERROR:", err);
 
@@ -82,19 +89,22 @@ export default function MenuPage() {
         );
 
   const formatPrice = (price: number) => {
-    return `${Number(price).toLocaleString(
-      "tr-TR",
-      {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 2,
-      }
-    )} ₺`;
+    return (
+      Number(price).toLocaleString(
+        "tr-TR",
+        {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 2,
+        }
+      ) + " ₺"
+    );
   };
 
   return (
     <main className="site">
 
       <header className="header">
+
         <a
           href="/"
           className="brand"
@@ -121,11 +131,13 @@ export default function MenuPage() {
         >
           ←
         </a>
+
       </header>
 
       <section className="section menu-page">
 
         <div className="section-heading">
+
           <div>
             <span className="eyebrow">
               TAŞKENT CAFE
@@ -141,6 +153,7 @@ export default function MenuPage() {
               ? "..."
               : `${filteredProducts.length} ürün`}
           </span>
+
         </div>
 
         <p className="menu-description">
@@ -149,6 +162,7 @@ export default function MenuPage() {
         </p>
 
         <div className="categories">
+
           {categories.map((item) => (
             <button
               key={item}
@@ -165,23 +179,25 @@ export default function MenuPage() {
               {item}
             </button>
           ))}
+
         </div>
 
         {loading && (
-          <div className="menu-status">
-            <div className="menu-spinner">
+          <div className="menu-message">
+            <div className="menu-message-icon">
               ☕
             </div>
 
-            <p>
+            <strong>
               Menü yükleniyor...
-            </p>
+            </strong>
           </div>
         )}
 
         {!loading && error && (
-          <div className="menu-status menu-error">
-            <div className="menu-status-icon">
+          <div className="menu-message menu-error">
+
+            <div className="menu-message-icon">
               ⚠️
             </div>
 
@@ -200,14 +216,16 @@ export default function MenuPage() {
             >
               Tekrar Dene
             </button>
+
           </div>
         )}
 
         {!loading &&
           !error &&
           filteredProducts.length === 0 && (
-            <div className="menu-status">
-              <div className="menu-status-icon">
+            <div className="menu-message">
+
+              <div className="menu-message-icon">
                 ☕
               </div>
 
@@ -219,22 +237,26 @@ export default function MenuPage() {
                 Şu anda bu kategoride
                 gösterilecek ürün bulunmuyor.
               </p>
+
             </div>
           )}
 
         {!loading &&
           !error &&
           filteredProducts.length > 0 && (
+
             <div className="products">
 
               {filteredProducts.map(
                 (product) => (
+
                   <article
                     className="product-card"
                     key={product.id}
                   >
 
                     <div className="product-image">
+
                       {product.image_url ? (
                         <img
                           src={product.image_url}
@@ -246,11 +268,13 @@ export default function MenuPage() {
                           ☕
                         </span>
                       )}
+
                     </div>
 
                     <div className="product-content">
 
                       <div>
+
                         <h3>
                           {product.name}
                         </h3>
@@ -259,6 +283,7 @@ export default function MenuPage() {
                           {product.description ||
                             "Taşkent Cafe'nin özel lezzetlerinden."}
                         </p>
+
                       </div>
 
                       <div className="product-bottom">
@@ -282,10 +307,12 @@ export default function MenuPage() {
                     </div>
 
                   </article>
+
                 )
               )}
 
             </div>
+
           )}
 
       </section>
@@ -306,7 +333,7 @@ export default function MenuPage() {
             Ana Sayfa
           </a>
 
-          <a href="/menü">
+          <a href="/menu">
             Menü
           </a>
 
@@ -328,15 +355,21 @@ export default function MenuPage() {
           href="/"
           className="nav-item"
         >
-          <span>⌂</span>
+          <span>
+            ⌂
+          </span>
+
           Ana Sayfa
         </a>
 
         <a
-          href="/menü"
+          href="/menu"
           className="nav-item active"
         >
-          <span>☕</span>
+          <span>
+            ☕
+          </span>
+
           Menü
         </a>
 
@@ -344,7 +377,10 @@ export default function MenuPage() {
           href="/#loyalty"
           className="nav-item"
         >
-          <span>⭐</span>
+          <span>
+            ⭐
+          </span>
+
           Sadakat
         </a>
 
@@ -352,7 +388,10 @@ export default function MenuPage() {
           href="/#location"
           className="nav-item"
         >
-          <span>📍</span>
+          <span>
+            📍
+          </span>
+
           Konum
         </a>
 
@@ -360,7 +399,7 @@ export default function MenuPage() {
 
       <style jsx global>{`
 
-        .menu-status {
+        .menu-message {
           margin-top: 25px;
           padding: 35px 20px;
           border: 1px solid #eee4da;
@@ -370,39 +409,26 @@ export default function MenuPage() {
           color: #77695e;
         }
 
-        .menu-spinner {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          width: 54px;
-          height: 54px;
-          margin-bottom: 12px;
-          border-radius: 50%;
-          background: #f5e9dc;
-          font-size: 24px;
-          animation: menuPulse 1.2s ease-in-out infinite;
-        }
-
-        .menu-status-icon {
-          display: flex;
-          align-items: center;
-          justify-content: center;
+        .menu-message-icon {
           width: 54px;
           height: 54px;
           margin: 0 auto 12px;
           border-radius: 50%;
           background: #f5e9dc;
+          display: flex;
+          align-items: center;
+          justify-content: center;
           font-size: 23px;
         }
 
-        .menu-status strong {
+        .menu-message strong {
           display: block;
           color: #493a30;
           font-size: 14px;
         }
 
-        .menu-status p {
-          margin: 7px 0 0;
+        .menu-message p {
+          margin-top: 7px;
           color: #998c81;
           font-size: 11px;
           line-height: 1.5;
@@ -437,19 +463,6 @@ export default function MenuPage() {
           height: 100%;
           display: block;
           object-fit: cover;
-        }
-
-        @keyframes menuPulse {
-          0%,
-          100% {
-            transform: scale(1);
-            opacity: 0.7;
-          }
-
-          50% {
-            transform: scale(1.08);
-            opacity: 1;
-          }
         }
 
       `}</style>
