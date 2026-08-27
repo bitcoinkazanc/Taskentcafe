@@ -1,4 +1,5 @@
- import "./globals.css";
+import "./globals.css";
+import BottomNav from "../components/BottomNav";
 
 export const metadata = {
   title: "Taşkent Cafe",
@@ -12,7 +13,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="tr">
-      <body>{children}</body>
+      <body>
+        {children}
+
+        <BottomNav />
+      </body>
     </html>
   );
 }
