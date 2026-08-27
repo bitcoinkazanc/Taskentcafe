@@ -13,50 +13,16 @@ const categories = [
   "Çerez",
 ];
 
-const products = [
-  {
-    name: "Türk Kahvesi",
-    category: "Sıcak İçecekler",
-    description: "Geleneksel Türk kahvesi.",
-    price: "120 ₺",
-    icon: "☕",
-  },
-  {
-    name: "Latte",
-    category: "Sıcak İçecekler",
-    description: "Espresso ve yumuşak süt köpüğü.",
-    price: "150 ₺",
-    icon: "☕",
-  },
-  {
-    name: "Soğuk Kahve",
-    category: "Soğuk İçecekler",
-    description: "Serinletici buzlu kahve.",
-    price: "160 ₺",
-    icon: "🧊",
-  },
-  {
-    name: "Serpme Kahvaltı",
-    category: "Kahvaltı",
-    description: "Zengin kahvaltı tabağı.",
-    price: "450 ₺",
-    icon: "🍳",
-  },
-  {
-    name: "Çikolatalı Pasta",
-    category: "Tatlı",
-    description: "Günlük hazırlanan özel pasta.",
-    price: "180 ₺",
-    icon: "🍰",
-  },
-  {
-    name: "Karışık Çerez",
-    category: "Çerez",
-    description: "Günün seçme çerezleri.",
-    price: "150 ₺",
-    icon: "🥜",
-  },
-];
+type Product = {
+  id: string;
+  name: string;
+  category: string;
+  description: string | null;
+  price: number;
+  image_url: string | null;
+  active: boolean;
+  sort_order: number;
+};
 
 type CafeTable = {
   id: string;
@@ -68,8 +34,31 @@ type CafeTable = {
 const logoUrl =
   "https://raw.githubusercontent.com/bitcoinkazanc/Taskentcafe/main/Taskent-logo.jpg";
 
+function getCategoryIcon(category: string) {
+  switch (category) {
+    case "Sıcak İçecekler":
+      return "☕";
+    case "Soğuk İçecekler":
+      return "🧊";
+    case "Kahvaltı":
+      return "🍳";
+    case "Yemek":
+      return "🍽️";
+    case "Tatlı":
+      return "🍰";
+    case "Çerez":
+      return "🥜";
+    default:
+      return "🍴";
+  }
+}
+
 export default function HomePage() {
   const [category, setCategory] = useState("Tümü");
+
+  const [products, setProducts] = useState<Product[]>([]);
+  const [productsLoading, setProductsLoading] = useState(true);
+  const [productsError, setProductsError] = useState("");
 
   const [table, setTable] =
     useState<CafeTable | null>(null);
@@ -88,6 +77,61 @@ export default function HomePage() {
 
   const [waiterOpen, setWaiterOpen] =
     useState(false);
+
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        setProductsLoading(true);
+        setProductsError("");
+
+        const {
+          data,
+          error,
+        } = await supabase
+          .from("products")
+          .select(
+            "id,name,category,description,price,image_url,active,sort_order"
+          )
+          .eq("active", true)
+          .order("sort_order", {
+            ascending: true,
+          })
+          .order("created_at", {
+            ascending: false,
+          });
+
+        if (error) {
+          console.error(
+            "PRODUCT LOAD ERROR:",
+            error
+          );
+
+          setProductsError(
+            "Menü ürünleri yüklenemedi."
+          );
+
+          return;
+        }
+
+        setProducts(
+          (data || []) as Product[]
+        );
+      } catch (error) {
+        console.error(
+          "PRODUCT ERROR:",
+          error
+        );
+
+        setProductsError(
+          "Menü ürünleri yüklenemedi."
+        );
+      } finally {
+        setProductsLoading(false);
+      }
+    };
+
+    loadProducts();
+  }, []);
 
   const filteredProducts =
     category === "Tümü"
@@ -379,7 +423,9 @@ export default function HomePage() {
           </div>
 
           <span className="menu-count">
-            {filteredProducts.length} ürün
+            {productsLoading
+              ? "..."
+              : `${filteredProducts.length} ürün`}
           </span>
 
         </div>
@@ -391,6 +437,7 @@ export default function HomePage() {
             (item) => (
               <button
                 key={item}
+                type="button"
                 className={
                   category === item
                     ? "category active"
@@ -408,55 +455,137 @@ export default function HomePage() {
         </div>
 
 
-        <div className="products">
+        {productsLoading && (
 
-          {filteredProducts.map(
-            (product) => (
-              <article
-                className="product-card"
-                key={product.name}
-              >
+          <div className="menu-loading">
+            <div className="loading-spinner" />
+            <span>
+              Menü yükleniyor...
+            </span>
+          </div>
 
-                <div className="product-image">
-                  {product.icon}
-                </div>
+        )}
 
-                <div className="product-content">
 
-                  <div>
+        {!productsLoading &&
+          productsError && (
 
-                    <h3>
-                      {product.name}
-                    </h3>
+            <div className="menu-error">
+              ⚠️ {productsError}
+            </div>
 
-                    <p>
-                      {product.description}
-                    </p>
-
-                  </div>
-
-                  <div className="product-bottom">
-
-                    <strong>
-                      {product.price}
-                    </strong>
-
-                    <button
-                      className="plus-button"
-                      aria-label={`${product.name} detay`}
-                    >
-                      +
-                    </button>
-
-                  </div>
-
-                </div>
-
-              </article>
-            )
           )}
 
-        </div>
+
+        {!productsLoading &&
+          !productsError &&
+          filteredProducts.length === 0 && (
+
+            <div className="menu-empty">
+              <div>
+                🍽️
+              </div>
+
+              <strong>
+                Bu kategoride ürün bulunmuyor.
+              </strong>
+
+              <span>
+                Yakında yeni ürünler eklenecek.
+              </span>
+            </div>
+
+          )}
+
+
+        {!productsLoading &&
+          !productsError &&
+          filteredProducts.length > 0 && (
+
+            <div className="products">
+
+              {filteredProducts.map(
+                (product) => (
+
+                  <article
+                    className="product-card"
+                    key={product.id}
+                  >
+
+                    <div className="product-image">
+
+                      {product.image_url ? (
+
+                        <img
+                          src={product.image_url}
+                          alt={product.name}
+                          loading="lazy"
+                        />
+
+                      ) : (
+
+                        <span>
+                          {getCategoryIcon(
+                            product.category
+                          )}
+                        </span>
+
+                      )}
+
+                    </div>
+
+
+                    <div className="product-content">
+
+                      <div>
+
+                        <h3>
+                          {product.name}
+                        </h3>
+
+                        <p>
+                          {product.description ||
+                            ""}
+                        </p>
+
+                      </div>
+
+
+                      <div className="product-bottom">
+
+                        <strong>
+                          {Number(
+                            product.price
+                          ).toLocaleString(
+                            "tr-TR",
+                            {
+                              minimumFractionDigits: 0,
+                              maximumFractionDigits: 2,
+                            }
+                          )}{" "}
+                          ₺
+                        </strong>
+
+                        <button
+                          type="button"
+                          className="plus-button"
+                          aria-label={`${product.name} detay`}
+                        >
+                          +
+                        </button>
+
+                      </div>
+
+                    </div>
+
+                  </article>
+
+                )
+              )}
+
+            </div>
+
+          )}
 
       </section>
 
@@ -701,7 +830,8 @@ export default function HomePage() {
                           callWaiter
                         }
                         disabled={
-                          waiterLoading
+                          waiterLoading ||
+                          tableLoading
                         }
                       >
 
@@ -855,6 +985,94 @@ export default function HomePage() {
           object-fit: cover;
           border-radius: 50%;
         }
+
+        /* =========================
+           MENÜ GÖRSELLERİ
+        ========================= */
+
+        .product-image {
+          overflow: hidden;
+        }
+
+        .product-image img {
+          width: 100%;
+          height: 100%;
+          display: block;
+          object-fit: cover;
+        }
+
+        .product-image span {
+          display: flex;
+          width: 100%;
+          height: 100%;
+          align-items: center;
+          justify-content: center;
+          font-size: 42px;
+        }
+
+        .menu-loading {
+          min-height: 180px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+          color: #8f8176;
+          font-size: 11px;
+        }
+
+        .loading-spinner {
+          width: 28px;
+          height: 28px;
+          border-radius: 50%;
+          border: 3px solid #eadfd5;
+          border-top-color: #8b5e3c;
+          animation: menuSpinner 0.8s linear infinite;
+        }
+
+        @keyframes menuSpinner {
+          to {
+            transform: rotate(360deg);
+          }
+        }
+
+        .menu-error {
+          margin-top: 18px;
+          padding: 13px;
+          border-radius: 12px;
+          background: #f6e7df;
+          color: #8a5135;
+          text-align: center;
+          font-size: 10px;
+        }
+
+        .menu-empty {
+          min-height: 160px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
+          gap: 7px;
+          color: #8f8176;
+        }
+
+        .menu-empty > div {
+          font-size: 32px;
+        }
+
+        .menu-empty strong {
+          color: #493a30;
+          font-size: 12px;
+        }
+
+        .menu-empty span {
+          font-size: 9px;
+        }
+
+        /* =========================
+           GARSON
+        ========================= */
 
         .waiter-widget {
           position: fixed;
@@ -1049,6 +1267,7 @@ export default function HomePage() {
           color: white;
           font-size: 20px;
           line-height: 1;
+          cursor: pointer;
         }
 
         .waiter-panel-body {
@@ -1095,6 +1314,7 @@ export default function HomePage() {
           justify-content: space-between;
           font-size: 10px;
           font-weight: 700;
+          cursor: pointer;
         }
 
         .waiter-call-button:disabled {
