@@ -1,8 +1,9 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { supabase } from "../../lib/supabase";
 
-export default function AdminPage() {
+export default function AdminLoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -33,7 +34,8 @@ export default function AdminPage() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            username,
+            username:
+              username.trim().toLowerCase(),
             password,
           }),
         }
@@ -49,22 +51,33 @@ export default function AdminPage() {
       }
 
       /*
-       * Supabase session'ı tarayıcıya kaydet.
+       * API tarafından doğrulanan Supabase
+       * session'ını gerçek Supabase client'a aktar.
        */
-      if (data.session?.access_token) {
-        localStorage.setItem(
-          "taskent_admin_access_token",
-          data.session.access_token
-        );
+      if (
+        data.session?.access_token &&
+        data.session?.refresh_token
+      ) {
+        const {
+          error: sessionError,
+        } = await supabase.auth.setSession({
+          access_token:
+            data.session.access_token,
+          refresh_token:
+            data.session.refresh_token,
+        });
+
+        if (sessionError) {
+          throw new Error(
+            "Oturum oluşturulamadı: " +
+              sessionError.message
+          );
+        }
       }
 
-      if (data.session?.refresh_token) {
-        localStorage.setItem(
-          "taskent_admin_refresh_token",
-          data.session.refresh_token
-        );
-      }
-
+      /*
+       * Personel bilgisini de sakla.
+       */
       if (data.staff) {
         localStorage.setItem(
           "taskent_admin_staff",
@@ -72,8 +85,12 @@ export default function AdminPage() {
         );
       }
 
+      /*
+       * Artık olmayan /admin/dashboard
+       * yerine gerçek yönetim paneline gidiyoruz.
+       */
       window.location.href =
-        "/admin/dashboard";
+        "/admin/panel";
     } catch (err) {
       console.error(
         "ADMIN LOGIN ERROR:",
@@ -136,7 +153,6 @@ export default function AdminPage() {
             onSubmit={handleLogin}
             className="login-form"
           >
-
             <div className="form-field">
               <label htmlFor="username">
                 Kullanıcı adı
@@ -216,7 +232,6 @@ export default function AdminPage() {
                 </>
               )}
             </button>
-
           </form>
 
           <a
@@ -226,7 +241,6 @@ export default function AdminPage() {
             <span>←</span>
             Ana Sayfaya Dön
           </a>
-
         </section>
 
         <footer className="login-footer">
@@ -327,12 +341,7 @@ export default function AdminPage() {
           padding: 30px 27px 25px;
           border: 1px solid #eadfd5;
           border-radius: 25px;
-          background: rgba(
-            255,
-            255,
-            255,
-            0.97
-          );
+          background: #ffffff;
           box-shadow:
             0 18px 50px
               rgba(61, 42, 29, 0.09);
@@ -359,7 +368,6 @@ export default function AdminPage() {
           display: block;
           color: #b56d38;
           font-size: 9px;
-          line-height: 1;
           font-weight: 900;
           letter-spacing: 1.6px;
         }
@@ -405,15 +413,10 @@ export default function AdminPage() {
           border: 1px solid #e4d8ce;
           border-radius: 14px;
           background: #fffdfb;
-          transition:
-            border-color 0.2s ease,
-            box-shadow 0.2s ease,
-            background 0.2s ease;
         }
 
         .input-wrapper:focus-within {
           border-color: #b98259;
-          background: #ffffff;
           box-shadow:
             0 0 0 3px
               rgba(181, 109, 56, 0.1);
@@ -446,10 +449,6 @@ export default function AdminPage() {
           font-weight: 400;
         }
 
-        .input-wrapper input:disabled {
-          opacity: 0.6;
-        }
-
         .login-error {
           display: flex;
           align-items: flex-start;
@@ -459,11 +458,6 @@ export default function AdminPage() {
           border: 1px solid #f0d2ce;
           border-radius: 13px;
           background: #fff3f1;
-        }
-
-        .login-error span {
-          flex: 0 0 auto;
-          font-size: 14px;
         }
 
         .login-error p {
@@ -477,7 +471,6 @@ export default function AdminPage() {
         .login-button {
           width: 100%;
           height: 50px;
-          margin-top: 4px;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -492,38 +485,17 @@ export default function AdminPage() {
           box-shadow:
             0 8px 20px
               rgba(139, 94, 60, 0.18);
-          transition:
-            transform 0.15s ease,
-            background 0.15s ease,
-            box-shadow 0.15s ease;
         }
 
         .login-button:hover:not(
             :disabled
           ) {
           background: #795034;
-          transform: translateY(-1px);
-          box-shadow:
-            0 10px 24px
-              rgba(139, 94, 60, 0.22);
-        }
-
-        .login-button:active:not(
-            :disabled
-          ) {
-          transform: translateY(0);
         }
 
         .login-button:disabled {
           opacity: 0.65;
           cursor: not-allowed;
-        }
-
-        .login-button > span:not(
-            .spinner
-          ) {
-          font-size: 17px;
-          line-height: 1;
         }
 
         .spinner {
@@ -554,14 +526,6 @@ export default function AdminPage() {
           font-size: 10px;
           font-weight: 700;
           text-decoration: none;
-        }
-
-        .home-link:hover {
-          color: #795034;
-        }
-
-        .home-link span {
-          font-size: 14px;
         }
 
         .login-footer {
@@ -601,22 +565,10 @@ export default function AdminPage() {
               25px
               18px
               21px;
-            border-radius: 22px;
-          }
-
-          .login-icon {
-            width: 60px;
-            height: 60px;
-            margin-bottom: 16px;
-            border-radius: 18px;
           }
 
           .login-heading h2 {
             font-size: 22px;
-          }
-
-          .login-form {
-            margin-top: 23px;
           }
         }
       `}</style>
