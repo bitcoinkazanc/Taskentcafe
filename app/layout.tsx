@@ -1,4 +1,4 @@
- import "./globals.css";
+import "./globals.css";
 import BottomNav from "../components/BottomNav";
 
 export const metadata = {
@@ -15,7 +15,6 @@ export default function RootLayout({
     <html lang="tr">
       <body>
         {children}
-
         <BottomNav />
       </body>
     </html>
