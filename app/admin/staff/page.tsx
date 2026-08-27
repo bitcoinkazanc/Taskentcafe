@@ -6,10 +6,7 @@ import { supabase } from "../../../lib/supabase";
 type StaffUser = {
   id: string;
   auth_user_id: string;
-  name: string | null;
-  username: string | null;
   role: string;
-  active: boolean;
   created_at: string;
 };
 
@@ -17,7 +14,7 @@ const roles = [
   {
     value: "staff",
     label: "Personel",
-    description: "Günlük personel işlemleri",
+    description: "Personel işlemleri",
   },
   {
     value: "admin",
@@ -35,7 +32,8 @@ const emptyForm = {
 
 export default function StaffAdminPage() {
   const [loading, setLoading] = useState(true);
-  const [authorized, setAuthorized] = useState(false);
+  const [authorized, setAuthorized] =
+    useState(false);
 
   const [currentUserId, setCurrentUserId] =
     useState("");
@@ -68,7 +66,8 @@ export default function StaffAdminPage() {
       const {
         data: { user },
         error: userError,
-      } = await supabase.auth.getUser();
+      } =
+        await supabase.auth.getUser();
 
       if (userError) {
         throw new Error(
@@ -86,15 +85,18 @@ export default function StaffAdminPage() {
       const {
         data: adminUser,
         error: adminError,
-      } = await supabase
-        .from("staff_users")
-        .select(
-          "id, auth_user_id, name, username, role, active, created_at"
-        )
-        .eq("auth_user_id", user.id)
-        .eq("role", "admin")
-        .eq("active", true)
-        .maybeSingle();
+      } =
+        await supabase
+          .from("staff_users")
+          .select(
+            "id, auth_user_id, role, created_at"
+          )
+          .eq(
+            "auth_user_id",
+            user.id
+          )
+          .eq("role", "admin")
+          .maybeSingle();
 
       if (adminError) {
         throw new Error(
@@ -132,14 +134,15 @@ export default function StaffAdminPage() {
     const {
       data,
       error: staffError,
-    } = await supabase
-      .from("staff_users")
-      .select(
-        "id, auth_user_id, name, username, role, active, created_at"
-      )
-      .order("created_at", {
-        ascending: false,
-      });
+    } =
+      await supabase
+        .from("staff_users")
+        .select(
+          "id, auth_user_id, role, created_at"
+        )
+        .order("created_at", {
+          ascending: false,
+        });
 
     if (staffError) {
       throw new Error(
@@ -160,29 +163,45 @@ export default function StaffAdminPage() {
     setMessage("");
     setError("");
 
-    const name = form.name.trim();
+    const name =
+      form.name.trim();
+
     const username =
-      form.username.trim().toLowerCase();
-    const password = form.password;
+      form.username
+        .trim()
+        .toLowerCase();
+
+    const password =
+      form.password;
 
     if (!name) {
-      setError("Personel adı girin.");
+      setError(
+        "Personel adı girin."
+      );
       return;
     }
 
     if (!username) {
-      setError("Kullanıcı adı girin.");
+      setError(
+        "Kullanıcı adı girin."
+      );
       return;
     }
 
-    if (!/^[a-z0-9._-]+$/.test(username)) {
+    if (
+      !/^[a-z0-9._-]+$/.test(
+        username
+      )
+    ) {
       setError(
         "Kullanıcı adı yalnızca küçük harf, rakam, nokta, alt çizgi ve tire içerebilir."
       );
       return;
     }
 
-    if (password.length < 6) {
+    if (
+      password.length < 6
+    ) {
       setError(
         "Şifre en az 6 karakter olmalıdır."
       );
@@ -193,32 +212,24 @@ export default function StaffAdminPage() {
       setSaving(true);
 
       const {
-        data,
         error: rpcError,
-      } = await supabase.rpc(
-        "create_staff_user",
-        {
-          staff_name: name,
-          staff_username: username,
-          staff_password: password,
-          staff_role: form.role,
-        }
-      );
+      } =
+        await supabase.rpc(
+          "create_staff_user",
+          {
+            staff_name: name,
+            staff_username:
+              username,
+            staff_password:
+              password,
+            staff_role:
+              form.role,
+          }
+        );
 
       if (rpcError) {
         throw new Error(
           rpcError.message
-        );
-      }
-
-      if (
-        data &&
-        typeof data === "object" &&
-        "success" in data &&
-        data.success === false
-      ) {
-        throw new Error(
-          "Personel oluşturulamadı."
         );
       }
 
@@ -249,7 +260,9 @@ export default function StaffAdminPage() {
     person: StaffUser,
     newRole: string
   ) => {
-    if (person.role === newRole) {
+    if (
+      person.role === newRole
+    ) {
       return;
     }
 
@@ -259,14 +272,14 @@ export default function StaffAdminPage() {
       newRole !== "admin"
     ) {
       setError(
-        "Kendi admin yetkinizi bu ekrandan kaldıramazsınız."
+        "Kendi admin yetkinizi kaldıramazsınız."
       );
       return;
     }
 
     const confirmed =
       window.confirm(
-        `${person.name || person.username || "Bu personel"} rolü "${newRole}" olarak değiştirilsin mi?`
+        `Bu personelin rolü "${newRole}" olarak değiştirilsin mi?`
       );
 
     if (!confirmed) {
@@ -279,14 +292,16 @@ export default function StaffAdminPage() {
     try {
       const {
         error: rpcError,
-      } = await supabase.rpc(
-        "update_staff_role",
-        {
-          target_staff_id:
-            person.id,
-          new_role: newRole,
-        }
-      );
+      } =
+        await supabase.rpc(
+          "update_staff_role",
+          {
+            target_staff_id:
+              person.id,
+            new_role:
+              newRole,
+          }
+        );
 
       if (rpcError) {
         throw new Error(
@@ -313,27 +328,22 @@ export default function StaffAdminPage() {
     }
   };
 
-  const toggleStaff = async (
+  const deleteStaff = async (
     person: StaffUser
   ) => {
     if (
       person.auth_user_id ===
-        currentUserId &&
-      person.active
+      currentUserId
     ) {
       setError(
-        "Kendi hesabınızı bu ekrandan pasifleştiremezsiniz."
+        "Kendi admin hesabınızı silemezsiniz."
       );
       return;
     }
 
-    const actionText = person.active
-      ? "pasifleştirilecek"
-      : "aktif hale getirilecek";
-
     const confirmed =
       window.confirm(
-        `${person.name || person.username || "Bu personel"} ${actionText}. Devam edilsin mi?`
+        "Bu personeli silmek istediğinize emin misiniz?"
       );
 
     if (!confirmed) {
@@ -346,15 +356,14 @@ export default function StaffAdminPage() {
     try {
       const {
         error: rpcError,
-      } = await supabase.rpc(
-        "toggle_staff_user",
-        {
-          target_staff_id:
-            person.id,
-          new_active:
-            !person.active,
-        }
-      );
+      } =
+        await supabase.rpc(
+          "delete_staff_user",
+          {
+            target_staff_id:
+              person.id,
+          }
+        );
 
       if (rpcError) {
         throw new Error(
@@ -363,22 +372,20 @@ export default function StaffAdminPage() {
       }
 
       setMessage(
-        person.active
-          ? "Personel pasifleştirildi."
-          : "Personel tekrar aktif edildi."
+        "Personel başarıyla silindi."
       );
 
       await loadStaff();
     } catch (err) {
       console.error(
-        "TOGGLE STAFF ERROR:",
+        "DELETE STAFF ERROR:",
         err
       );
 
       setError(
         err instanceof Error
           ? err.message
-          : "Personel durumu değiştirilemedi."
+          : "Personel silinemedi."
       );
     }
   };
@@ -533,13 +540,16 @@ export default function StaffAdminPage() {
           <div className="staff-form">
             <label>
               Personel adı
+
               <input
                 type="text"
                 value={form.name}
                 onChange={(event) =>
                   setForm({
                     ...form,
-                    name: event.target.value,
+                    name:
+                      event.target
+                        .value,
                   })
                 }
                 placeholder="Örn. Ahmet Yılmaz"
@@ -549,14 +559,18 @@ export default function StaffAdminPage() {
 
             <label>
               Kullanıcı adı
+
               <input
                 type="text"
-                value={form.username}
+                value={
+                  form.username
+                }
                 onChange={(event) =>
                   setForm({
                     ...form,
                     username:
-                      event.target.value
+                      event.target
+                        .value
                         .toLowerCase()
                         .replace(
                           /\s/g,
@@ -569,21 +583,25 @@ export default function StaffAdminPage() {
               />
 
               <small>
-                Giriş sırasında bu kullanıcı adı
-                kullanılacak.
+                Personel giriş yaparken bu
+                kullanıcı adını kullanacak.
               </small>
             </label>
 
             <label>
               Şifre
+
               <input
                 type="password"
-                value={form.password}
+                value={
+                  form.password
+                }
                 onChange={(event) =>
                   setForm({
                     ...form,
                     password:
-                      event.target.value,
+                      event.target
+                        .value,
                   })
                 }
                 placeholder="En az 6 karakter"
@@ -593,23 +611,32 @@ export default function StaffAdminPage() {
 
             <label>
               Rol
+
               <select
                 value={form.role}
                 onChange={(event) =>
                   setForm({
                     ...form,
-                    role: event.target.value,
+                    role:
+                      event.target
+                        .value,
                   })
                 }
               >
-                {roles.map((role) => (
-                  <option
-                    key={role.value}
-                    value={role.value}
-                  >
-                    {role.label}
-                  </option>
-                ))}
+                {roles.map(
+                  (role) => (
+                    <option
+                      key={
+                        role.value
+                      }
+                      value={
+                        role.value
+                      }
+                    >
+                      {role.label}
+                    </option>
+                  )
+                )}
               </select>
             </label>
 
@@ -638,7 +665,9 @@ export default function StaffAdminPage() {
             <button
               type="button"
               className="loyalty-button"
-              onClick={createStaff}
+              onClick={
+                createStaff
+              }
               disabled={saving}
             >
               {saving
@@ -661,108 +690,114 @@ export default function StaffAdminPage() {
             </div>
           </div>
 
-          {staff.length === 0 ? (
+          {staff.length ===
+          0 ? (
             <div className="loyalty-message">
               Henüz personel bulunmuyor.
             </div>
           ) : (
             <div className="staff-list">
-              {staff.map((person) => (
-                <article
-                  className={`staff-card ${
-                    person.active
-                      ? ""
-                      : "staff-card-inactive"
-                  }`}
-                  key={person.id}
-                >
-                  <div className="staff-avatar">
-                    {person.name
-                      ? person.name
-                          .charAt(0)
-                          .toUpperCase()
-                      : "👤"}
-                  </div>
+              {staff.map(
+                (person) => (
+                  <article
+                    className="staff-card"
+                    key={
+                      person.id
+                    }
+                  >
+                    <div className="staff-avatar">
+                      👤
+                    </div>
 
-                  <div className="staff-content">
-                    <strong>
-                      {person.name ||
-                        "İsimsiz Personel"}
-                    </strong>
+                    <div className="staff-content">
+                      <strong>
+                        Personel
+                      </strong>
 
-                    <span className="staff-username">
-                      @{person.username ||
-                        "kullanıcı adı yok"}
-                    </span>
+                      <span className="staff-id">
+                        ID:{" "}
+                        {person.id.slice(
+                          0,
+                          8
+                        )}
+                      </span>
 
-                    <span
-                      className={`staff-status ${
-                        person.active
-                          ? "staff-status-active"
-                          : "staff-status-inactive"
-                      }`}
-                    >
-                      {person.active
-                        ? "● Aktif"
-                        : "● Pasif"}
-                    </span>
-                  </div>
+                      <span
+                        className={`staff-role ${
+                          person.role ===
+                          "admin"
+                            ? "staff-role-admin"
+                            : "staff-role-staff"
+                        }`}
+                      >
+                        {person.role ===
+                        "admin"
+                          ? "👑 Admin"
+                          : "👤 Personel"}
+                      </span>
 
-                  <div className="staff-actions">
-                    <select
-                      value={person.role}
-                      onChange={(event) =>
-                        changeRole(
-                          person,
-                          event.target
-                            .value
-                        )
-                      }
-                      disabled={
-                        person.auth_user_id ===
+                      <small>
+                        {new Date(
+                          person.created_at
+                        ).toLocaleDateString(
+                          "tr-TR"
+                        )}
+                      </small>
+                    </div>
+
+                    <div className="staff-actions">
+                      <select
+                        value={
+                          person.role
+                        }
+                        onChange={(
+                          event
+                        ) =>
+                          changeRole(
+                            person,
+                            event
+                              .target
+                              .value
+                          )
+                        }
+                      >
+                        {roles.map(
+                          (role) => (
+                            <option
+                              key={
+                                role.value
+                              }
+                              value={
+                                role.value
+                              }
+                            >
+                              {
+                                role.label
+                              }
+                            </option>
+                          )
+                        )}
+                      </select>
+
+                      <button
+                        type="button"
+                        className="staff-delete-button"
+                        onClick={() =>
+                          deleteStaff(
+                            person
+                          )
+                        }
+                        disabled={
+                          person.auth_user_id ===
                           currentUserId
-                      }
-                    >
-                      {roles.map(
-                        (role) => (
-                          <option
-                            key={
-                              role.value
-                            }
-                            value={
-                              role.value
-                            }
-                          >
-                            {role.label}
-                          </option>
-                        )
-                      )}
-                    </select>
-
-                    <button
-                      type="button"
-                      className={
-                        person.active
-                          ? "staff-disable-button"
-                          : "staff-enable-button"
-                      }
-                      onClick={() =>
-                        toggleStaff(
-                          person
-                        )
-                      }
-                      disabled={
-                        person.auth_user_id ===
-                        currentUserId
-                      }
-                    >
-                      {person.active
-                        ? "Pasifleştir"
-                        : "Aktifleştir"}
-                    </button>
-                  </div>
-                </article>
-              ))}
+                        }
+                      >
+                        Sil
+                      </button>
+                    </div>
+                  </article>
+                )
+              )}
             </div>
           )}
         </section>
@@ -774,15 +809,17 @@ export default function StaffAdminPage() {
 
           <div>
             <strong>
-              Güvenlik
+              Admin güvenliği
             </strong>
 
             <p>
-              Personel yönetimi yalnızca admin
-              rolündeki hesaplara açıktır.
-              Kullanıcı adı ve şifre bilgileri
-              istemci tarafında yöneticiye
-              gösterilmez.
+              Bu sayfaya yalnızca
+              staff_users tablosunda
+              role değeri admin olan
+              kullanıcılar erişebilir.
+              Kendi admin hesabınızı
+              silemez veya admin rolünüzü
+              kaldıramazsınız.
             </p>
           </div>
         </div>
@@ -927,10 +964,6 @@ export default function StaffAdminPage() {
               rgba(60, 39, 25, 0.04);
         }
 
-        .staff-card-inactive {
-          opacity: 0.62;
-        }
-
         .staff-avatar {
           width: 46px;
           height: 46px;
@@ -940,9 +973,7 @@ export default function StaffAdminPage() {
           justify-content: center;
           border-radius: 14px;
           background: #f7eee7;
-          color: #8b5e3c;
           font-size: 18px;
-          font-weight: 800;
         }
 
         .staff-content {
@@ -956,33 +987,44 @@ export default function StaffAdminPage() {
           font-size: 12px;
         }
 
-        .staff-username {
+        .staff-id {
           display: block;
           margin-top: 3px;
           color: #998c81;
-          font-size: 9px;
+          font-size: 8px;
         }
 
-        .staff-status {
+        .staff-role {
           display: inline-block;
           margin-top: 5px;
+          padding: 4px 7px;
+          border-radius: 8px;
           font-size: 8px;
           font-weight: 800;
         }
 
-        .staff-status-active {
-          color: #4f8a55;
+        .staff-role-admin {
+          background: #f6eadc;
+          color: #9a5f2e;
         }
 
-        .staff-status-inactive {
-          color: #a46d60;
+        .staff-role-staff {
+          background: #eee9e4;
+          color: #74675e;
+        }
+
+        .staff-content small {
+          display: block;
+          margin-top: 4px;
+          color: #aaa097;
+          font-size: 7px;
         }
 
         .staff-actions {
           display: flex;
           flex-direction: column;
           gap: 6px;
-          flex: 0 0 95px;
+          flex: 0 0 90px;
         }
 
         .staff-actions select,
@@ -1001,20 +1043,13 @@ export default function StaffAdminPage() {
           padding: 0 5px;
         }
 
-        .staff-actions button {
+        .staff-delete-button {
+          color: #a05f53 !important;
           cursor: pointer;
         }
 
-        .staff-disable-button {
-          color: #9a6255 !important;
-        }
-
-        .staff-enable-button {
-          color: #4f8054 !important;
-        }
-
-        .staff-actions button:disabled {
-          opacity: 0.45;
+        .staff-delete-button:disabled {
+          opacity: 0.4;
           cursor: not-allowed;
         }
 
@@ -1090,7 +1125,7 @@ export default function StaffAdminPage() {
           }
 
           .staff-actions {
-            flex: 0 0 82px;
+            flex: 0 0 78px;
           }
 
           .staff-actions select,
