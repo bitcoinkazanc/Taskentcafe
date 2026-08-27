@@ -1,21 +1,59 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
+export const dynamic = "force-dynamic";
+
 const supabaseUrl =
   process.env.NEXT_PUBLIC_SUPABASE_URL;
 
 const serviceRoleKey =
   process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!supabaseUrl || !serviceRoleKey) {
+const anonKey =
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl) {
   throw new Error(
-    "Supabase server environment variables eksik."
+    "NEXT_PUBLIC_SUPABASE_URL eksik."
   );
 }
 
+if (!serviceRoleKey) {
+  throw new Error(
+    "SUPABASE_SERVICE_ROLE_KEY eksik."
+  );
+}
+
+if (!anonKey) {
+  throw new Error(
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY eksik."
+  );
+}
+
+/*
+ * SERVER-SIDE ADMIN CLIENT
+ *
+ * Service Role Key yalnızca burada kullanılır.
+ * Bu anahtar frontend'e gönderilmez.
+ */
 const supabaseAdmin = createClient(
   supabaseUrl,
   serviceRoleKey,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  }
+);
+
+/*
+ * Şifre doğrulamak için kullanılacak normal
+ * Supabase Auth client.
+ */
+const supabaseAuth = createClient(
+  supabaseUrl,
+  anonKey,
   {
     auth: {
       autoRefreshToken: false,
@@ -28,7 +66,31 @@ export async function POST(
   request: NextRequest
 ) {
   try {
-    const body = await request.json();
+    /*
+     * --------------------------------------------------
+     * 1. REQUEST BODY
+     * --------------------------------------------------
+     */
+
+    let body: {
+      username?: unknown;
+      password?: unknown;
+    };
+
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            "Geçersiz istek gönderildi.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
 
     const username = String(
       body?.username ?? ""
@@ -43,6 +105,7 @@ export async function POST(
     if (!username || !password) {
       return NextResponse.json(
         {
+          success: false,
           error:
             "Kullanıcı adı ve şifre gereklidir.",
         },
@@ -52,31 +115,64 @@ export async function POST(
       );
     }
 
+    /*
+     * --------------------------------------------------
+     * 2. STAFF_USERS KONTROLÜ
+     * --------------------------------------------------
+     */
+
     const {
-      data: staff,
+      data: staffRows,
       error: staffError,
-    } =
-      await supabaseAdmin
-        .from("staff_users")
-        .select(
-          "id, auth_user_id, name, username, role, created_at"
-        )
-        .ilike(
-          "username",
-          username
-        )
-        .maybeSingle();
+    } = await supabaseAdmin
+      .from("staff_users")
+      .select(
+        "id, auth_user_id, name, username, role, created_at"
+      )
+      .eq(
+        "username",
+        username
+      )
+      .limit(2);
 
     if (staffError) {
       console.error(
-        "STAFF LOOKUP ERROR:",
-        staffError
+        "================================="
+      );
+
+      console.error(
+        "STAFF LOOKUP ERROR"
+      );
+
+      console.error(
+        "Code:",
+        staffError.code
+      );
+
+      console.error(
+        "Message:",
+        staffError.message
+      );
+
+      console.error(
+        "Details:",
+        staffError.details
+      );
+
+      console.error(
+        "Hint:",
+        staffError.hint
+      );
+
+      console.error(
+        "================================="
       );
 
       return NextResponse.json(
         {
+          success: false,
           error:
-            "Kullanıcı kontrol edilemedi.",
+            "Personel veritabanı kontrol edilemedi.",
         },
         {
           status: 500,
@@ -84,9 +180,13 @@ export async function POST(
       );
     }
 
-    if (!staff) {
+    if (
+      !staffRows ||
+      staffRows.length === 0
+    ) {
       return NextResponse.json(
         {
+          success: false,
           error:
             "Kullanıcı adı veya şifre hatalı.",
         },
@@ -97,27 +197,45 @@ export async function POST(
     }
 
     /*
-     * Supabase Auth kullanıcısını bul.
+     * Aynı kullanıcı adı birden fazla kayıt
+     * içeriyorsa güvenlik nedeniyle girişe
+     * izin vermiyoruz.
      */
-    const {
-      data: authUser,
-      error: authUserError,
-    } =
-      await supabaseAdmin.auth.admin.getUserById(
-        staff.auth_user_id
-      );
-
-    if (
-      authUserError ||
-      !authUser.user
-    ) {
+    if (staffRows.length > 1) {
       console.error(
-        "AUTH USER ERROR:",
-        authUserError
+        "DUPLICATE STAFF USERNAME:",
+        username
       );
 
       return NextResponse.json(
         {
+          success: false,
+          error:
+            "Bu kullanıcı adı birden fazla personelde kayıtlı. Yönetici tarafından düzeltilmesi gerekiyor.",
+        },
+        {
+          status: 409,
+        }
+      );
+    }
+
+    const staff = staffRows[0];
+
+    /*
+     * --------------------------------------------------
+     * 3. AUTH USER KONTROLÜ
+     * --------------------------------------------------
+     */
+
+    if (!staff.auth_user_id) {
+      console.error(
+        "STAFF AUTH USER ID MISSING:",
+        staff.id
+      );
+
+      return NextResponse.json(
+        {
+          success: false,
           error:
             "Personel hesabının Auth bağlantısı bulunamadı.",
         },
@@ -127,14 +245,58 @@ export async function POST(
       );
     }
 
-    const email =
-      authUser.user.email;
+    const {
+      data: authUserData,
+      error: authUserError,
+    } =
+      await supabaseAdmin.auth.admin.getUserById(
+        staff.auth_user_id
+      );
 
-    if (!email) {
+    if (
+      authUserError ||
+      !authUserData.user
+    ) {
+      console.error(
+        "AUTH USER ERROR"
+      );
+
+      console.error(
+        "Code:",
+        authUserError?.status
+      );
+
+      console.error(
+        "Message:",
+        authUserError?.message
+      );
+
       return NextResponse.json(
         {
+          success: false,
           error:
-            "Personel hesabında giriş bilgisi bulunamadı.",
+            "Personel hesabının Supabase Auth bağlantısı bulunamadı.",
+        },
+        {
+          status: 401,
+        }
+      );
+    }
+
+    const email =
+      authUserData.user.email;
+
+    if (!email) {
+      console.error(
+        "AUTH USER EMAIL MISSING:",
+        staff.auth_user_id
+      );
+
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            "Personel hesabında giriş e-postası bulunamadı.",
         },
         {
           status: 401,
@@ -143,27 +305,27 @@ export async function POST(
     }
 
     /*
-     * Şifreyi doğrulamak için geçici bir
-     * Supabase Auth istemcisi oluşturuyoruz.
+     * --------------------------------------------------
+     * 4. ŞİFRE DOĞRULAMA
+     * --------------------------------------------------
+     *
+     * Kullanıcı kullanıcı adıyla giriş yapıyor.
+     * Supabase Auth ise e-posta + şifre kullanıyor.
+     *
+     * staff_users.username
+     *        ↓
+     * staff_users.auth_user_id
+     *        ↓
+     * Supabase Auth email
+     *        ↓
+     * email + password
      */
-    const authClient =
-      createClient(
-        supabaseUrl!,
-        process.env
-          .NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        {
-          auth: {
-            autoRefreshToken: false,
-            persistSession: false,
-          },
-        }
-      );
 
     const {
       data: loginData,
       error: loginError,
     } =
-      await authClient.auth.signInWithPassword(
+      await supabaseAuth.auth.signInWithPassword(
         {
           email,
           password,
@@ -174,8 +336,20 @@ export async function POST(
       loginError ||
       !loginData.session
     ) {
+      console.error(
+        "AUTH LOGIN FAILED:",
+        {
+          username,
+          message:
+            loginError?.message,
+          status:
+            loginError?.status,
+        }
+      );
+
       return NextResponse.json(
         {
+          success: false,
           error:
             "Kullanıcı adı veya şifre hatalı.",
         },
@@ -186,42 +360,68 @@ export async function POST(
     }
 
     /*
-     * Admin panelinin kullanacağı Supabase
-     * session bilgisini döndürüyoruz.
+     * --------------------------------------------------
+     * 5. BAŞARILI GİRİŞ
+     * --------------------------------------------------
      */
-    return NextResponse.json({
-      success: true,
 
-      session: {
-        access_token:
-          loginData.session
-            .access_token,
+    return NextResponse.json(
+      {
+        success: true,
 
-        refresh_token:
-          loginData.session
-            .refresh_token,
+        session: {
+          access_token:
+            loginData.session
+              .access_token,
+
+          refresh_token:
+            loginData.session
+              .refresh_token,
+        },
+
+        staff: {
+          id: staff.id,
+
+          auth_user_id:
+            staff.auth_user_id,
+
+          name:
+            staff.name,
+
+          username:
+            staff.username,
+
+          role:
+            staff.role,
+
+          created_at:
+            staff.created_at,
+        },
       },
-
-      staff: {
-        id: staff.id,
-        auth_user_id:
-          staff.auth_user_id,
-        name: staff.name,
-        username:
-          staff.username,
-        role: staff.role,
-        created_at:
-          staff.created_at,
-      },
-    });
+      {
+        status: 200,
+      }
+    );
   } catch (error) {
     console.error(
-      "ADMIN LOGIN API ERROR:",
+      "================================="
+    );
+
+    console.error(
+      "ADMIN LOGIN API ERROR"
+    );
+
+    console.error(
       error
+    );
+
+    console.error(
+      "================================="
     );
 
     return NextResponse.json(
       {
+        success: false,
         error:
           "Giriş sırasında beklenmeyen bir hata oluştu.",
       },
