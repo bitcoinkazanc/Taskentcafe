@@ -6,14 +6,9 @@ import { usePathname } from "next/navigation";
 export default function BottomNav() {
   const pathname = usePathname();
 
-  const isHome =
-    pathname === "/";
-
-  const isMenu =
-    pathname === "/menu";
-
-  const isLoyalty =
-    pathname === "/loyalty";
+  const isHome = pathname === "/";
+  const isMenu = pathname === "/menu";
+  const isLoyalty = pathname === "/loyalty";
 
   return (
     <nav className="bottom-nav">
