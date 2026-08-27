@@ -6,9 +6,9 @@ import { usePathname } from "next/navigation";
 export default function BottomNav() {
   const pathname = usePathname();
 
-  const isHome = pathname === "/";
-  const isMenu = pathname === "/menu";
-  const isLoyalty = pathname === "/loyalty";
+  const homeActive = pathname === "/";
+  const menuActive = pathname === "/menu";
+  const loyaltyActive = pathname === "/loyalty";
 
   return (
     <nav className="bottom-nav">
@@ -16,7 +16,7 @@ export default function BottomNav() {
       <Link
         href="/"
         className={
-          isHome
+          homeActive
             ? "nav-item active"
             : "nav-item"
         }
@@ -28,7 +28,7 @@ export default function BottomNav() {
       <Link
         href="/menu"
         className={
-          isMenu
+          menuActive
             ? "nav-item active"
             : "nav-item"
         }
@@ -40,7 +40,7 @@ export default function BottomNav() {
       <Link
         href="/loyalty"
         className={
-          isLoyalty
+          loyaltyActive
             ? "nav-item active"
             : "nav-item"
         }
