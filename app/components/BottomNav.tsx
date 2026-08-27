@@ -27,7 +27,7 @@ export default function BottomNav() {
         }
       >
         <span>⌂</span>
-        Ana Sayfa
+        <small>Ana Sayfa</small>
       </Link>
 
       <Link
@@ -39,7 +39,7 @@ export default function BottomNav() {
         }
       >
         <span>☕</span>
-        Menü
+        <small>Menü</small>
       </Link>
 
       <Link
@@ -51,7 +51,7 @@ export default function BottomNav() {
         }
       >
         <span>⭐</span>
-        Sadakat
+        <small>Sadakat</small>
       </Link>
 
       <Link
@@ -59,7 +59,7 @@ export default function BottomNav() {
         className="nav-item"
       >
         <span>📍</span>
-        Konum
+        <small>Konum</small>
       </Link>
 
     </nav>
