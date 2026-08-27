@@ -3,72 +3,67 @@ import { createClient } from "@supabase/supabase-js";
 
 export const dynamic = "force-dynamic";
 
-const supabaseUrl =
-  process.env.NEXT_PUBLIC_SUPABASE_URL;
+function getEnv(name: string): string {
+  const value = process.env[name];
 
-const serviceRoleKey =
-  process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-const anonKey =
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-if (!supabaseUrl) {
-  throw new Error(
-    "NEXT_PUBLIC_SUPABASE_URL eksik."
-  );
-}
-
-if (!serviceRoleKey) {
-  throw new Error(
-    "SUPABASE_SERVICE_ROLE_KEY eksik."
-  );
-}
-
-if (!anonKey) {
-  throw new Error(
-    "NEXT_PUBLIC_SUPABASE_ANON_KEY eksik."
-  );
-}
-
-/*
- * SERVER-SIDE ADMIN CLIENT
- *
- * Service Role Key yalnızca burada kullanılır.
- * Bu anahtar frontend'e gönderilmez.
- */
-const supabaseAdmin = createClient(
-  supabaseUrl,
-  serviceRoleKey,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
+  if (!value) {
+    throw new Error(`${name} eksik.`);
   }
-);
 
-/*
- * Şifre doğrulamak için kullanılacak normal
- * Supabase Auth client.
- */
-const supabaseAuth = createClient(
-  supabaseUrl,
-  anonKey,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  }
-);
+  return value;
+}
 
 export async function POST(
   request: NextRequest
 ) {
   try {
+    console.log(
+      "[ADMIN LOGIN] API başladı."
+    );
+
     /*
      * --------------------------------------------------
-     * 1. REQUEST BODY
+     * 1. ENVIRONMENT VARIABLES
+     * --------------------------------------------------
+     */
+
+    const supabaseUrl = getEnv(
+      "NEXT_PUBLIC_SUPABASE_URL"
+    );
+
+    const serviceRoleKey = getEnv(
+      "SUPABASE_SERVICE_ROLE_KEY"
+    );
+
+    const anonKey = getEnv(
+      "NEXT_PUBLIC_SUPABASE_ANON_KEY"
+    );
+
+    console.log(
+      "[ADMIN LOGIN] Environment variables bulundu."
+    );
+
+    /*
+     * --------------------------------------------------
+     * 2. SERVER SUPABASE CLIENT
+     * --------------------------------------------------
+     */
+
+    const supabaseAdmin =
+      createClient(
+        supabaseUrl,
+        serviceRoleKey,
+        {
+          auth: {
+            autoRefreshToken: false,
+            persistSession: false,
+          },
+        }
+      );
+
+    /*
+     * --------------------------------------------------
+     * 3. REQUEST BODY
      * --------------------------------------------------
      */
 
@@ -80,6 +75,10 @@ export async function POST(
     try {
       body = await request.json();
     } catch {
+      console.error(
+        "[ADMIN LOGIN] JSON okunamadı."
+      );
+
       return NextResponse.json(
         {
           success: false,
@@ -115,11 +114,20 @@ export async function POST(
       );
     }
 
+    console.log(
+      "[ADMIN LOGIN] Kullanıcı adı:",
+      username
+    );
+
     /*
      * --------------------------------------------------
-     * 2. STAFF_USERS KONTROLÜ
+     * 4. STAFF USERS
      * --------------------------------------------------
      */
+
+    console.log(
+      "[ADMIN LOGIN] staff_users sorgulanıyor..."
+    );
 
     const {
       data: staffRows,
@@ -137,35 +145,27 @@ export async function POST(
 
     if (staffError) {
       console.error(
-        "================================="
+        "[ADMIN LOGIN] STAFF DATABASE ERROR"
       );
 
       console.error(
-        "STAFF LOOKUP ERROR"
-      );
-
-      console.error(
-        "Code:",
+        "code:",
         staffError.code
       );
 
       console.error(
-        "Message:",
+        "message:",
         staffError.message
       );
 
       console.error(
-        "Details:",
+        "details:",
         staffError.details
       );
 
       console.error(
-        "Hint:",
+        "hint:",
         staffError.hint
-      );
-
-      console.error(
-        "================================="
       );
 
       return NextResponse.json(
@@ -173,6 +173,11 @@ export async function POST(
           success: false,
           error:
             "Personel veritabanı kontrol edilemedi.",
+          debug:
+            process.env.NODE_ENV ===
+            "development"
+              ? staffError.message
+              : undefined,
         },
         {
           status: 500,
@@ -180,10 +185,19 @@ export async function POST(
       );
     }
 
+    console.log(
+      "[ADMIN LOGIN] staff_users sorgusu başarılı."
+    );
+
     if (
       !staffRows ||
       staffRows.length === 0
     ) {
+      console.log(
+        "[ADMIN LOGIN] Kullanıcı bulunamadı:",
+        username
+      );
+
       return NextResponse.json(
         {
           success: false,
@@ -196,14 +210,9 @@ export async function POST(
       );
     }
 
-    /*
-     * Aynı kullanıcı adı birden fazla kayıt
-     * içeriyorsa güvenlik nedeniyle girişe
-     * izin vermiyoruz.
-     */
     if (staffRows.length > 1) {
       console.error(
-        "DUPLICATE STAFF USERNAME:",
+        "[ADMIN LOGIN] Aynı kullanıcı adına sahip birden fazla personel var:",
         username
       );
 
@@ -211,7 +220,7 @@ export async function POST(
         {
           success: false,
           error:
-            "Bu kullanıcı adı birden fazla personelde kayıtlı. Yönetici tarafından düzeltilmesi gerekiyor.",
+            "Bu kullanıcı adı birden fazla personelde kayıtlı.",
         },
         {
           status: 409,
@@ -221,16 +230,25 @@ export async function POST(
 
     const staff = staffRows[0];
 
+    console.log(
+      "[ADMIN LOGIN] Personel bulundu:",
+      {
+        id: staff.id,
+        name: staff.name,
+        username: staff.username,
+        role: staff.role,
+      }
+    );
+
     /*
      * --------------------------------------------------
-     * 3. AUTH USER KONTROLÜ
+     * 5. AUTH USER
      * --------------------------------------------------
      */
 
     if (!staff.auth_user_id) {
       console.error(
-        "STAFF AUTH USER ID MISSING:",
-        staff.id
+        "[ADMIN LOGIN] auth_user_id boş."
       );
 
       return NextResponse.json(
@@ -245,6 +263,10 @@ export async function POST(
       );
     }
 
+    console.log(
+      "[ADMIN LOGIN] Supabase Auth kullanıcısı kontrol ediliyor..."
+    );
+
     const {
       data: authUserData,
       error: authUserError,
@@ -258,16 +280,16 @@ export async function POST(
       !authUserData.user
     ) {
       console.error(
-        "AUTH USER ERROR"
+        "[ADMIN LOGIN] AUTH USER ERROR"
       );
 
       console.error(
-        "Code:",
+        "status:",
         authUserError?.status
       );
 
       console.error(
-        "Message:",
+        "message:",
         authUserError?.message
       );
 
@@ -288,8 +310,7 @@ export async function POST(
 
     if (!email) {
       console.error(
-        "AUTH USER EMAIL MISSING:",
-        staff.auth_user_id
+        "[ADMIN LOGIN] Auth kullanıcısında email yok."
       );
 
       return NextResponse.json(
@@ -304,22 +325,31 @@ export async function POST(
       );
     }
 
+    console.log(
+      "[ADMIN LOGIN] Auth kullanıcısı bulundu."
+    );
+
     /*
      * --------------------------------------------------
-     * 4. ŞİFRE DOĞRULAMA
+     * 6. ŞİFRE KONTROLÜ
      * --------------------------------------------------
-     *
-     * Kullanıcı kullanıcı adıyla giriş yapıyor.
-     * Supabase Auth ise e-posta + şifre kullanıyor.
-     *
-     * staff_users.username
-     *        ↓
-     * staff_users.auth_user_id
-     *        ↓
-     * Supabase Auth email
-     *        ↓
-     * email + password
      */
+
+    const supabaseAuth =
+      createClient(
+        supabaseUrl,
+        anonKey,
+        {
+          auth: {
+            autoRefreshToken: false,
+            persistSession: false,
+          },
+        }
+      );
+
+    console.log(
+      "[ADMIN LOGIN] Şifre doğrulanıyor..."
+    );
 
     const {
       data: loginData,
@@ -337,14 +367,17 @@ export async function POST(
       !loginData.session
     ) {
       console.error(
-        "AUTH LOGIN FAILED:",
-        {
-          username,
-          message:
-            loginError?.message,
-          status:
-            loginError?.status,
-        }
+        "[ADMIN LOGIN] AUTH LOGIN FAILED"
+      );
+
+      console.error(
+        "status:",
+        loginError?.status
+      );
+
+      console.error(
+        "message:",
+        loginError?.message
       );
 
       return NextResponse.json(
@@ -359,9 +392,13 @@ export async function POST(
       );
     }
 
+    console.log(
+      "[ADMIN LOGIN] Giriş başarılı."
+    );
+
     /*
      * --------------------------------------------------
-     * 5. BAŞARILI GİRİŞ
+     * 7. BAŞARILI GİRİŞ
      * --------------------------------------------------
      */
 
@@ -404,26 +441,16 @@ export async function POST(
     );
   } catch (error) {
     console.error(
-      "================================="
+      "[ADMIN LOGIN] FATAL ERROR"
     );
 
-    console.error(
-      "ADMIN LOGIN API ERROR"
-    );
-
-    console.error(
-      error
-    );
-
-    console.error(
-      "================================="
-    );
+    console.error(error);
 
     return NextResponse.json(
       {
         success: false,
         error:
-          "Giriş sırasında beklenmeyen bir hata oluştu.",
+          "Giriş sırasında sunucu hatası oluştu.",
       },
       {
         status: 500,
