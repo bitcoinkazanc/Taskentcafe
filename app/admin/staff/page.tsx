@@ -6,18 +6,55 @@ import { supabase } from "../../../lib/supabase";
 type StaffUser = {
   id: string;
   auth_user_id: string;
-  role: "admin" | "staff";
+  name: string | null;
+  username: string | null;
+  role: string;
+  active: boolean;
   created_at: string;
+};
+
+const roles = [
+  {
+    value: "staff",
+    label: "Personel",
+    description: "Günlük personel işlemleri",
+  },
+  {
+    value: "admin",
+    label: "Admin",
+    description: "Tüm yönetim işlemleri",
+  },
+];
+
+const emptyForm = {
+  name: "",
+  username: "",
+  password: "",
+  role: "staff",
 };
 
 export default function StaffAdminPage() {
   const [loading, setLoading] = useState(true);
   const [authorized, setAuthorized] = useState(false);
-  const [currentUserId, setCurrentUserId] = useState("");
-  const [staffUsers, setStaffUsers] = useState<StaffUser[]>([]);
-  const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
-  const [workingId, setWorkingId] = useState<string | null>(null);
+
+  const [currentUserId, setCurrentUserId] =
+    useState("");
+
+  const [staff, setStaff] = useState<
+    StaffUser[]
+  >([]);
+
+  const [form, setForm] =
+    useState(emptyForm);
+
+  const [saving, setSaving] =
+    useState(false);
+
+  const [message, setMessage] =
+    useState("");
+
+  const [error, setError] =
+    useState("");
 
   useEffect(() => {
     checkAdminAccess();
@@ -46,16 +83,26 @@ export default function StaffAdminPage() {
 
       setCurrentUserId(user.id);
 
-      const { data: adminCheck, error: adminError } =
-        await supabase.rpc("is_admin");
+      const {
+        data: adminUser,
+        error: adminError,
+      } = await supabase
+        .from("staff_users")
+        .select(
+          "id, auth_user_id, name, username, role, active, created_at"
+        )
+        .eq("auth_user_id", user.id)
+        .eq("role", "admin")
+        .eq("active", true)
+        .maybeSingle();
 
       if (adminError) {
         throw new Error(
-          `Admin kontrolü başarısız: ${adminError.message}`
+          `Admin yetkisi kontrol edilemedi: ${adminError.message}`
         );
       }
 
-      if (!adminCheck) {
+      if (!adminUser) {
         setAuthorized(false);
         return;
       }
@@ -64,7 +111,10 @@ export default function StaffAdminPage() {
 
       await loadStaff();
     } catch (err) {
-      console.error("STAFF ADMIN ERROR:", err);
+      console.error(
+        "STAFF ADMIN ACCESS ERROR:",
+        err
+      );
 
       setError(
         err instanceof Error
@@ -79,15 +129,17 @@ export default function StaffAdminPage() {
   };
 
   const loadStaff = async () => {
-    const { data, error: staffError } =
-      await supabase
-        .from("staff_users")
-        .select(
-          "id, auth_user_id, role, created_at"
-        )
-        .order("created_at", {
-          ascending: true,
-        });
+    const {
+      data,
+      error: staffError,
+    } = await supabase
+      .from("staff_users")
+      .select(
+        "id, auth_user_id, name, username, role, active, created_at"
+      )
+      .order("created_at", {
+        ascending: false,
+      });
 
     if (staffError) {
       throw new Error(
@@ -95,48 +147,146 @@ export default function StaffAdminPage() {
       );
     }
 
-    setStaffUsers(
+    setStaff(
       (data ?? []) as StaffUser[]
     );
   };
 
-  const changeRole = async (
-    staffUser: StaffUser
-  ) => {
-    if (staffUser.auth_user_id === currentUserId) {
+  const resetForm = () => {
+    setForm(emptyForm);
+  };
+
+  const createStaff = async () => {
+    setMessage("");
+    setError("");
+
+    const name = form.name.trim();
+    const username =
+      form.username.trim().toLowerCase();
+    const password = form.password;
+
+    if (!name) {
+      setError("Personel adı girin.");
+      return;
+    }
+
+    if (!username) {
+      setError("Kullanıcı adı girin.");
+      return;
+    }
+
+    if (!/^[a-z0-9._-]+$/.test(username)) {
       setError(
-        "Kendi admin yetkinizi buradan değiştiremezsiniz."
+        "Kullanıcı adı yalnızca küçük harf, rakam, nokta, alt çizgi ve tire içerebilir."
       );
       return;
     }
 
-    const newRole =
-      staffUser.role === "admin"
-        ? "staff"
-        : "admin";
+    if (password.length < 6) {
+      setError(
+        "Şifre en az 6 karakter olmalıdır."
+      );
+      return;
+    }
 
-    const confirmed = window.confirm(
-      `${staffUser.role === "admin" ? "Admin" : "Staff"} rolündeki bu personeli "${newRole}" rolüne geçirmek istediğinize emin misiniz?`
-    );
+    try {
+      setSaving(true);
+
+      const {
+        data,
+        error: rpcError,
+      } = await supabase.rpc(
+        "create_staff_user",
+        {
+          staff_name: name,
+          staff_username: username,
+          staff_password: password,
+          staff_role: form.role,
+        }
+      );
+
+      if (rpcError) {
+        throw new Error(
+          rpcError.message
+        );
+      }
+
+      if (
+        data &&
+        typeof data === "object" &&
+        "success" in data &&
+        data.success === false
+      ) {
+        throw new Error(
+          "Personel oluşturulamadı."
+        );
+      }
+
+      setMessage(
+        `${name} adlı personel başarıyla oluşturuldu.`
+      );
+
+      resetForm();
+
+      await loadStaff();
+    } catch (err) {
+      console.error(
+        "CREATE STAFF ERROR:",
+        err
+      );
+
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Personel oluşturulamadı."
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const changeRole = async (
+    person: StaffUser,
+    newRole: string
+  ) => {
+    if (person.role === newRole) {
+      return;
+    }
+
+    if (
+      person.auth_user_id ===
+        currentUserId &&
+      newRole !== "admin"
+    ) {
+      setError(
+        "Kendi admin yetkinizi bu ekrandan kaldıramazsınız."
+      );
+      return;
+    }
+
+    const confirmed =
+      window.confirm(
+        `${person.name || person.username || "Bu personel"} rolü "${newRole}" olarak değiştirilsin mi?`
+      );
 
     if (!confirmed) {
       return;
     }
 
-    try {
-      setWorkingId(staffUser.id);
-      setError("");
-      setMessage("");
+    setMessage("");
+    setError("");
 
-      const { error: rpcError } =
-        await supabase.rpc(
-          "update_staff_role",
-          {
-            target_staff_id:
-              staffUser.id,
-            new_role: newRole,
-          }
-        );
+    try {
+      const {
+        error: rpcError,
+      } = await supabase.rpc(
+        "update_staff_role",
+        {
+          target_staff_id:
+            person.id,
+          new_role: newRole,
+        }
+      );
 
       if (rpcError) {
         throw new Error(
@@ -145,7 +295,7 @@ export default function StaffAdminPage() {
       }
 
       setMessage(
-        `Personel rolü "${newRole}" olarak güncellendi.`
+        "Personel rolü başarıyla güncellendi."
       );
 
       await loadStaff();
@@ -158,44 +308,53 @@ export default function StaffAdminPage() {
       setError(
         err instanceof Error
           ? err.message
-          : "Personel rolü değiştirilemedi."
+          : "Rol değiştirilemedi."
       );
-    } finally {
-      setWorkingId(null);
     }
   };
 
-  const removeStaff = async (
-    staffUser: StaffUser
+  const toggleStaff = async (
+    person: StaffUser
   ) => {
-    if (staffUser.auth_user_id === currentUserId) {
+    if (
+      person.auth_user_id ===
+        currentUserId &&
+      person.active
+    ) {
       setError(
-        "Kendi admin yetkinizi kaldıramazsınız."
+        "Kendi hesabınızı bu ekrandan pasifleştiremezsiniz."
       );
       return;
     }
 
-    const confirmed = window.confirm(
-      "Bu personelin yönetim yetkisini kaldırmak istediğinize emin misiniz?"
-    );
+    const actionText = person.active
+      ? "pasifleştirilecek"
+      : "aktif hale getirilecek";
+
+    const confirmed =
+      window.confirm(
+        `${person.name || person.username || "Bu personel"} ${actionText}. Devam edilsin mi?`
+      );
 
     if (!confirmed) {
       return;
     }
 
-    try {
-      setWorkingId(staffUser.id);
-      setError("");
-      setMessage("");
+    setMessage("");
+    setError("");
 
-      const { error: rpcError } =
-        await supabase.rpc(
-          "remove_staff",
-          {
-            target_staff_id:
-              staffUser.id,
-          }
-        );
+    try {
+      const {
+        error: rpcError,
+      } = await supabase.rpc(
+        "toggle_staff_user",
+        {
+          target_staff_id:
+            person.id,
+          new_active:
+            !person.active,
+        }
+      );
 
       if (rpcError) {
         throw new Error(
@@ -204,39 +363,24 @@ export default function StaffAdminPage() {
       }
 
       setMessage(
-        "Personelin yönetim yetkisi kaldırıldı."
+        person.active
+          ? "Personel pasifleştirildi."
+          : "Personel tekrar aktif edildi."
       );
 
       await loadStaff();
     } catch (err) {
       console.error(
-        "REMOVE STAFF ERROR:",
+        "TOGGLE STAFF ERROR:",
         err
       );
 
       setError(
         err instanceof Error
           ? err.message
-          : "Personel yetkisi kaldırılamadı."
+          : "Personel durumu değiştirilemedi."
       );
-    } finally {
-      setWorkingId(null);
     }
-  };
-
-  const formatDate = (
-    date: string
-  ) => {
-    return new Date(
-      date
-    ).toLocaleDateString(
-      "tr-TR",
-      {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-      }
-    );
   };
 
   if (loading) {
@@ -286,8 +430,8 @@ export default function StaffAdminPage() {
             </h2>
 
             <p>
-              Bu bölüme yalnızca admin
-              yetkisine sahip kullanıcılar
+              Personel yönetimine yalnızca
+              admin yetkisine sahip kullanıcılar
               erişebilir.
             </p>
 
@@ -344,7 +488,7 @@ export default function StaffAdminPage() {
         <div className="section-heading">
           <div>
             <span className="eyebrow">
-              YÖNETİM
+              ADMİN
             </span>
 
             <h2>
@@ -353,180 +497,295 @@ export default function StaffAdminPage() {
           </div>
 
           <span className="menu-count">
-            {staffUsers.length} kişi
+            {staff.length} kişi
           </span>
         </div>
 
-        <div className="staff-info-card">
-          <div className="staff-info-icon">
-            🔐
-          </div>
-
-          <div>
-            <strong>
-              Admin yetkisi
-            </strong>
-
-            <p>
-              Buradan personellerin rollerini
-              yönetebilir ve yönetim erişimlerini
-              kaldırabilirsiniz.
-            </p>
-          </div>
-        </div>
-
         {message && (
-          <div className="loyalty-message staff-success">
+          <div className="loyalty-message">
             ✅ {message}
           </div>
         )}
 
         {error && (
-          <div className="loyalty-message staff-error">
+          <div className="loyalty-message">
             ⚠️ {error}
           </div>
         )}
 
-        <div className="staff-list">
-          {staffUsers.length === 0 ? (
+        <div className="staff-form-card">
+          <div className="staff-form-heading">
+            <div className="staff-form-icon">
+              ➕
+            </div>
+
+            <div>
+              <strong>
+                Yeni Personel Ekle
+              </strong>
+
+              <span>
+                E-posta gerektirmez.
+              </span>
+            </div>
+          </div>
+
+          <div className="staff-form">
+            <label>
+              Personel adı
+              <input
+                type="text"
+                value={form.name}
+                onChange={(event) =>
+                  setForm({
+                    ...form,
+                    name: event.target.value,
+                  })
+                }
+                placeholder="Örn. Ahmet Yılmaz"
+                autoComplete="off"
+              />
+            </label>
+
+            <label>
+              Kullanıcı adı
+              <input
+                type="text"
+                value={form.username}
+                onChange={(event) =>
+                  setForm({
+                    ...form,
+                    username:
+                      event.target.value
+                        .toLowerCase()
+                        .replace(
+                          /\s/g,
+                          ""
+                        ),
+                  })
+                }
+                placeholder="Örn. ahmet"
+                autoComplete="off"
+              />
+
+              <small>
+                Giriş sırasında bu kullanıcı adı
+                kullanılacak.
+              </small>
+            </label>
+
+            <label>
+              Şifre
+              <input
+                type="password"
+                value={form.password}
+                onChange={(event) =>
+                  setForm({
+                    ...form,
+                    password:
+                      event.target.value,
+                  })
+                }
+                placeholder="En az 6 karakter"
+                autoComplete="new-password"
+              />
+            </label>
+
+            <label>
+              Rol
+              <select
+                value={form.role}
+                onChange={(event) =>
+                  setForm({
+                    ...form,
+                    role: event.target.value,
+                  })
+                }
+              >
+                {roles.map((role) => (
+                  <option
+                    key={role.value}
+                    value={role.value}
+                  >
+                    {role.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <div className="selected-role-info">
+              <strong>
+                {
+                  roles.find(
+                    (role) =>
+                      role.value ===
+                      form.role
+                  )?.label
+                }
+              </strong>
+
+              <span>
+                {
+                  roles.find(
+                    (role) =>
+                      role.value ===
+                      form.role
+                  )?.description
+                }
+              </span>
+            </div>
+
+            <button
+              type="button"
+              className="loyalty-button"
+              onClick={createStaff}
+              disabled={saving}
+            >
+              {saving
+                ? "Personel oluşturuluyor..."
+                : "Personel Oluştur"}
+            </button>
+          </div>
+        </div>
+
+        <section className="staff-list-section">
+          <div className="section-heading">
+            <div>
+              <span className="eyebrow">
+                PERSONELLER
+              </span>
+
+              <h2>
+                Personel Listesi
+              </h2>
+            </div>
+          </div>
+
+          {staff.length === 0 ? (
             <div className="loyalty-message">
               Henüz personel bulunmuyor.
             </div>
           ) : (
-            staffUsers.map(
-              (staffUser) => {
-                const isMe =
-                  staffUser.auth_user_id ===
-                  currentUserId;
+            <div className="staff-list">
+              {staff.map((person) => (
+                <article
+                  className={`staff-card ${
+                    person.active
+                      ? ""
+                      : "staff-card-inactive"
+                  }`}
+                  key={person.id}
+                >
+                  <div className="staff-avatar">
+                    {person.name
+                      ? person.name
+                          .charAt(0)
+                          .toUpperCase()
+                      : "👤"}
+                  </div>
 
-                const isWorking =
-                  workingId ===
-                  staffUser.id;
+                  <div className="staff-content">
+                    <strong>
+                      {person.name ||
+                        "İsimsiz Personel"}
+                    </strong>
 
-                return (
-                  <article
-                    className="staff-card"
-                    key={staffUser.id}
-                  >
-                    <div className="staff-avatar">
-                      {staffUser.role ===
-                      "admin"
-                        ? "👑"
-                        : "👨‍🍳"}
-                    </div>
+                    <span className="staff-username">
+                      @{person.username ||
+                        "kullanıcı adı yok"}
+                    </span>
 
-                    <div className="staff-content">
-                      <div className="staff-name">
-                        {isMe
-                          ? "Siz"
-                          : "Personel"}
-                      </div>
+                    <span
+                      className={`staff-status ${
+                        person.active
+                          ? "staff-status-active"
+                          : "staff-status-inactive"
+                      }`}
+                    >
+                      {person.active
+                        ? "● Aktif"
+                        : "● Pasif"}
+                    </span>
+                  </div>
 
-                      <div className="staff-id">
-                        {staffUser.auth_user_id}
-                      </div>
-
-                      <div className="staff-date">
-                        Eklenme:{" "}
-                        {formatDate(
-                          staffUser.created_at
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="staff-actions">
-                      <span
-                        className={
-                          staffUser.role ===
-                          "admin"
-                            ? "staff-role staff-role-admin"
-                            : "staff-role staff-role-staff"
-                        }
-                      >
-                        {staffUser.role ===
-                        "admin"
-                          ? "ADMIN"
-                          : "STAFF"}
-                      </span>
-
-                      {!isMe && (
-                        <>
-                          <button
-                            type="button"
-                            className="staff-action-button"
-                            disabled={
-                              isWorking
+                  <div className="staff-actions">
+                    <select
+                      value={person.role}
+                      onChange={(event) =>
+                        changeRole(
+                          person,
+                          event.target
+                            .value
+                        )
+                      }
+                      disabled={
+                        person.auth_user_id ===
+                          currentUserId
+                      }
+                    >
+                      {roles.map(
+                        (role) => (
+                          <option
+                            key={
+                              role.value
                             }
-                            onClick={() =>
-                              changeRole(
-                                staffUser
-                              )
+                            value={
+                              role.value
                             }
                           >
-                            {isWorking
-                              ? "..."
-                              : staffUser.role ===
-                                "admin"
-                              ? "Staff Yap"
-                              : "Admin Yap"}
-                          </button>
-
-                          <button
-                            type="button"
-                            className="staff-remove-button"
-                            disabled={
-                              isWorking
-                            }
-                            onClick={() =>
-                              removeStaff(
-                                staffUser
-                              )
-                            }
-                          >
-                            Yetkiyi Kaldır
-                          </button>
-                        </>
+                            {role.label}
+                          </option>
+                        )
                       )}
+                    </select>
 
-                      {isMe && (
-                        <span className="staff-you">
-                          Aktif hesabınız
-                        </span>
-                      )}
-                    </div>
-                  </article>
-                );
-              }
-            )
+                    <button
+                      type="button"
+                      className={
+                        person.active
+                          ? "staff-disable-button"
+                          : "staff-enable-button"
+                      }
+                      onClick={() =>
+                        toggleStaff(
+                          person
+                        )
+                      }
+                      disabled={
+                        person.auth_user_id ===
+                        currentUserId
+                      }
+                    >
+                      {person.active
+                        ? "Pasifleştir"
+                        : "Aktifleştir"}
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
           )}
-        </div>
+        </section>
 
-        <div className="staff-coming-card">
-          <div className="staff-coming-icon">
-            ➕
+        <div className="staff-security-card">
+          <div className="staff-security-icon">
+            🔐
           </div>
 
           <div>
             <strong>
-              Yeni personel ekleme
+              Güvenlik
             </strong>
 
             <p>
-              Personel oluşturma bölümünü
-              bir sonraki adımda ekleyeceğiz.
-              Burada yeni personelin e-posta
-              adresini girerek hesap oluşturma
-              sistemi olacak.
+              Personel yönetimi yalnızca admin
+              rolündeki hesaplara açıktır.
+              Kullanıcı adı ve şifre bilgileri
+              istemci tarafında yöneticiye
+              gösterilmez.
             </p>
           </div>
         </div>
-
-        <a
-          href="/admin"
-          className="staff-back-button"
-        >
-          ← Yönetim Paneline Dön
-        </a>
       </section>
 
       <footer className="footer">
@@ -548,69 +807,142 @@ export default function StaffAdminPage() {
           padding-bottom: 40px;
         }
 
-        .staff-info-card {
+        .staff-form-card {
+          padding: 18px;
+          border: 1px solid #eee4da;
+          border-radius: 21px;
+          background: #ffffff;
+          box-shadow:
+            0 7px 24px
+              rgba(60, 39, 25, 0.05);
+        }
+
+        .staff-form-heading {
           display: flex;
-          gap: 12px;
+          align-items: center;
+          gap: 11px;
           margin-bottom: 18px;
-          padding: 15px;
-          border-radius: 17px;
+        }
+
+        .staff-form-icon {
+          width: 42px;
+          height: 42px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 13px;
+          background: #f7eee7;
+          font-size: 20px;
+        }
+
+        .staff-form-heading strong {
+          display: block;
+          color: #392a20;
+          font-size: 13px;
+        }
+
+        .staff-form-heading span {
+          display: block;
+          margin-top: 3px;
+          color: #998c81;
+          font-size: 9px;
+        }
+
+        .staff-form {
+          display: grid;
+          gap: 14px;
+        }
+
+        .staff-form label {
+          display: grid;
+          gap: 7px;
+          color: #493a30;
+          font-size: 10px;
+          font-weight: 800;
+        }
+
+        .staff-form input,
+        .staff-form select {
+          width: 100%;
+          height: 43px;
+          padding: 0 13px;
+          border: 1px solid #e5d9ce;
+          border-radius: 11px;
+          background: #fffaf5;
+          color: #30261f;
+          outline: none;
+          font-size: 11px;
+        }
+
+        .staff-form input:focus,
+        .staff-form select:focus {
+          border-color: #b96f38;
+        }
+
+        .staff-form label small {
+          margin-top: -2px;
+          color: #998c81;
+          font-size: 8px;
+          font-weight: 500;
+        }
+
+        .selected-role-info {
+          display: grid;
+          gap: 3px;
+          padding: 11px 13px;
+          border-radius: 11px;
           background: #fffaf5;
           border: 1px solid #eee1d5;
         }
 
-        .staff-info-icon {
-          font-size: 21px;
+        .selected-role-info strong {
+          color: #8b5e3c;
+          font-size: 10px;
         }
 
-        .staff-info-card strong {
-          display: block;
-          color: #493a30;
-          font-size: 11px;
-        }
-
-        .staff-info-card p {
-          margin-top: 4px;
+        .selected-role-info span {
           color: #998c81;
-          font-size: 9px;
-          line-height: 1.5;
+          font-size: 8px;
         }
 
-        .staff-success {
-          margin-bottom: 12px;
-        }
-
-        .staff-error {
-          margin-bottom: 12px;
+        .staff-list-section {
+          margin-top: 30px;
         }
 
         .staff-list {
           display: grid;
-          gap: 11px;
+          gap: 10px;
         }
 
         .staff-card {
           display: flex;
           align-items: center;
           gap: 12px;
-          padding: 14px;
+          padding: 13px;
           border: 1px solid #eee4da;
           border-radius: 18px;
           background: #ffffff;
           box-shadow:
             0 5px 18px
-              rgba(60, 39, 25, 0.05);
+              rgba(60, 39, 25, 0.04);
+        }
+
+        .staff-card-inactive {
+          opacity: 0.62;
         }
 
         .staff-avatar {
-          width: 48px;
-          height: 48px;
-          flex: 0 0 48px;
+          width: 46px;
+          height: 46px;
+          flex: 0 0 46px;
           display: flex;
           align-items: center;
           justify-content: center;
-          border-radius: 15px;
+          border-radius: 14px;
           background: #f7eee7;
-          font-size: 23px;
+          color: #8b5e3c;
+          font-size: 18px;
+          font-weight: 800;
         }
 
         .staff-content {
@@ -618,140 +950,138 @@ export default function StaffAdminPage() {
           min-width: 0;
         }
 
-        .staff-name {
+        .staff-content strong {
+          display: block;
           color: #392a20;
-          font-size: 13px;
+          font-size: 12px;
+        }
+
+        .staff-username {
+          display: block;
+          margin-top: 3px;
+          color: #998c81;
+          font-size: 9px;
+        }
+
+        .staff-status {
+          display: inline-block;
+          margin-top: 5px;
+          font-size: 8px;
           font-weight: 800;
         }
 
-        .staff-id {
-          margin-top: 4px;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-          color: #998c81;
-          font-size: 8px;
+        .staff-status-active {
+          color: #4f8a55;
         }
 
-        .staff-date {
-          margin-top: 4px;
-          color: #b3a69c;
-          font-size: 8px;
+        .staff-status-inactive {
+          color: #a46d60;
         }
 
         .staff-actions {
           display: flex;
           flex-direction: column;
-          align-items: flex-end;
           gap: 6px;
-          flex: 0 0 auto;
+          flex: 0 0 95px;
         }
 
-        .staff-role {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          min-width: 58px;
-          padding: 5px 8px;
+        .staff-actions select,
+        .staff-actions button {
+          width: 100%;
+          min-height: 32px;
+          border: 1px solid #e5d9ce;
           border-radius: 9px;
-          font-size: 8px;
-          font-weight: 900;
-        }
-
-        .staff-role-admin {
-          background: #f7eadc;
-          color: #9a5e2f;
-        }
-
-        .staff-role-staff {
-          background: #eeeae6;
-          color: #75685d;
-        }
-
-        .staff-action-button,
-        .staff-remove-button {
-          min-width: 105px;
-          padding: 7px 9px;
-          border-radius: 9px;
+          background: #fffaf5;
+          color: #66584d;
           font-size: 8px;
           font-weight: 800;
+        }
+
+        .staff-actions select {
+          padding: 0 5px;
+        }
+
+        .staff-actions button {
           cursor: pointer;
         }
 
-        .staff-action-button {
-          border: 1px solid #e2d4c8;
-          background: #fffaf5;
-          color: #805a3e;
+        .staff-disable-button {
+          color: #9a6255 !important;
         }
 
-        .staff-remove-button {
-          border: 1px solid #ead8d2;
-          background: #fff7f5;
-          color: #a35e50;
+        .staff-enable-button {
+          color: #4f8054 !important;
         }
 
-        .staff-action-button:disabled,
-        .staff-remove-button:disabled {
-          opacity: 0.5;
-          cursor: wait;
+        .staff-actions button:disabled {
+          opacity: 0.45;
+          cursor: not-allowed;
         }
 
-        .staff-you {
-          color: #998c81;
-          font-size: 8px;
-        }
-
-        .staff-coming-card {
+        .staff-security-card {
           display: flex;
-          gap: 12px;
-          margin-top: 18px;
-          padding: 16px;
-          border: 1px dashed #dfd1c5;
-          border-radius: 18px;
+          gap: 11px;
+          margin-top: 20px;
+          padding: 14px;
+          border: 1px solid #eee1d5;
+          border-radius: 17px;
           background: #fffaf5;
         }
 
-        .staff-coming-icon {
-          width: 38px;
-          height: 38px;
-          flex: 0 0 38px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border-radius: 12px;
-          background: #f3e7dd;
-          color: #a5673c;
-          font-size: 18px;
-          font-weight: 800;
+        .staff-security-icon {
+          font-size: 19px;
         }
 
-        .staff-coming-card strong {
+        .staff-security-card strong {
           display: block;
           color: #493a30;
-          font-size: 11px;
+          font-size: 10px;
         }
 
-        .staff-coming-card p {
-          margin-top: 5px;
+        .staff-security-card p {
+          margin-top: 4px;
           color: #998c81;
-          font-size: 9px;
-          line-height: 1.5;
+          font-size: 8px;
+          line-height: 1.55;
         }
 
-        .staff-back-button {
+        .admin-access-box {
+          padding: 30px 20px;
+          border-radius: 22px;
+          background: #ffffff;
+          border: 1px solid #eee4da;
+          text-align: center;
+        }
+
+        .admin-access-icon {
+          width: 65px;
+          height: 65px;
+          margin: 0 auto 15px;
           display: flex;
           align-items: center;
           justify-content: center;
-          width: 100%;
-          height: 44px;
-          margin-top: 18px;
-          border: 1px solid #e5d8cd;
-          border-radius: 13px;
-          background: #ffffff;
-          color: #795d49;
-          text-decoration: none;
-          font-size: 10px;
-          font-weight: 800;
+          border-radius: 50%;
+          background: #f7eee7;
+          font-size: 28px;
+        }
+
+        .admin-access-box h2 {
+          margin: 0;
+          color: #392a20;
+          font-size: 20px;
+        }
+
+        .admin-access-box p {
+          margin: 8px auto 20px;
+          max-width: 320px;
+          color: #998c81;
+          font-size: 11px;
+          line-height: 1.6;
+        }
+
+        .admin-access-box
+          .loyalty-message {
+          margin-bottom: 15px;
         }
 
         @media (max-width: 600px) {
@@ -760,11 +1090,12 @@ export default function StaffAdminPage() {
           }
 
           .staff-actions {
-            min-width: 105px;
+            flex: 0 0 82px;
           }
 
-          .staff-id {
-            max-width: 150px;
+          .staff-actions select,
+          .staff-actions button {
+            font-size: 7px;
           }
         }
       `}</style>
