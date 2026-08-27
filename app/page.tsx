@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 
 const categories = [
-  "Tümü",
   "Sıcak İçecekler",
   "Soğuk İçecekler",
   "Kahvaltı",
@@ -65,30 +64,47 @@ type CafeTable = {
   active: boolean;
 };
 
+const logoUrl =
+  "https://raw.githubusercontent.com/bitcoinkazanc/Taskentcafe/main/taskent-logo.png";
+
+const mardinImageUrl =
+  "https://raw.githubusercontent.com/bitcoinkazanc/Taskentcafe/main/mardin-1.jpeg";
+
 export default function HomePage() {
-  const [category, setCategory] = useState("Tümü");
-  const [table, setTable] = useState<CafeTable | null>(null);
-  const [tableLoading, setTableLoading] = useState(false);
-  const [waiterLoading, setWaiterLoading] = useState(false);
-  const [waiterMessage, setWaiterMessage] = useState("");
-  const [waiterError, setWaiterError] = useState("");
+  const [category, setCategory] =
+    useState("Sıcak İçecekler");
+
+  const [table, setTable] =
+    useState<CafeTable | null>(null);
+
+  const [tableLoading, setTableLoading] =
+    useState(false);
+
+  const [waiterLoading, setWaiterLoading] =
+    useState(false);
+
+  const [waiterMessage, setWaiterMessage] =
+    useState("");
+
+  const [waiterError, setWaiterError] =
+    useState("");
 
   const filteredProducts =
-    category === "Tümü"
-      ? products
-      : products.filter(
-          (product) =>
-            product.category === category
-        );
+    products.filter(
+      (product) =>
+        product.category === category
+    );
 
   useEffect(() => {
     const loadTable = async () => {
       try {
-        const params = new URLSearchParams(
-          window.location.search
-        );
+        const params =
+          new URLSearchParams(
+            window.location.search
+          );
 
-        const qrToken = params.get("table");
+        const qrToken =
+          params.get("table");
 
         if (!qrToken) {
           return;
@@ -102,7 +118,8 @@ export default function HomePage() {
         } = await supabase.rpc(
           "get_cafe_table",
           {
-            requested_qr_token: qrToken,
+            requested_qr_token:
+              qrToken,
           }
         );
 
@@ -119,7 +136,9 @@ export default function HomePage() {
           return;
         }
 
-        setTable(data as CafeTable);
+        setTable(
+          data as CafeTable
+        );
       } catch (error) {
         console.error(
           "TABLE ERROR:",
@@ -174,9 +193,14 @@ export default function HomePage() {
           } = await supabase.rpc(
             "create_waiter_call",
             {
-              requested_table_id: table.id,
-              user_latitude: latitude,
-              user_longitude: longitude,
+              requested_table_id:
+                table.id,
+
+              user_latitude:
+                latitude,
+
+              user_longitude:
+                longitude,
             }
           );
 
@@ -256,11 +280,16 @@ export default function HomePage() {
         <div className="brand">
 
           <div className="logo">
-            ☕
+            <img
+              src={logoUrl}
+              alt="Taşkent Cafe"
+            />
           </div>
 
           <div>
-            <h1>Taşkent Cafe</h1>
+            <h1>
+              Taşkent Cafe
+            </h1>
 
             <span>
               Keyif burada başlar
@@ -268,13 +297,6 @@ export default function HomePage() {
           </div>
 
         </div>
-
-        <button
-          className="icon-button"
-          aria-label="Menü"
-        >
-          ☰
-        </button>
 
       </header>
 
@@ -336,49 +358,11 @@ export default function HomePage() {
           </h2>
 
           <p>
-            Lezzet, sohbet ve güzel
-            manzara için Taşkent Cafe.
+            Tarihi Mardin'in kalbinde,
+            kahve ve güzel sohbet.
           </p>
 
-          <a
-            href="#menu"
-            className="hero-button"
-          >
-            Menüyü Gör
-          </a>
-
         </div>
-
-      </section>
-
-      <section className="quick-links">
-
-        <a
-          href="#menu"
-          className="quick-card"
-        >
-          <span>📖</span>
-          <strong>Menü</strong>
-          <small>Tüm ürünler</small>
-        </a>
-
-        <a
-          href="#loyalty"
-          className="quick-card"
-        >
-          <span>⭐</span>
-          <strong>Sadakat</strong>
-          <small>Puan kazan</small>
-        </a>
-
-        <a
-          href="#location"
-          className="quick-card"
-        >
-          <span>📍</span>
-          <strong>Konum</strong>
-          <small>Bizi bul</small>
-        </a>
 
       </section>
 
@@ -394,7 +378,9 @@ export default function HomePage() {
               TAŞKENT CAFE
             </span>
 
-            <h2>Menümüz</h2>
+            <h2>
+              Menümüz
+            </h2>
           </div>
 
           <span className="menu-count">
@@ -405,21 +391,23 @@ export default function HomePage() {
 
         <div className="categories">
 
-          {categories.map((item) => (
-            <button
-              key={item}
-              className={
-                category === item
-                  ? "category active"
-                  : "category"
-              }
-              onClick={() =>
-                setCategory(item)
-              }
-            >
-              {item}
-            </button>
-          ))}
+          {categories.map(
+            (item) => (
+              <button
+                key={item}
+                className={
+                  category === item
+                    ? "category active"
+                    : "category"
+                }
+                onClick={() =>
+                  setCategory(item)
+                }
+              >
+                {item}
+              </button>
+            )
+          )}
 
         </div>
 
@@ -476,99 +464,69 @@ export default function HomePage() {
       </section>
 
       <section
-        className="loyalty"
-        id="loyalty"
+        className="about-cafe"
+        style={{
+          backgroundImage: `linear-gradient(
+            180deg,
+            rgba(25, 18, 13, 0.30),
+            rgba(25, 18, 13, 0.82)
+          ), url("${mardinImageUrl}")`,
+        }}
       >
 
-        <div className="loyalty-content">
+        <div className="about-overlay">
 
-          <span className="eyebrow light">
-            SADAKAT KULÜBÜ
+          <span className="eyebrow about-eyebrow">
+            TAŞKENT CAFE
           </span>
 
           <h2>
-            Her kahvede
+            Mardin'in kalbinde
             <br />
-            daha fazla kazanın.
+            lezzet ve samimiyet.
           </h2>
 
           <p>
-            Alışverişlerinden puan
-            biriktir, özel ödüllerin ve
-            avantajların tadını çıkar.
+            Tarihi dokuyla iç içe,
+            eşsiz Mardin manzarası
+            eşliğinde geleneksel ve
+            modern lezzetleri bir arada
+            sunuyoruz. Kahvenizi yudumlarken
+            güzel sohbetlerin ve sıcak
+            atmosferin tadını çıkarın.
           </p>
 
-          <a
-            href="/loyalty"
-            className="loyalty-button"
-          >
-            Sadakat Kulübüne Katıl
-          </a>
+          <p>
+            Taşkent Cafe, Mardin'de
+            lezzet ve samimiyetin
+            buluştuğu özel bir noktadır.
+          </p>
 
-        </div>
+          <div className="social-links">
 
-        <div className="loyalty-icon">
-          ⭐
-        </div>
+            <a
+              href="#"
+              aria-label="Instagram"
+              className="social-link"
+            >
+              ◎
+            </a>
 
-      </section>
+            <a
+              href="#"
+              aria-label="Facebook"
+              className="social-link"
+            >
+              f
+            </a>
 
-      <section
-        className="info-section"
-        id="location"
-      >
-
-        <div className="section-heading">
-
-          <div>
-
-            <span className="eyebrow">
-              BİZİ ZİYARET ET
-            </span>
-
-            <h2>Taşkent Cafe</h2>
-
-          </div>
-
-        </div>
-
-        <div className="info-card">
-
-          <div className="info-row">
-
-            <span>📍</span>
-
-            <div>
-              <strong>Konum</strong>
-              <p>Mardin Kale</p>
-            </div>
-
-          </div>
-
-          <div className="info-row">
-
-            <span>🕐</span>
-
-            <div>
-              <strong>
-                Çalışma Saatleri
-              </strong>
-
-              <p>
-                Her gün 09:00 – 00:00
-              </p>
-            </div>
-
-          </div>
-
-          <div className="info-row">
-
-            <span>📞</span>
-
-            <div>
-              <strong>İletişim</strong>
-              <p>05XX XXX XX XX</p>
-            </div>
+            <a
+              href="#"
+              aria-label="WhatsApp"
+              className="social-link"
+            >
+              ☎
+            </a>
 
           </div>
 
@@ -578,21 +536,30 @@ export default function HomePage() {
 
       <footer className="footer">
 
-        <div className="footer-logo">
-          ☕ Taşkent Cafe
+        <div className="footer-brand">
+
+          <img
+            src={logoUrl}
+            alt="Taşkent Cafe"
+          />
+
+          <strong>
+            Taşkent Cafe
+          </strong>
+
         </div>
 
         <p>
           Kahve, lezzet ve güzel sohbet.
         </p>
 
-        <div className="footer-links">
-
-          <a href="#menu">Menü</a>
-          <a href="#loyalty">Sadakat</a>
-          <a href="#location">Konum</a>
-
-        </div>
+        <a
+          href="#contact"
+          className="contact-link"
+          id="contact"
+        >
+          İletişim
+        </a>
 
         <small>
           © 2026 Taşkent Cafe
@@ -606,7 +573,9 @@ export default function HomePage() {
           href="#"
           className="nav-item active"
         >
-          <span>⌂</span>
+          <span>
+            ⌂
+          </span>
           Ana Sayfa
         </a>
 
@@ -614,24 +583,30 @@ export default function HomePage() {
           href="#menu"
           className="nav-item"
         >
-          <span>☕</span>
+          <span>
+            ☕
+          </span>
           Menü
         </a>
 
         <a
-          href="#loyalty"
+          href="/loyalty"
           className="nav-item"
         >
-          <span>⭐</span>
+          <span>
+            ⭐
+          </span>
           Sadakat
         </a>
 
         <a
-          href="#location"
+          href="#contact"
           className="nav-item"
         >
-          <span>📍</span>
-          Konum
+          <span>
+            ☎
+          </span>
+          İletişim
         </a>
 
       </nav>
