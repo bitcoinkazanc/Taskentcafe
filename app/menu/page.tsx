@@ -1,6 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { supabase } from "../../lib/supabase";
+
+type MenuItem = {
+  id: string;
+  name: string;
+  category: string;
+  description: string | null;
+  price: number;
+  image_url: string | null;
+  active: boolean;
+  sort_order: number;
+};
 
 const categories = [
   "Tümü",
@@ -12,127 +24,101 @@ const categories = [
   "Çerez",
 ];
 
-const products = [
-  {
-    id: 1,
-    name: "Türk Kahvesi",
-    category: "Sıcak İçecekler",
-    description: "Geleneksel Türk kahvesi.",
-    price: "120 ₺",
-    icon: "☕",
-  },
-  {
-    id: 2,
-    name: "Latte",
-    category: "Sıcak İçecekler",
-    description: "Espresso ve yumuşak süt köpüğü.",
-    price: "150 ₺",
-    icon: "☕",
-  },
-  {
-    id: 3,
-    name: "Cappuccino",
-    category: "Sıcak İçecekler",
-    description: "Yoğun espresso ve süt köpüğü.",
-    price: "150 ₺",
-    icon: "☕",
-  },
-  {
-    id: 4,
-    name: "Çay",
-    category: "Sıcak İçecekler",
-    description: "Taze demlenmiş çay.",
-    price: "60 ₺",
-    icon: "🍵",
-  },
-  {
-    id: 5,
-    name: "Soğuk Kahve",
-    category: "Soğuk İçecekler",
-    description: "Serinletici buzlu kahve.",
-    price: "160 ₺",
-    icon: "🧊",
-  },
-  {
-    id: 6,
-    name: "Limonata",
-    category: "Soğuk İçecekler",
-    description: "Ev yapımı taze limonata.",
-    price: "120 ₺",
-    icon: "🍋",
-  },
-  {
-    id: 7,
-    name: "Serpme Kahvaltı",
-    category: "Kahvaltı",
-    description: "Zengin kahvaltı tabağı.",
-    price: "450 ₺",
-    icon: "🍳",
-  },
-  {
-    id: 8,
-    name: "Kahvaltı Tabağı",
-    category: "Kahvaltı",
-    description: "Günün özel kahvaltı tabağı.",
-    price: "300 ₺",
-    icon: "🥚",
-  },
-  {
-    id: 9,
-    name: "Günün Yemeği",
-    category: "Yemek",
-    description: "Günün taze hazırlanan yemeği.",
-    price: "250 ₺",
-    icon: "🍽️",
-  },
-  {
-    id: 10,
-    name: "Çikolatalı Pasta",
-    category: "Tatlı",
-    description: "Günlük hazırlanan özel pasta.",
-    price: "180 ₺",
-    icon: "🍰",
-  },
-  {
-    id: 11,
-    name: "Cheesecake",
-    category: "Tatlı",
-    description: "Yumuşak ve kremalı cheesecake.",
-    price: "180 ₺",
-    icon: "🍰",
-  },
-  {
-    id: 12,
-    name: "Karışık Çerez",
-    category: "Çerez",
-    description: "Günün seçme çerezleri.",
-    price: "150 ₺",
-    icon: "🥜",
-  },
-];
-
 export default function MenuPage() {
   const [category, setCategory] = useState("Tümü");
+  const [products, setProducts] = useState<MenuItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    loadMenu();
+  }, []);
+
+  const loadMenu = async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const { data, error: menuError } = await supabase
+        .from("menu_items")
+        .select(
+          "id, name, category, description, price, image_url, active, sort_order"
+        )
+        .eq("active", true)
+        .order("sort_order", {
+          ascending: true,
+        })
+        .order("created_at", {
+          ascending: true,
+        });
+
+      if (menuError) {
+        console.error("MENU LOAD ERROR:", menuError);
+        throw new Error(
+          "Menü ürünleri yüklenemedi."
+        );
+      }
+
+      setProducts((data ?? []) as MenuItem[]);
+    } catch (err) {
+      console.error("MENU ERROR:", err);
+
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Menü yüklenirken bir hata oluştu."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredProducts =
     category === "Tümü"
       ? products
-      : products.filter((product) => product.category === category);
+      : products.filter(
+          (product) =>
+            product.category === category
+        );
+
+  const formatPrice = (price: number) => {
+    return `${Number(price).toLocaleString(
+      "tr-TR",
+      {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
+      }
+    )} ₺`;
+  };
 
   return (
     <main className="site">
 
       <header className="header">
-        <a href="/" className="brand">
-          <div className="logo">☕</div>
+        <a
+          href="/"
+          className="brand"
+        >
+          <div className="logo">
+            ☕
+          </div>
 
           <div>
-            <h1>Taşkent Cafe</h1>
-            <span>Keyif burada başlar</span>
+            <h1>
+              Taşkent Cafe
+            </h1>
+
+            <span>
+              Keyif burada başlar
+            </span>
           </div>
         </a>
 
-        <a href="/" className="icon-button" aria-label="Ana sayfa">
+        <a
+          href="/"
+          className="icon-button"
+          aria-label="Ana sayfa"
+        >
           ←
         </a>
       </header>
@@ -141,12 +127,19 @@ export default function MenuPage() {
 
         <div className="section-heading">
           <div>
-            <span className="eyebrow">TAŞKENT CAFE</span>
-            <h2>Menümüz</h2>
+            <span className="eyebrow">
+              TAŞKENT CAFE
+            </span>
+
+            <h2>
+              Menümüz
+            </h2>
           </div>
 
           <span className="menu-count">
-            {filteredProducts.length} ürün
+            {loading
+              ? "..."
+              : `${filteredProducts.length} ürün`}
           </span>
         </div>
 
@@ -159,59 +152,146 @@ export default function MenuPage() {
           {categories.map((item) => (
             <button
               key={item}
+              type="button"
               className={
                 category === item
                   ? "category active"
                   : "category"
               }
-              onClick={() => setCategory(item)}
+              onClick={() =>
+                setCategory(item)
+              }
             >
               {item}
             </button>
           ))}
         </div>
 
-        <div className="products">
+        {loading && (
+          <div className="menu-status">
+            <div className="menu-spinner">
+              ☕
+            </div>
 
-          {filteredProducts.map((product) => (
-            <article
-              className="product-card"
-              key={product.id}
+            <p>
+              Menü yükleniyor...
+            </p>
+          </div>
+        )}
+
+        {!loading && error && (
+          <div className="menu-status menu-error">
+            <div className="menu-status-icon">
+              ⚠️
+            </div>
+
+            <strong>
+              Menü yüklenemedi
+            </strong>
+
+            <p>
+              {error}
+            </p>
+
+            <button
+              type="button"
+              className="menu-retry"
+              onClick={loadMenu}
             >
-              <div className="product-image">
-                {product.icon}
+              Tekrar Dene
+            </button>
+          </div>
+        )}
+
+        {!loading &&
+          !error &&
+          filteredProducts.length === 0 && (
+            <div className="menu-status">
+              <div className="menu-status-icon">
+                ☕
               </div>
 
-              <div className="product-content">
+              <strong>
+                Bu kategoride ürün yok
+              </strong>
 
-                <div>
-                  <h3>{product.name}</h3>
+              <p>
+                Şu anda bu kategoride
+                gösterilecek ürün bulunmuyor.
+              </p>
+            </div>
+          )}
 
-                  <p>
-                    {product.description}
-                  </p>
-                </div>
+        {!loading &&
+          !error &&
+          filteredProducts.length > 0 && (
+            <div className="products">
 
-                <div className="product-bottom">
-                  <strong>{product.price}</strong>
-
-                  <button
-                    className="plus-button"
-                    aria-label={`${product.name} detay`}
+              {filteredProducts.map(
+                (product) => (
+                  <article
+                    className="product-card"
+                    key={product.id}
                   >
-                    +
-                  </button>
-                </div>
 
-              </div>
-            </article>
-          ))}
+                    <div className="product-image">
+                      {product.image_url ? (
+                        <img
+                          src={product.image_url}
+                          alt={product.name}
+                          loading="lazy"
+                        />
+                      ) : (
+                        <span>
+                          ☕
+                        </span>
+                      )}
+                    </div>
 
-        </div>
+                    <div className="product-content">
+
+                      <div>
+                        <h3>
+                          {product.name}
+                        </h3>
+
+                        <p>
+                          {product.description ||
+                            "Taşkent Cafe'nin özel lezzetlerinden."}
+                        </p>
+                      </div>
+
+                      <div className="product-bottom">
+
+                        <strong>
+                          {formatPrice(
+                            product.price
+                          )}
+                        </strong>
+
+                        <button
+                          type="button"
+                          className="plus-button"
+                          aria-label={`${product.name} detay`}
+                        >
+                          +
+                        </button>
+
+                      </div>
+
+                    </div>
+
+                  </article>
+                )
+              )}
+
+            </div>
+          )}
 
       </section>
 
       <footer className="footer">
+
         <div className="footer-logo">
           ☕ Taşkent Cafe
         </div>
@@ -221,39 +301,158 @@ export default function MenuPage() {
         </p>
 
         <div className="footer-links">
-          <a href="/">Ana Sayfa</a>
-          <a href="/menu">Menü</a>
-          <a href="/#loyalty">Sadakat</a>
+
+          <a href="/">
+            Ana Sayfa
+          </a>
+
+          <a href="/menü">
+            Menü
+          </a>
+
+          <a href="/#loyalty">
+            Sadakat
+          </a>
+
         </div>
 
         <small>
           © 2026 Taşkent Cafe
         </small>
+
       </footer>
 
       <nav className="bottom-nav">
 
-        <a href="/" className="nav-item">
+        <a
+          href="/"
+          className="nav-item"
+        >
           <span>⌂</span>
           Ana Sayfa
         </a>
 
-        <a href="/menu" className="nav-item active">
+        <a
+          href="/menü"
+          className="nav-item active"
+        >
           <span>☕</span>
           Menü
         </a>
 
-        <a href="/#loyalty" className="nav-item">
+        <a
+          href="/#loyalty"
+          className="nav-item"
+        >
           <span>⭐</span>
           Sadakat
         </a>
 
-        <a href="/#location" className="nav-item">
+        <a
+          href="/#location"
+          className="nav-item"
+        >
           <span>📍</span>
           Konum
         </a>
 
       </nav>
+
+      <style jsx global>{`
+
+        .menu-status {
+          margin-top: 25px;
+          padding: 35px 20px;
+          border: 1px solid #eee4da;
+          border-radius: 20px;
+          background: #ffffff;
+          text-align: center;
+          color: #77695e;
+        }
+
+        .menu-spinner {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 54px;
+          height: 54px;
+          margin-bottom: 12px;
+          border-radius: 50%;
+          background: #f5e9dc;
+          font-size: 24px;
+          animation: menuPulse 1.2s ease-in-out infinite;
+        }
+
+        .menu-status-icon {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 54px;
+          height: 54px;
+          margin: 0 auto 12px;
+          border-radius: 50%;
+          background: #f5e9dc;
+          font-size: 23px;
+        }
+
+        .menu-status strong {
+          display: block;
+          color: #493a30;
+          font-size: 14px;
+        }
+
+        .menu-status p {
+          margin: 7px 0 0;
+          color: #998c81;
+          font-size: 11px;
+          line-height: 1.5;
+        }
+
+        .menu-error {
+          border-color: #ead7ca;
+        }
+
+        .menu-retry {
+          margin-top: 15px;
+          padding: 10px 17px;
+          border: 0;
+          border-radius: 10px;
+          background: #b96f38;
+          color: #ffffff;
+          font-size: 11px;
+          font-weight: 700;
+          cursor: pointer;
+        }
+
+        .menu-retry:active {
+          transform: scale(0.98);
+        }
+
+        .product-image {
+          overflow: hidden;
+        }
+
+        .product-image img {
+          width: 100%;
+          height: 100%;
+          display: block;
+          object-fit: cover;
+        }
+
+        @keyframes menuPulse {
+          0%,
+          100% {
+            transform: scale(1);
+            opacity: 0.7;
+          }
+
+          50% {
+            transform: scale(1.08);
+            opacity: 1;
+          }
+        }
+
+      `}</style>
 
     </main>
   );
