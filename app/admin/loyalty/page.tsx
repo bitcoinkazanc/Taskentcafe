@@ -17,13 +17,18 @@ export default function AdminLoyaltyPage() {
   const [loading, setLoading] = useState(true);
 
   const [customers, setCustomers] = useState<Customer[]>([]);
-  const [selectedCustomer, setSelectedCustomer] = useState("");
-  const [purchaseAmount, setPurchaseAmount] = useState("");
+  const [selectedCustomer, setSelectedCustomer] =
+    useState("");
+
+  const [purchaseAmount, setPurchaseAmount] =
+    useState("");
+
   const [description, setDescription] =
     useState("Alışveriş puanı");
 
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     checkStaff();
@@ -130,9 +135,7 @@ export default function AdminLoyaltyPage() {
     setError("");
 
     if (!selectedCustomer) {
-      setError(
-        "Lütfen bir müşteri seçin."
-      );
+      setError("Lütfen bir müşteri seçin.");
       return;
     }
 
@@ -161,13 +164,13 @@ export default function AdminLoyaltyPage() {
     }
 
     if (!description.trim()) {
-      setError(
-        "Açıklama girin."
-      );
+      setError("Açıklama girin.");
       return;
     }
 
     try {
+      setSaving(true);
+
       const {
         error: rpcError,
       } = await supabase.rpc(
@@ -190,8 +193,12 @@ export default function AdminLoyaltyPage() {
       }
 
       setMessage(
-        `${amount.toFixed(
-          2
+        `${amount.toLocaleString(
+          "tr-TR",
+          {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          }
         )} ₺ alışveriş için ${calculatedPoints} puan eklendi.`
       );
 
@@ -212,6 +219,8 @@ export default function AdminLoyaltyPage() {
           ? err.message
           : "Puan eklenirken hata oluştu."
       );
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -219,13 +228,13 @@ export default function AdminLoyaltyPage() {
     return (
       <main className="site">
         <section className="loyalty-page">
-          <div className="loyalty-message">
-            <div className="panel-loading-icon">
-              ☕
+          <div className="admin-loading-card">
+            <div className="admin-loading-icon">
+              ⭐
             </div>
 
             <strong>
-              Personel paneli yükleniyor
+              Sadakat sistemi yükleniyor
             </strong>
 
             <span>
@@ -233,40 +242,6 @@ export default function AdminLoyaltyPage() {
             </span>
           </div>
         </section>
-
-        <style jsx global>{`
-          .loyalty-message {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 7px;
-            min-height: 120px;
-            text-align: center;
-          }
-
-          .panel-loading-icon {
-            width: 48px;
-            height: 48px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 4px;
-            border-radius: 15px;
-            background: #f7eee7;
-            font-size: 21px;
-          }
-
-          .loyalty-message strong {
-            color: #392a20;
-            font-size: 13px;
-          }
-
-          .loyalty-message span {
-            color: #998c81;
-            font-size: 9px;
-          }
-        `}</style>
       </main>
     );
   }
@@ -274,165 +249,35 @@ export default function AdminLoyaltyPage() {
   if (!authorized) {
     return (
       <main className="site">
-        <header className="header">
-          <a
-            href="/"
-            className="brand"
-          >
-            <div className="logo">
-              ☕
-            </div>
-
-            <div>
-              <h1>
-                Taşkent Cafe
-              </h1>
-
-              <span>
-                Personel Paneli
-              </span>
-            </div>
-          </a>
-
-          <a
-            href="/"
-            className="panel-back-button"
-            aria-label="Geri dön"
-          >
-            <span>←</span>
-          </a>
-        </header>
-
         <section className="loyalty-page">
-          <div className="access-card">
-            <div className="access-icon">
+          <div className="admin-access-card">
+            <div className="admin-access-icon">
               🔒
             </div>
-
-            <span className="access-eyebrow">
-              PERSONEL PANELİ
-            </span>
 
             <h2>
               Yetkisiz erişim
             </h2>
 
             <p>
-              Bu sayfaya yalnızca yetkili
+              Bu bölüme yalnızca yetkili
               personel erişebilir.
             </p>
 
             {error && (
-              <div className="panel-alert error">
+              <div className="admin-alert error">
                 ⚠️ {error}
               </div>
             )}
 
             <a
-              href="/"
-              className="panel-primary-button"
+              href="/admin"
+              className="admin-back-button"
             >
-              Ana Sayfaya Dön
+              Yönetim Paneline Dön
             </a>
           </div>
         </section>
-
-        <style jsx global>{`
-          .panel-back-button {
-            width: 42px;
-            height: 42px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid #e8ddd4;
-            border-radius: 13px;
-            background: #ffffff;
-            color: #493a30;
-            text-decoration: none;
-            box-shadow: 0 5px 16px rgba(60, 39, 25, 0.06);
-            transition: 0.2s ease;
-          }
-
-          .panel-back-button span {
-            font-size: 20px;
-            line-height: 1;
-          }
-
-          .panel-back-button:hover {
-            transform: translateY(-1px);
-            border-color: #c88a5a;
-          }
-
-          .access-card {
-            padding: 34px 22px;
-            border: 1px solid #eee4da;
-            border-radius: 24px;
-            background: #ffffff;
-            text-align: center;
-            box-shadow: 0 10px 30px rgba(60, 39, 25, 0.06);
-          }
-
-          .access-icon {
-            width: 66px;
-            height: 66px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 15px;
-            border-radius: 20px;
-            background: #f7eee7;
-            font-size: 28px;
-          }
-
-          .access-eyebrow {
-            color: #b56d38;
-            font-size: 8px;
-            font-weight: 900;
-            letter-spacing: 1.4px;
-          }
-
-          .access-card h2 {
-            margin: 7px 0 0;
-            color: #392a20;
-            font-size: 21px;
-          }
-
-          .access-card p {
-            max-width: 310px;
-            margin: 9px auto 20px;
-            color: #998c81;
-            font-size: 10px;
-            line-height: 1.6;
-          }
-
-          .panel-alert {
-            margin-bottom: 14px;
-            padding: 11px 13px;
-            border-radius: 11px;
-            font-size: 9px;
-            line-height: 1.5;
-          }
-
-          .panel-alert.error {
-            background: #fff3f1;
-            border: 1px solid #f0d7d2;
-            color: #9b5c53;
-          }
-
-          .panel-primary-button {
-            min-height: 43px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0 18px;
-            border-radius: 12px;
-            background: #b96f38;
-            color: #ffffff;
-            text-decoration: none;
-            font-size: 10px;
-            font-weight: 800;
-          }
-        `}</style>
       </main>
     );
   }
@@ -440,160 +285,156 @@ export default function AdminLoyaltyPage() {
   const previewPoints =
     calculatePoints();
 
+  const selectedCustomerData =
+    customers.find(
+      (customer) =>
+        customer.id === selectedCustomer
+    );
+
   return (
     <main className="site">
+      <header className="admin-page-header">
+        <div>
+          <span className="admin-page-kicker">
+            SADAKAT
+          </span>
 
-      <header className="header">
-        <a
-          href="/"
-          className="brand"
-        >
-          <div className="logo">
-            ☕
-          </div>
+          <h1>
+            Puan Yönetimi
+          </h1>
 
-          <div>
-            <h1>
-              Taşkent Cafe
-            </h1>
-
-            <span>
-              Personel Paneli
-            </span>
-          </div>
-        </a>
+          <p>
+            Müşteri puanlarını yönetin
+          </p>
+        </div>
 
         <a
-          href="/"
-          className="panel-back-button"
-          aria-label="Personel paneline dön"
+          href="/admin"
+          className="admin-header-back"
+          aria-label="Yönetim paneline dön"
         >
           <span>←</span>
         </a>
       </header>
 
-      <section className="loyalty-page staff-loyalty-page">
-
-        <div className="panel-title">
-          <div>
-            <span className="panel-eyebrow">
-              PERSONEL
-            </span>
-
-            <h2>
-              Sadakat Yönetimi
-            </h2>
-
-            <p>
-              Müşteri alışverişlerini ve puanlarını yönetin.
-            </p>
-          </div>
-
-          <div className="customer-total">
-            <strong>
-              {customers.length}
-            </strong>
-
-            <span>
-              müşteri
-            </span>
-          </div>
-        </div>
-
+      <section className="loyalty-page admin-loyalty-page">
         {message && (
-          <div className="panel-alert success">
-            <span className="alert-icon">
-              ✓
-            </span>
+          <div className="admin-alert success">
+            <span>✓</span>
+            <div>
+              <strong>
+                İşlem başarılı
+              </strong>
 
-            <span>
-              {message}
-            </span>
+              <p>
+                {message}
+              </p>
+            </div>
           </div>
         )}
 
         {error && (
-          <div className="panel-alert error">
-            <span className="alert-icon">
-              !
-            </span>
+          <div className="admin-alert error">
+            <span>!</span>
+            <div>
+              <strong>
+                İşlem gerçekleştirilemedi
+              </strong>
 
-            <span>
-              {error}
-            </span>
+              <p>
+                {error}
+              </p>
+            </div>
           </div>
         )}
 
-        <div className="points-card">
-
-          <div className="card-top">
-            <div className="card-icon">
+        <section className="points-card">
+          <div className="points-card-header">
+            <div className="points-icon">
               ⭐
             </div>
 
             <div>
-              <strong>
-                Alışveriş Puanı Ekle
-              </strong>
-
               <span>
-                Müşterinin alışverişinden puan kazandırın.
+                PUAN İŞLEMİ
               </span>
+
+              <h2>
+                Alışveriş puanı ekle
+              </h2>
+
+              <p>
+                Müşterinin alışveriş tutarına
+                göre puan hesabı yapılır.
+              </p>
             </div>
           </div>
 
-          <div className="form-grid">
+          <div className="points-form">
+            <div className="form-field">
+              <label>
+                Müşteri
+              </label>
 
-            <label className="panel-field">
-              <span>
-                MÜŞTERİ
-              </span>
+              <select
+                value={
+                  selectedCustomer
+                }
+                onChange={(event) =>
+                  setSelectedCustomer(
+                    event.target.value
+                  )
+                }
+              >
+                <option value="">
+                  Müşteri seçin
+                </option>
 
-              <div className="field-wrap">
-                <span className="field-icon">
-                  👤
-                </span>
+                {customers.map(
+                  (customer) => (
+                    <option
+                      key={customer.id}
+                      value={customer.id}
+                    >
+                      {customer.name ||
+                        "Misafir"}{" "}
+                      •{" "}
+                      {customer.points} puan
+                    </option>
+                  )
+                )}
+              </select>
 
-                <select
-                  value={
-                    selectedCustomer
-                  }
-                  onChange={(event) =>
-                    setSelectedCustomer(
-                      event.target.value
-                    )
-                  }
-                >
-                  <option value="">
-                    Müşteri seçin
-                  </option>
+              {selectedCustomerData && (
+                <div className="selected-customer">
+                  <div className="selected-customer-avatar">
+                    👤
+                  </div>
 
-                  {customers.map(
-                    (customer) => (
-                      <option
-                        key={customer.id}
-                        value={customer.id}
-                      >
-                        {customer.name ||
-                          "Misafir"}{" "}
-                        —{" "}
-                        {customer.points} puan
-                      </option>
-                    )
-                  )}
-                </select>
-              </div>
-            </label>
+                  <div>
+                    <strong>
+                      {selectedCustomerData.name ||
+                        "Misafir"}
+                    </strong>
 
-            <label className="panel-field">
-              <span>
-                ALIŞVERİŞ TUTARI
-              </span>
+                    <span>
+                      Mevcut puan:{" "}
+                      {
+                        selectedCustomerData.points
+                      }
+                    }
+                  </span>
+                </div>
+              )}
+            </div>
 
-              <div className="field-wrap">
-                <span className="field-icon currency-icon">
-                  ₺
-                </span>
+            <div className="form-field">
+              <label>
+                Alışveriş tutarı
+              </label>
+
+              <div className="money-input">
+                <span>₺</span>
 
                 <input
                   type="number"
@@ -607,108 +448,101 @@ export default function AdminLoyaltyPage() {
                       event.target.value
                     )
                   }
-                  placeholder="Örn. 450"
+                  placeholder="450"
                 />
-              </div>
-            </label>
-
-            <div className="points-preview">
-              <div className="preview-left">
-                <div className="preview-icon">
-                  ⭐
-                </div>
-
-                <div>
-                  <span>
-                    KAZANILACAK PUAN
-                  </span>
-
-                  <strong>
-                    {previewPoints > 0
-                      ? `${previewPoints} puan`
-                      : "—"}
-                  </strong>
-                </div>
               </div>
 
               <small>
-                Her 10 ₺ = 1 puan
+                Her 10 ₺ alışveriş için 1
+                puan kazanılır.
               </small>
             </div>
 
-            <label className="panel-field">
-              <span>
-                AÇIKLAMA
-              </span>
+            <div className="points-preview">
+              <div className="points-preview-icon">
+                ⭐
+              </div>
 
-              <div className="field-wrap">
-                <span className="field-icon">
-                  📝
+              <div>
+                <span>
+                  KAZANILACAK PUAN
                 </span>
 
-                <input
-                  type="text"
-                  value={
-                    description
-                  }
-                  onChange={(event) =>
-                    setDescription(
-                      event.target.value
-                    )
-                  }
-                  placeholder="Alışveriş puanı"
-                />
+                <strong>
+                  {previewPoints}
+                </strong>
+
+                <small>
+                  puan
+                </small>
               </div>
-            </label>
+            </div>
 
+            <div className="form-field">
+              <label>
+                İşlem açıklaması
+              </label>
+
+              <input
+                type="text"
+                value={
+                  description
+                }
+                onChange={(event) =>
+                  setDescription(
+                    event.target.value
+                  )
+                }
+                placeholder="Alışveriş puanı"
+              />
+            </div>
+
+            <button
+              type="button"
+              className="add-points-button"
+              onClick={
+                addPurchasePoints
+              }
+              disabled={
+                saving ||
+                !selectedCustomer ||
+                previewPoints <= 0
+              }
+            >
+              <span>
+                ⭐
+              </span>
+
+              {saving
+                ? "Puan ekleniyor..."
+                : previewPoints > 0
+                  ? `${previewPoints} Puan Ekle`
+                  : "Puan Ekle"}
+            </button>
           </div>
-
-          <button
-            type="button"
-            className="points-submit"
-            onClick={
-              addPurchasePoints
-            }
-            disabled={
-              !selectedCustomer ||
-              previewPoints <= 0
-            }
-          >
-            <span>
-              ⭐
-            </span>
-
-            {previewPoints > 0
-              ? `${previewPoints} Puan Ekle`
-              : "Puan Ekle"}
-          </button>
-
-        </div>
+        </section>
 
         <section className="customer-section">
-
-          <div className="customer-section-heading">
+          <div className="section-title">
             <div>
-              <span className="panel-eyebrow">
-                SADAKAT
+              <span>
+                MÜŞTERİLER
               </span>
 
               <h2>
-                Müşteri Listesi
+                Müşteri bakiyeleri
               </h2>
             </div>
 
-            <span className="customer-count">
-              {customers.length} kayıt
-            </span>
+            <strong>
+              {customers.length}
+            </strong>
           </div>
 
           <div className="customer-list">
-
             {customers.length === 0 ? (
-
-              <div className="empty-customers">
-                <div className="empty-icon">
+              <div className="empty-card">
+                <div>
                   👤
                 </div>
 
@@ -716,14 +550,13 @@ export default function AdminLoyaltyPage() {
                   Henüz müşteri yok
                 </strong>
 
-                <span>
-                  Sadakat sistemine müşteri eklendiğinde
-                  burada görünecek.
-                </span>
+                <p>
+                  Sisteme müşteri
+                  eklendiğinde burada
+                  görünecek.
+                </p>
               </div>
-
             ) : (
-
               customers.map(
                 (customer) => (
                   <article
@@ -732,38 +565,27 @@ export default function AdminLoyaltyPage() {
                       customer.id
                     }
                   >
-
                     <div className="customer-avatar">
-                      {customer.name
-                        ? customer.name
-                            .charAt(0)
-                            .toUpperCase()
-                        : "M"}
+                      👤
                     </div>
 
                     <div className="customer-info">
-
                       <strong>
                         {customer.name ||
                           "Misafir"}
                       </strong>
 
                       <span>
-                        {customer.phone ||
-                          customer.email ||
-                          "İletişim bilgisi yok"}
-                      </span>
-
-                      <small>
                         {customer.level ||
                           "Standart"}
-                      </small>
-
+                      </span>
                     </div>
 
                     <div className="customer-points">
                       <strong>
-                        {customer.points}
+                        {
+                          customer.points
+                        }
                       </strong>
 
                       <span>
@@ -773,408 +595,511 @@ export default function AdminLoyaltyPage() {
 
                     <button
                       type="button"
-                      className="customer-select-button"
-                      onClick={() =>
+                      className="remove-points-button"
+                      onClick={() => {
                         setSelectedCustomer(
                           customer.id
-                        )
-                      }
+                        );
+                        setError(
+                          "Puan silme işlemi için mevcut Supabase puan silme fonksiyonunu bağlamamız gerekiyor. Çalışan sistemi bozmamak için burada varsayımsal bir RPC kullanılmadı."
+                        );
+                      }}
                     >
-                      Seç
+                      − Puan Sil
                     </button>
-
                   </article>
                 )
               )
-
             )}
-
           </div>
-
         </section>
 
-        <div className="points-rule-card">
-          <div className="rule-icon">
-            💡
+        <div className="security-note">
+          <div>
+            🔐
           </div>
 
           <div>
             <strong>
-              Puan sistemi
+              Güvenli işlem
             </strong>
 
             <p>
-              Her 10 ₺ alışveriş için müşteriye
-              1 sadakat puanı eklenir.
+              Puan ekleme işlemi mevcut
+              Supabase fonksiyonunuz üzerinden
+              gerçekleştirilir. Çalışan puan
+              sistemine doğrudan müdahale
+              edilmez.
             </p>
           </div>
         </div>
-
       </section>
 
       <footer className="footer">
-
         <div className="footer-logo">
           ☕ Taşkent Cafe
         </div>
 
-        <p>
-          Personel yönetim paneli
-        </p>
-
         <small>
           © 2026 Taşkent Cafe
         </small>
-
       </footer>
 
       <style jsx global>{`
-        .staff-loyalty-page {
-          padding-bottom: 40px;
-        }
-
-        .panel-back-button {
-          width: 42px;
-          height: 42px;
+        .admin-page-header {
           display: flex;
           align-items: center;
-          justify-content: center;
-          flex: 0 0 42px;
-          border: 1px solid #e8ddd4;
-          border-radius: 13px;
-          background: #ffffff;
-          color: #493a30;
-          text-decoration: none;
-          box-shadow: 0 5px 16px rgba(60, 39, 25, 0.06);
-          transition:
-            transform 0.2s ease,
-            border-color 0.2s ease,
-            box-shadow 0.2s ease;
-        }
-
-        .panel-back-button:hover {
-          transform: translateY(-1px);
-          border-color: #c88a5a;
-          box-shadow: 0 7px 20px rgba(60, 39, 25, 0.09);
-        }
-
-        .panel-back-button span {
-          font-size: 20px;
-          line-height: 1;
-        }
-
-        .panel-title {
-          display: flex;
-          align-items: flex-start;
           justify-content: space-between;
-          gap: 15px;
-          margin-bottom: 18px;
+          gap: 16px;
+          padding: 22px 18px 18px;
+          border-bottom: 1px solid #eee4da;
+          background: #ffffff;
         }
 
-        .panel-eyebrow {
+        .admin-page-kicker {
           display: block;
-          color: #b56d38;
+          margin-bottom: 5px;
+          color: #b66d36;
           font-size: 8px;
           font-weight: 900;
           letter-spacing: 1.5px;
         }
 
-        .panel-title h2,
-        .customer-section-heading h2 {
-          margin: 5px 0 0;
-          color: #392a20;
-          font-size: 22px;
-          line-height: 1.2;
+        .admin-page-header h1 {
+          margin: 0;
+          color: #33251c;
+          font-size: 21px;
+          font-weight: 900;
           letter-spacing: -0.3px;
         }
 
-        .panel-title p {
-          margin: 7px 0 0;
+        .admin-page-header p {
+          margin: 4px 0 0;
           color: #998c81;
-          font-size: 9px;
-          line-height: 1.5;
+          font-size: 10px;
         }
 
-        .customer-total {
+        .admin-header-back {
+          width: 42px;
+          height: 42px;
+          flex: 0 0 42px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border: 1px solid #e4d8cd;
+          border-radius: 13px;
+          background: #fffaf5;
+          color: #4b382b;
+          text-decoration: none;
+          box-shadow:
+            0 4px 12px
+              rgba(55, 38, 25, 0.06);
+        }
+
+        .admin-header-back span {
+          font-size: 21px;
+          line-height: 1;
+        }
+
+        .admin-loyalty-page {
+          padding-top: 22px;
+          padding-bottom: 40px;
+        }
+
+        .admin-loading-card {
           display: flex;
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          min-width: 62px;
-          min-height: 62px;
-          padding: 8px;
-          border: 1px solid #eee1d5;
-          border-radius: 16px;
-          background: #fffaf5;
+          min-height: 240px;
+          padding: 30px;
+          border: 1px solid #eee4da;
+          border-radius: 22px;
+          background: #ffffff;
+          text-align: center;
         }
 
-        .customer-total strong {
-          color: #a96534;
-          font-size: 18px;
-          line-height: 1;
-        }
-
-        .customer-total span {
-          margin-top: 4px;
-          color: #998c81;
-          font-size: 7px;
-          font-weight: 700;
-        }
-
-        .panel-alert {
+        .admin-loading-icon {
+          width: 58px;
+          height: 58px;
           display: flex;
           align-items: center;
-          gap: 9px;
-          margin-bottom: 12px;
-          padding: 11px 13px;
-          border-radius: 12px;
+          justify-content: center;
+          margin-bottom: 13px;
+          border-radius: 18px;
+          background: #f8eee6;
+          font-size: 25px;
+        }
+
+        .admin-loading-card strong {
+          color: #392a20;
+          font-size: 14px;
+        }
+
+        .admin-loading-card span {
+          margin-top: 5px;
+          color: #998c81;
+          font-size: 10px;
+        }
+
+        .admin-access-card {
+          padding: 34px 20px;
+          border: 1px solid #eee4da;
+          border-radius: 22px;
+          background: #ffffff;
+          text-align: center;
+        }
+
+        .admin-access-icon {
+          width: 64px;
+          height: 64px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin: 0 auto 15px;
+          border-radius: 20px;
+          background: #f8eee6;
+          font-size: 27px;
+        }
+
+        .admin-access-card h2 {
+          margin: 0;
+          color: #392a20;
+          font-size: 20px;
+          font-weight: 900;
+        }
+
+        .admin-access-card p {
+          margin: 8px auto 20px;
+          max-width: 300px;
+          color: #998c81;
+          font-size: 11px;
+          line-height: 1.55;
+        }
+
+        .admin-back-button {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 42px;
+          padding: 0 18px;
+          border-radius: 11px;
+          background: #b66d36;
+          color: #ffffff;
+          text-decoration: none;
+          font-size: 10px;
+          font-weight: 800;
+        }
+
+        .admin-alert {
+          display: flex;
+          align-items: flex-start;
+          gap: 10px;
+          margin-bottom: 14px;
+          padding: 13px 14px;
+          border-radius: 14px;
+        }
+
+        .admin-alert > span {
+          width: 25px;
+          height: 25px;
+          flex: 0 0 25px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 8px;
+          font-size: 12px;
+          font-weight: 900;
+        }
+
+        .admin-alert strong {
+          display: block;
+          font-size: 10px;
+          font-weight: 900;
+        }
+
+        .admin-alert p {
+          margin: 3px 0 0;
           font-size: 9px;
           line-height: 1.5;
         }
 
-        .panel-alert.success {
+        .admin-alert.success {
           border: 1px solid #dce9df;
-          background: #f3f9f4;
-          color: #52745b;
+          background: #f4faf5;
+          color: #42624a;
         }
 
-        .panel-alert.error {
-          border: 1px solid #efd8d3;
-          background: #fff5f3;
-          color: #9b5c53;
+        .admin-alert.success > span {
+          background: #dcefe0;
         }
 
-        .alert-icon {
-          width: 21px;
-          height: 21px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex: 0 0 21px;
-          border-radius: 7px;
-          background: rgba(255, 255, 255, 0.75);
-          font-size: 10px;
-          font-weight: 900;
+        .admin-alert.error {
+          border: 1px solid #eadbd6;
+          background: #fff8f5;
+          color: #8c5146;
+        }
+
+        .admin-alert.error > span {
+          background: #f1dfd9;
         }
 
         .points-card {
-          padding: 18px;
-          border: 1px solid #eee3da;
+          overflow: hidden;
+          border: 1px solid #eadfd5;
           border-radius: 22px;
           background: #ffffff;
-          box-shadow: 0 10px 30px rgba(60, 39, 25, 0.055);
+          box-shadow:
+            0 9px 28px
+              rgba(60, 39, 25, 0.06);
         }
 
-        .card-top {
+        .points-card-header {
           display: flex;
           align-items: center;
-          gap: 11px;
-          padding-bottom: 16px;
-          margin-bottom: 16px;
-          border-bottom: 1px solid #f0e8e1;
+          gap: 12px;
+          padding: 18px;
+          border-bottom: 1px solid #f0e7df;
+          background: #fffaf5;
         }
 
-        .card-icon {
-          width: 43px;
-          height: 43px;
+        .points-icon {
+          width: 45px;
+          height: 45px;
+          flex: 0 0 45px;
           display: flex;
           align-items: center;
           justify-content: center;
-          flex: 0 0 43px;
-          border-radius: 13px;
-          background: #f7eee7;
-          font-size: 19px;
+          border-radius: 14px;
+          background: #f4e5d7;
+          font-size: 20px;
         }
 
-        .card-top strong {
+        .points-card-header span {
           display: block;
+          color: #b66d36;
+          font-size: 7px;
+          font-weight: 900;
+          letter-spacing: 1.2px;
+        }
+
+        .points-card-header h2 {
+          margin: 3px 0 0;
           color: #392a20;
-          font-size: 13px;
+          font-size: 16px;
+          font-weight: 900;
         }
 
-        .card-top span {
-          display: block;
-          margin-top: 3px;
+        .points-card-header p {
+          margin: 4px 0 0;
           color: #998c81;
-          font-size: 8px;
+          font-size: 9px;
+          line-height: 1.45;
         }
 
-        .form-grid {
+        .points-form {
           display: grid;
-          gap: 14px;
+          gap: 15px;
+          padding: 18px;
         }
 
-        .panel-field {
+        .form-field {
           display: grid;
           gap: 7px;
         }
 
-        .panel-field > span {
-          color: #75675d;
-          font-size: 8px;
+        .form-field label {
+          color: #493a30;
+          font-size: 10px;
           font-weight: 900;
-          letter-spacing: 0.8px;
         }
 
-        .field-wrap {
+        .form-field input,
+        .form-field select {
+          width: 100%;
+          min-height: 44px;
+          box-sizing: border-box;
+          padding: 0 13px;
+          border: 1px solid #e2d7cd;
+          border-radius: 11px;
+          outline: none;
+          background: #fffdfb;
+          color: #30261f;
+          font-size: 11px;
+        }
+
+        .form-field input:focus,
+        .form-field select:focus {
+          border-color: #b66d36;
+          box-shadow:
+            0 0 0 3px
+              rgba(182, 109, 54, 0.08);
+        }
+
+        .form-field small {
+          color: #9d9187;
+          font-size: 8px;
+        }
+
+        .money-input {
           position: relative;
-          display: flex;
-          align-items: center;
         }
 
-        .field-icon {
+        .money-input span {
           position: absolute;
-          left: 12px;
-          z-index: 1;
-          width: 20px;
-          color: #a58f80;
+          left: 13px;
+          top: 50%;
+          transform: translateY(-50%);
+          color: #a66a3d;
           font-size: 13px;
-          text-align: center;
+          font-weight: 900;
           pointer-events: none;
         }
 
-        .currency-icon {
-          font-weight: 900;
-          color: #b56d38;
+        .money-input input {
+          padding-left: 32px;
         }
 
-        .field-wrap input,
-        .field-wrap select {
-          width: 100%;
-          height: 44px;
-          padding: 0 12px 0 40px;
-          border: 1px solid #e4d9cf;
+        .selected-customer {
+          display: flex;
+          align-items: center;
+          gap: 9px;
+          padding: 9px 10px;
           border-radius: 11px;
-          outline: none;
-          background: #fffaf5;
-          color: #30261f;
-          font-family: inherit;
-          font-size: 10px;
-          transition:
-            border-color 0.2s ease,
-            box-shadow 0.2s ease,
-            background 0.2s ease;
+          background: #faf5f0;
+          border: 1px solid #eee3da;
         }
 
-        .field-wrap input:focus,
-        .field-wrap select:focus {
-          border-color: #b96f38;
-          background: #ffffff;
-          box-shadow: 0 0 0 3px rgba(185, 111, 56, 0.08);
+        .selected-customer-avatar {
+          width: 31px;
+          height: 31px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 10px;
+          background: #f0e2d7;
+          font-size: 14px;
         }
 
-        .field-wrap select {
-          appearance: auto;
+        .selected-customer strong {
+          display: block;
+          color: #493a30;
+          font-size: 9px;
+        }
+
+        .selected-customer span {
+          display: block;
+          margin-top: 2px;
+          color: #998c81;
+          font-size: 8px;
         }
 
         .points-preview {
           display: flex;
           align-items: center;
-          justify-content: space-between;
-          gap: 10px;
-          min-height: 64px;
-          padding: 11px 13px;
-          border: 1px solid #eadbc9;
-          border-radius: 13px;
-          background: linear-gradient(
-            135deg,
-            #fffaf5 0%,
-            #f8eee4 100%
-          );
+          gap: 12px;
+          padding: 13px;
+          border: 1px solid #eadaca;
+          border-radius: 14px;
+          background: #fff8ef;
         }
 
-        .preview-left {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-        }
-
-        .preview-icon {
-          width: 36px;
-          height: 36px;
+        .points-preview-icon {
+          width: 42px;
+          height: 42px;
           display: flex;
           align-items: center;
           justify-content: center;
-          border-radius: 11px;
-          background: #ffffff;
-          font-size: 16px;
-          box-shadow: 0 3px 10px rgba(60, 39, 25, 0.06);
+          border-radius: 13px;
+          background: #f2dfc8;
+          font-size: 19px;
         }
 
-        .preview-left span {
+        .points-preview span {
           display: block;
-          color: #998c81;
+          color: #a66a3d;
           font-size: 7px;
           font-weight: 900;
-          letter-spacing: 0.7px;
+          letter-spacing: 1px;
         }
 
-        .preview-left strong {
-          display: block;
-          margin-top: 3px;
-          color: #a96534;
-          font-size: 14px;
+        .points-preview strong {
+          display: inline-block;
+          margin-top: 1px;
+          color: #392a20;
+          font-size: 24px;
+          line-height: 1;
+          font-weight: 900;
         }
 
         .points-preview small {
-          color: #998c81;
-          font-size: 7px;
-          text-align: right;
+          margin-left: 4px;
+          color: #8f8176;
+          font-size: 9px;
+          font-weight: 700;
         }
 
-        .points-submit {
-          width: 100%;
-          height: 45px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 7px;
-          margin-top: 17px;
+        .add-points-button {
+          min-height: 46px;
           border: 0;
           border-radius: 12px;
-          background: #b96f38;
+          background: #b66d36;
           color: #ffffff;
-          cursor: pointer;
-          font-family: inherit;
-          font-size: 10px;
+          font-size: 11px;
           font-weight: 900;
-          box-shadow: 0 7px 18px rgba(185, 111, 56, 0.18);
-          transition:
-            transform 0.2s ease,
-            opacity 0.2s ease,
-            box-shadow 0.2s ease;
+          cursor: pointer;
+          box-shadow:
+            0 6px 16px
+              rgba(182, 109, 54, 0.18);
         }
 
-        .points-submit:hover:not(:disabled) {
-          transform: translateY(-1px);
-          box-shadow: 0 9px 22px rgba(185, 111, 56, 0.23);
+        .add-points-button span {
+          margin-right: 5px;
         }
 
-        .points-submit:disabled {
+        .add-points-button:disabled {
           opacity: 0.45;
           cursor: not-allowed;
           box-shadow: none;
         }
 
         .customer-section {
-          margin-top: 31px;
+          margin-top: 30px;
         }
 
-        .customer-section-heading {
+        .section-title {
           display: flex;
           align-items: flex-end;
           justify-content: space-between;
-          gap: 12px;
           margin-bottom: 12px;
         }
 
-        .customer-count {
-          padding: 6px 9px;
-          border-radius: 8px;
-          background: #f7eee7;
-          color: #8b674d;
+        .section-title span {
+          display: block;
+          margin-bottom: 3px;
+          color: #b66d36;
           font-size: 7px;
-          font-weight: 800;
+          font-weight: 900;
+          letter-spacing: 1.3px;
+        }
+
+        .section-title h2 {
+          margin: 0;
+          color: #392a20;
+          font-size: 17px;
+          font-weight: 900;
+        }
+
+        .section-title > strong {
+          min-width: 27px;
+          height: 27px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 9px;
+          background: #f4ebe4;
+          color: #87644b;
+          font-size: 9px;
         }
 
         .customer-list {
@@ -1185,39 +1110,31 @@ export default function AdminLoyaltyPage() {
         .customer-card {
           display: flex;
           align-items: center;
-          gap: 11px;
+          gap: 10px;
           padding: 12px;
           border: 1px solid #eee4da;
-          border-radius: 17px;
+          border-radius: 16px;
           background: #ffffff;
-          box-shadow: 0 5px 17px rgba(60, 39, 25, 0.035);
-          transition:
-            transform 0.2s ease,
-            box-shadow 0.2s ease;
-        }
-
-        .customer-card:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 8px 22px rgba(60, 39, 25, 0.065);
+          box-shadow:
+            0 4px 14px
+              rgba(60, 39, 25, 0.035);
         }
 
         .customer-avatar {
-          width: 42px;
-          height: 42px;
+          width: 40px;
+          height: 40px;
+          flex: 0 0 40px;
           display: flex;
           align-items: center;
           justify-content: center;
-          flex: 0 0 42px;
-          border-radius: 13px;
-          background: #f7eee7;
-          color: #9a633d;
-          font-size: 14px;
-          font-weight: 900;
+          border-radius: 12px;
+          background: #f6eee8;
+          font-size: 17px;
         }
 
         .customer-info {
-          flex: 1;
           min-width: 0;
+          flex: 1;
         }
 
         .customer-info strong {
@@ -1225,6 +1142,7 @@ export default function AdminLoyaltyPage() {
           overflow: hidden;
           color: #392a20;
           font-size: 11px;
+          font-weight: 900;
           text-overflow: ellipsis;
           white-space: nowrap;
         }
@@ -1232,154 +1150,126 @@ export default function AdminLoyaltyPage() {
         .customer-info span {
           display: block;
           margin-top: 3px;
-          overflow: hidden;
-          color: #a09287;
-          font-size: 7px;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
-
-        .customer-info small {
-          display: inline-block;
-          margin-top: 4px;
-          padding: 3px 6px;
-          border-radius: 6px;
-          background: #f3eee9;
-          color: #776a60;
-          font-size: 6px;
-          font-weight: 800;
+          color: #998c81;
+          font-size: 8px;
         }
 
         .customer-points {
           display: flex;
           flex-direction: column;
           align-items: flex-end;
-          flex: 0 0 auto;
+          margin-right: 2px;
         }
 
         .customer-points strong {
-          color: #a96534;
+          color: #b66d36;
           font-size: 16px;
+          font-weight: 900;
           line-height: 1;
         }
 
         .customer-points span {
           margin-top: 3px;
-          color: #998c81;
-          font-size: 6px;
-        }
-
-        .customer-select-button {
-          min-width: 43px;
-          height: 29px;
-          padding: 0 8px;
-          border: 1px solid #e3d6ca;
-          border-radius: 8px;
-          background: #fffaf5;
-          color: #8f603f;
-          cursor: pointer;
-          font-family: inherit;
+          color: #a3978e;
           font-size: 7px;
-          font-weight: 800;
         }
 
-        .customer-select-button:hover {
-          border-color: #c58a60;
-          background: #f9efe7;
+        .remove-points-button {
+          min-height: 31px;
+          padding: 0 8px;
+          border: 1px solid #eadbd6;
+          border-radius: 9px;
+          background: #fff8f5;
+          color: #a35e50;
+          font-size: 7px;
+          font-weight: 900;
+          cursor: pointer;
         }
 
-        .empty-customers {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          padding: 35px 20px;
+        .empty-card {
+          padding: 30px 18px;
           border: 1px dashed #dfd2c7;
-          border-radius: 18px;
-          background: #fffaf5;
+          border-radius: 17px;
+          background: #fffdfb;
           text-align: center;
         }
 
-        .empty-icon {
-          width: 48px;
-          height: 48px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          margin-bottom: 9px;
-          border-radius: 15px;
-          background: #f7eee7;
-          font-size: 19px;
+        .empty-card > div {
+          font-size: 25px;
         }
 
-        .empty-customers strong {
+        .empty-card strong {
+          display: block;
+          margin-top: 7px;
           color: #493a30;
           font-size: 11px;
         }
 
-        .empty-customers span {
-          max-width: 260px;
-          margin-top: 5px;
+        .empty-card p {
+          margin: 4px 0 0;
           color: #998c81;
           font-size: 8px;
-          line-height: 1.5;
         }
 
-        .points-rule-card {
+        .security-note {
           display: flex;
           align-items: flex-start;
           gap: 10px;
           margin-top: 18px;
           padding: 13px;
-          border: 1px solid #eee1d5;
-          border-radius: 16px;
+          border: 1px solid #eee3d8;
+          border-radius: 15px;
           background: #fffaf5;
         }
 
-        .rule-icon {
-          font-size: 18px;
+        .security-note > div:first-child {
+          font-size: 17px;
         }
 
-        .points-rule-card strong {
+        .security-note strong {
           display: block;
           color: #493a30;
           font-size: 9px;
+          font-weight: 900;
         }
 
-        .points-rule-card p {
+        .security-note p {
           margin: 4px 0 0;
           color: #998c81;
-          font-size: 7px;
+          font-size: 8px;
           line-height: 1.5;
         }
 
-        @media (max-width: 480px) {
-          .panel-title h2,
-          .customer-section-heading h2 {
-            font-size: 20px;
+        @media (max-width: 430px) {
+          .admin-page-header {
+            padding: 18px 15px 15px;
           }
 
-          .points-card {
+          .admin-page-header h1 {
+            font-size: 19px;
+          }
+
+          .admin-loyalty-page {
+            padding-left: 15px;
+            padding-right: 15px;
+          }
+
+          .points-card-header,
+          .points-form {
             padding: 15px;
           }
 
           .customer-card {
-            gap: 8px;
-            padding: 10px;
+            gap: 7px;
           }
 
           .customer-avatar {
-            width: 38px;
-            height: 38px;
-            flex-basis: 38px;
+            width: 36px;
+            height: 36px;
+            flex-basis: 36px;
           }
 
-          .customer-points strong {
-            font-size: 14px;
-          }
-
-          .customer-select-button {
-            min-width: 39px;
+          .remove-points-button {
             padding: 0 6px;
           }
         }
