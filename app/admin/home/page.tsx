@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
+import { supabase } from "../../../lib/supabase";
 
 type HeroSettings = {
+  id: number;
   enabled: boolean;
   title: string;
   subtitle: string;
@@ -12,18 +14,28 @@ type HeroSettings = {
   imageUrl: string;
 };
 
+type SectionType =
+  | "menu"
+  | "loyalty"
+  | "about"
+  | "image"
+  | "text"
+  | "button";
+
 type Section = {
   id: string;
-  type: "menu" | "loyalty" | "about" | "image" | "text" | "button";
+  type: SectionType;
   title: string;
   description: string;
   imageUrl: string;
   buttonText: string;
   buttonLink: string;
   enabled: boolean;
+  sortOrder: number;
 };
 
-const initialHero: HeroSettings = {
+const defaultHero: HeroSettings = {
+  id: 1,
   enabled: true,
   title: "Taşkent Cafe",
   subtitle: "Mardin Kale",
@@ -34,9 +46,9 @@ const initialHero: HeroSettings = {
     "https://raw.githubusercontent.com/bitcoinkazanc/Taskentcafe/main/taskent-logo.png",
 };
 
-const initialSections: Section[] = [
+const defaultSections: Section[] = [
   {
-    id: "1",
+    id: "default-1",
     type: "menu",
     title: "Menümüz",
     description: "Lezzetli seçeneklerimizi keşfedin.",
@@ -44,30 +56,35 @@ const initialSections: Section[] = [
     buttonText: "",
     buttonLink: "",
     enabled: true,
+    sortOrder: 1,
   },
   {
-    id: "2",
+    id: "default-2",
     type: "loyalty",
     title: "Sadakat Kulübü",
-    description: "Alışverişlerinden puan kazan, avantajları kaçırma.",
+    description:
+      "Alışverişlerinden puan kazan, avantajları kaçırma.",
     imageUrl: "",
     buttonText: "Kulübe Katıl",
     buttonLink: "/loyalty",
     enabled: true,
+    sortOrder: 2,
   },
   {
-    id: "3",
+    id: "default-3",
     type: "about",
     title: "Taşkent Cafe",
-    description: "Mardin Kalesi'nde keyifli anlar için sizleri bekliyoruz.",
+    description:
+      "Mardin Kalesi'nde keyifli anlar için sizleri bekliyoruz.",
     imageUrl: "",
     buttonText: "",
     buttonLink: "",
     enabled: true,
+    sortOrder: 3,
   },
 ];
 
-function getSectionIcon(type: Section["type"]) {
+function getSectionIcon(type: SectionType) {
   switch (type) {
     case "menu":
       return "🍽️";
@@ -86,7 +103,7 @@ function getSectionIcon(type: Section["type"]) {
   }
 }
 
-function getSectionName(type: Section["type"]) {
+function getSectionName(type: SectionType) {
   switch (type) {
     case "menu":
       return "Menü";
@@ -106,9 +123,11 @@ function getSectionName(type: Section["type"]) {
 }
 
 export default function AdminHomePage() {
-  const [hero, setHero] = useState<HeroSettings>(initialHero);
+  const [hero, setHero] =
+    useState<HeroSettings>(defaultHero);
+
   const [sections, setSections] =
-    useState<Section[]>(initialSections);
+    useState<Section[]>([]);
 
   const [editingSection, setEditingSection] =
     useState<Section | null>(null);
@@ -118,64 +137,399 @@ export default function AdminHomePage() {
 
   const [message, setMessage] = useState("");
 
+  const [error, setError] = useState("");
+
+  const [loading, setLoading] = useState(true);
+
+  const [saving, setSaving] = useState(false);
+
   useEffect(() => {
-    const savedHero = localStorage.getItem(
-      "taskent_home_hero"
-    );
-
-    const savedSections = localStorage.getItem(
-      "taskent_home_sections"
-    );
-
-    if (savedHero) {
-      try {
-        setHero(JSON.parse(savedHero));
-      } catch {}
-    }
-
-    if (savedSections) {
-      try {
-        setSections(JSON.parse(savedSections));
-      } catch {}
-    }
+    loadHomeSettings();
   }, []);
 
-  function saveChanges() {
-    localStorage.setItem(
-      "taskent_home_hero",
-      JSON.stringify(hero)
-    );
+  async function loadHomeSettings() {
+    try {
+      setLoading(true);
+      setError("");
 
-    localStorage.setItem(
-      "taskent_home_sections",
-      JSON.stringify(sections)
-    );
+      const {
+        data: heroData,
+        error: heroError,
+      } = await supabase
+        .from("home_hero")
+        .select(
+          "id, enabled, title, subtitle, description, button_text, button_link, image_url"
+        )
+        .eq("id", 1)
+        .maybeSingle();
 
-    setMessage("Ana sayfa ayarları kaydedildi.");
+      if (heroError) {
+        throw new Error(
+          "Ana sayfa üst alanı yüklenemedi: " +
+            heroError.message
+        );
+      }
 
-    setTimeout(() => {
-      setMessage("");
-    }, 2500);
+      const {
+        data: sectionData,
+        error: sectionError,
+      } = await supabase
+        .from("home_sections")
+        .select(
+          "id, section_type, title, description, image_url, button_text, button_link, enabled, sort_order"
+        )
+        .order("sort_order", {
+          ascending: true,
+        });
+
+      if (sectionError) {
+        throw new Error(
+          "Ana sayfa bölümleri yüklenemedi: " +
+            sectionError.message
+        );
+      }
+
+      if (heroData) {
+        setHero({
+          id: Number(heroData.id),
+          enabled: Boolean(heroData.enabled),
+          title: heroData.title ?? "",
+          subtitle: heroData.subtitle ?? "",
+          description:
+            heroData.description ?? "",
+          buttonText:
+            heroData.button_text ?? "",
+          buttonLink:
+            heroData.button_link ?? "",
+          imageUrl:
+            heroData.image_url ?? "",
+        });
+      } else {
+        setHero(defaultHero);
+      }
+
+      if (sectionData) {
+        setSections(
+          sectionData.map((section) => ({
+            id: String(section.id),
+            type: section.section_type as SectionType,
+            title: section.title ?? "",
+            description:
+              section.description ?? "",
+            imageUrl:
+              section.image_url ?? "",
+            buttonText:
+              section.button_text ?? "",
+            buttonLink:
+              section.button_link ?? "",
+            enabled: Boolean(section.enabled),
+            sortOrder:
+              Number(section.sort_order) || 0,
+          }))
+        );
+      } else {
+        setSections([]);
+      }
+    } catch (err) {
+      console.error(
+        "HOME SETTINGS LOAD ERROR:",
+        err
+      );
+
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Ana sayfa ayarları yüklenemedi."
+      );
+    } finally {
+      setLoading(false);
+    }
   }
 
-  function resetPage() {
+  async function saveChanges() {
+    try {
+      setSaving(true);
+      setError("");
+      setMessage("");
+
+      const {
+        error: heroError,
+      } = await supabase
+        .from("home_hero")
+        .upsert(
+          {
+            id: 1,
+            enabled: hero.enabled,
+            title: hero.title,
+            subtitle: hero.subtitle,
+            description: hero.description,
+            button_text: hero.buttonText,
+            button_link: hero.buttonLink,
+            image_url: hero.imageUrl,
+          },
+          {
+            onConflict: "id",
+          }
+        );
+
+      if (heroError) {
+        throw new Error(
+          "Üst alan kaydedilemedi: " +
+            heroError.message
+        );
+      }
+
+      const {
+        data: existingSections,
+        error: existingError,
+      } = await supabase
+        .from("home_sections")
+        .select("id");
+
+      if (existingError) {
+        throw new Error(
+          "Mevcut bölümler kontrol edilemedi: " +
+            existingError.message
+        );
+      }
+
+      const currentIds = new Set(
+        sections.map((section) => section.id)
+      );
+
+      const idsToDelete =
+        existingSections
+          ?.map((section) => String(section.id))
+          .filter(
+            (id) => !currentIds.has(id)
+          ) ?? [];
+
+      if (idsToDelete.length > 0) {
+        const {
+          error: deleteError,
+        } = await supabase
+          .from("home_sections")
+          .delete()
+          .in("id", idsToDelete);
+
+        if (deleteError) {
+          throw new Error(
+            "Silinen bölümler kaydedilemedi: " +
+              deleteError.message
+          );
+        }
+      }
+
+      if (sections.length > 0) {
+        const rows = sections.map(
+          (section, index) => ({
+            id: section.id,
+            section_type: section.type,
+            title: section.title,
+            description:
+              section.description,
+            image_url:
+              section.imageUrl,
+            button_text:
+              section.buttonText,
+            button_link:
+              section.buttonLink,
+            enabled:
+              section.enabled,
+            sort_order: index + 1,
+          })
+        );
+
+        const {
+          error: sectionsError,
+        } = await supabase
+          .from("home_sections")
+          .upsert(rows, {
+            onConflict: "id",
+          });
+
+        if (sectionsError) {
+          throw new Error(
+            "Ana sayfa bölümleri kaydedilemedi: " +
+              sectionsError.message
+          );
+        }
+      }
+
+      setSections((current) =>
+        current.map((section, index) => ({
+          ...section,
+          sortOrder: index + 1,
+        }))
+      );
+
+      setMessage(
+        "Ana sayfa ayarları Supabase'e kaydedildi."
+      );
+
+      setTimeout(() => {
+        setMessage("");
+      }, 2500);
+    } catch (err) {
+      console.error(
+        "HOME SETTINGS SAVE ERROR:",
+        err
+      );
+
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Ana sayfa ayarları kaydedilemedi."
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function resetPage() {
     const confirmed = window.confirm(
       "Ana sayfa düzenini varsayılan hale getirmek istediğinize emin misiniz?"
     );
 
     if (!confirmed) return;
 
-    setHero(initialHero);
-    setSections(initialSections);
-
-    localStorage.removeItem("taskent_home_hero");
-    localStorage.removeItem("taskent_home_sections");
-
-    setMessage("Ana sayfa varsayılan hale getirildi.");
-
-    setTimeout(() => {
+    try {
+      setSaving(true);
+      setError("");
       setMessage("");
-    }, 2500);
+
+      const {
+        error: heroError,
+      } = await supabase
+        .from("home_hero")
+        .upsert(
+          {
+            id: 1,
+            enabled: defaultHero.enabled,
+            title: defaultHero.title,
+            subtitle:
+              defaultHero.subtitle,
+            description:
+              defaultHero.description,
+            button_text:
+              defaultHero.buttonText,
+            button_link:
+              defaultHero.buttonLink,
+            image_url:
+              defaultHero.imageUrl,
+          },
+          {
+            onConflict: "id",
+          }
+        );
+
+      if (heroError) {
+        throw new Error(
+          "Üst alan sıfırlanamadı: " +
+            heroError.message
+        );
+      }
+
+      const {
+        error: deleteError,
+      } = await supabase
+        .from("home_sections")
+        .delete()
+        .neq("id", "00000000-0000-0000-0000-000000000000");
+
+      if (deleteError) {
+        throw new Error(
+          "Bölümler sıfırlanamadı: " +
+            deleteError.message
+        );
+      }
+
+      const rows = defaultSections.map(
+        (section, index) => ({
+          section_type:
+            section.type,
+          title: section.title,
+          description:
+            section.description,
+          image_url:
+            section.imageUrl,
+          button_text:
+            section.buttonText,
+          button_link:
+            section.buttonLink,
+          enabled:
+            section.enabled,
+          sort_order: index + 1,
+        })
+      );
+
+      const {
+        data: insertedSections,
+        error: insertError,
+      } = await supabase
+        .from("home_sections")
+        .insert(rows)
+        .select(
+          "id, section_type, title, description, image_url, button_text, button_link, enabled, sort_order"
+        );
+
+      if (insertError) {
+        throw new Error(
+          "Varsayılan bölümler oluşturulamadı: " +
+            insertError.message
+        );
+      }
+
+      setHero(defaultHero);
+
+      setSections(
+        (insertedSections ?? []).map(
+          (section) => ({
+            id: String(section.id),
+            type: section.section_type as SectionType,
+            title: section.title ?? "",
+            description:
+              section.description ?? "",
+            imageUrl:
+              section.image_url ?? "",
+            buttonText:
+              section.button_text ?? "",
+            buttonLink:
+              section.button_link ?? "",
+            enabled: Boolean(
+              section.enabled
+            ),
+            sortOrder:
+              Number(
+                section.sort_order
+              ) || 0,
+          })
+        )
+      );
+
+      setEditingSection(null);
+
+      setMessage(
+        "Ana sayfa varsayılan hale getirildi."
+      );
+
+      setTimeout(() => {
+        setMessage("");
+      }, 2500);
+    } catch (err) {
+      console.error(
+        "HOME RESET ERROR:",
+        err
+      );
+
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Ana sayfa sıfırlanamadı."
+      );
+    } finally {
+      setSaving(false);
+    }
   }
 
   function moveSection(
@@ -196,14 +550,24 @@ export default function AdminHomePage() {
       return;
     }
 
-    const current = newSections[index];
+    const current =
+      newSections[index];
 
     newSections[index] =
       newSections[targetIndex];
 
-    newSections[targetIndex] = current;
+    newSections[targetIndex] =
+      current;
 
-    setSections(newSections);
+    setSections(
+      newSections.map(
+        (section, sectionIndex) => ({
+          ...section,
+          sortOrder:
+            sectionIndex + 1,
+        })
+      )
+    );
   }
 
   function toggleSection(id: string) {
@@ -212,7 +576,8 @@ export default function AdminHomePage() {
         section.id === id
           ? {
               ...section,
-              enabled: !section.enabled,
+              enabled:
+                !section.enabled,
             }
           : section
       )
@@ -227,18 +592,32 @@ export default function AdminHomePage() {
     if (!confirmed) return;
 
     setSections((current) =>
-      current.filter(
-        (section) => section.id !== id
-      )
+      current
+        .filter(
+          (section) =>
+            section.id !== id
+        )
+        .map(
+          (section, index) => ({
+            ...section,
+            sortOrder: index + 1,
+          })
+        )
     );
+
+    if (
+      editingSection?.id === id
+    ) {
+      setEditingSection(null);
+    }
   }
 
   function addSection(
-    type: Section["type"]
+    type: SectionType
   ) {
     const newSection: Section = {
       id:
-        Date.now().toString(),
+        crypto.randomUUID(),
       type,
       title:
         type === "menu"
@@ -257,12 +636,18 @@ export default function AdminHomePage() {
       buttonText:
         type === "button"
           ? "Detayları Gör"
+          : type === "loyalty"
+          ? "Kulübe Katıl"
           : "",
       buttonLink:
         type === "button"
           ? "#"
+          : type === "loyalty"
+          ? "/loyalty"
           : "",
       enabled: true,
+      sortOrder:
+        sections.length + 1,
     };
 
     setSections((current) => [
@@ -296,6 +681,91 @@ export default function AdminHomePage() {
     );
   }
 
+  if (loading) {
+    return (
+      <main className="loading-page">
+        <div className="loading-card">
+          <div className="loading-logo">
+            ☕
+          </div>
+
+          <strong>
+            Ana Sayfa Yönetimi
+          </strong>
+
+          <span>
+            Ayarlar Supabase'den yükleniyor...
+          </span>
+        </div>
+
+        <style jsx global>{`
+          * {
+            box-sizing: border-box;
+          }
+
+          body {
+            margin: 0;
+            background: #f6f1ec;
+            font-family:
+              -apple-system,
+              BlinkMacSystemFont,
+              "Segoe UI",
+              sans-serif;
+          }
+
+          .loading-page {
+            min-height: 100vh;
+            min-height: 100dvh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: #f6f1ec;
+          }
+
+          .loading-card {
+            width: 100%;
+            max-width: 330px;
+            padding: 34px 20px;
+            border: 1px solid #e7dcd3;
+            border-radius: 20px;
+            background: #fffdfb;
+            text-align: center;
+            box-shadow:
+              0 15px 45px
+                rgba(61, 42, 29, 0.08);
+          }
+
+          .loading-logo {
+            width: 62px;
+            height: 62px;
+            margin: 0 auto 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 19px;
+            background: #8b5e3c;
+            color: #fff;
+            font-size: 27px;
+          }
+
+          .loading-card strong {
+            display: block;
+            color: #392a20;
+            font-size: 14px;
+          }
+
+          .loading-card span {
+            display: block;
+            margin-top: 6px;
+            color: #9b8d82;
+            font-size: 10px;
+          }
+        `}</style>
+      </main>
+    );
+  }
+
   return (
     <main className="admin-page">
       <div className="page-header">
@@ -304,11 +774,14 @@ export default function AdminHomePage() {
             YÖNETİM PANELİ
           </span>
 
-          <h1>Ana Sayfa Yönetimi</h1>
+          <h1>
+            Ana Sayfa Yönetimi
+          </h1>
 
           <p>
-            Ziyaretçilerin göreceği ana sayfanın
-            yapısını buradan oluşturun ve düzenleyin.
+            Ziyaretçilerin göreceği ana
+            sayfanın yapısını buradan
+            oluşturun ve düzenleyin.
           </p>
         </div>
 
@@ -317,6 +790,7 @@ export default function AdminHomePage() {
             type="button"
             className="reset-button"
             onClick={resetPage}
+            disabled={saving}
           >
             Sıfırla
           </button>
@@ -325,8 +799,11 @@ export default function AdminHomePage() {
             type="button"
             className="save-button"
             onClick={saveChanges}
+            disabled={saving}
           >
-            Kaydet
+            {saving
+              ? "Kaydediliyor..."
+              : "Kaydet"}
           </button>
         </div>
       </div>
@@ -334,6 +811,12 @@ export default function AdminHomePage() {
       {message && (
         <div className="success-message">
           ✓ {message}
+        </div>
+      )}
+
+      {error && (
+        <div className="error-message">
+          ⚠️ {error}
         </div>
       )}
 
@@ -348,8 +831,8 @@ export default function AdminHomePage() {
               <h2>Üst Alan</h2>
 
               <p>
-                Ana sayfanın en üstünde görünecek
-                bölüm.
+                Ana sayfanın en üstünde
+                görünecek bölüm.
               </p>
             </div>
           </div>
@@ -380,7 +863,8 @@ export default function AdminHomePage() {
               onChange={(event) =>
                 setHero({
                   ...hero,
-                  title: event.target.value,
+                  title:
+                    event.target.value,
                 })
               }
               placeholder="Ana başlık"
@@ -407,7 +891,9 @@ export default function AdminHomePage() {
             <span>Açıklama</span>
 
             <textarea
-              value={hero.description}
+              value={
+                hero.description
+              }
               onChange={(event) =>
                 setHero({
                   ...hero,
@@ -423,7 +909,9 @@ export default function AdminHomePage() {
             <span>Buton yazısı</span>
 
             <input
-              value={hero.buttonText}
+              value={
+                hero.buttonText
+              }
               onChange={(event) =>
                 setHero({
                   ...hero,
@@ -436,10 +924,14 @@ export default function AdminHomePage() {
           </label>
 
           <label>
-            <span>Buton bağlantısı</span>
+            <span>
+              Buton bağlantısı
+            </span>
 
             <input
-              value={hero.buttonLink}
+              value={
+                hero.buttonLink
+              }
               onChange={(event) =>
                 setHero({
                   ...hero,
@@ -452,7 +944,9 @@ export default function AdminHomePage() {
           </label>
 
           <label className="full">
-            <span>Logo / Görsel URL</span>
+            <span>
+              Logo / Görsel URL
+            </span>
 
             <input
               value={hero.imageUrl}
@@ -476,11 +970,14 @@ export default function AdminHomePage() {
               SAYFA YAPISI
             </span>
 
-            <h2>Ana Sayfa Bölümleri</h2>
+            <h2>
+              Ana Sayfa Bölümleri
+            </h2>
 
             <p>
-              Bölümlerin sırasını değiştirin,
-              açıp kapatın veya düzenleyin.
+              Bölümlerin sırasını
+              değiştirin, açıp kapatın
+              veya düzenleyin.
             </p>
           </div>
 
@@ -598,7 +1095,9 @@ export default function AdminHomePage() {
                         "up"
                       )
                     }
-                    disabled={index === 0}
+                    disabled={
+                      index === 0
+                    }
                     aria-label="Yukarı taşı"
                   >
                     ↑
@@ -674,8 +1173,9 @@ export default function AdminHomePage() {
             </strong>
 
             <p>
-              Yukarıdaki "Bölüm Ekle" butonunu
-              kullanarak ana sayfanızı oluşturmaya
+              Yukarıdaki "Bölüm Ekle"
+              butonunu kullanarak ana
+              sayfanızı oluşturmaya
               başlayın.
             </p>
           </div>
@@ -706,13 +1206,17 @@ export default function AdminHomePage() {
                   )}
                 </span>
 
-                <h2>Bölümü Düzenle</h2>
+                <h2>
+                  Bölümü Düzenle
+                </h2>
               </div>
 
               <button
                 type="button"
                 onClick={() =>
-                  setEditingSection(null)
+                  setEditingSection(
+                    null
+                  )
                 }
               >
                 ×
@@ -737,7 +1241,9 @@ export default function AdminHomePage() {
               </label>
 
               <label>
-                <span>Açıklama</span>
+                <span>
+                  Açıklama
+                </span>
 
                 <textarea
                   value={
@@ -757,7 +1263,9 @@ export default function AdminHomePage() {
                 editingSection.type ===
                   "about") && (
                 <label>
-                  <span>Görsel URL</span>
+                  <span>
+                    Görsel URL
+                  </span>
 
                   <input
                     value={
@@ -819,7 +1327,9 @@ export default function AdminHomePage() {
               )}
 
               <div className="preview-box">
-                <span>Önizleme</span>
+                <span>
+                  Önizleme
+                </span>
 
                 <strong>
                   {editingSection.title ||
@@ -841,7 +1351,9 @@ export default function AdminHomePage() {
                 type="button"
                 className="cancel-button"
                 onClick={() =>
-                  setEditingSection(null)
+                  setEditingSection(
+                    null
+                  )
                 }
               >
                 Kapat
@@ -851,14 +1363,17 @@ export default function AdminHomePage() {
                 type="button"
                 className="save-button"
                 onClick={() => {
-                  setEditingSection(null);
+                  setEditingSection(
+                    null
+                  );
+
                   setMessage(
-                    "Bölüm güncellendi."
+                    "Bölüm güncellendi. Değişiklikleri kalıcı yapmak için Kaydet'e basın."
                   );
 
                   setTimeout(() => {
                     setMessage("");
-                  }, 2000);
+                  }, 2500);
                 }}
               >
                 Tamam
@@ -893,6 +1408,11 @@ export default function AdminHomePage() {
         button {
           cursor: pointer;
           -webkit-tap-highlight-color: transparent;
+        }
+
+        button:disabled {
+          opacity: 0.55;
+          cursor: not-allowed;
         }
 
         .admin-page {
@@ -966,6 +1486,17 @@ export default function AdminHomePage() {
           border-radius: 11px;
           background: #e7f3e9;
           color: #39704a;
+          font-size: 11px;
+          font-weight: 750;
+        }
+
+        .error-message {
+          margin-bottom: 16px;
+          padding: 12px 14px;
+          border: 1px solid #f0d2ce;
+          border-radius: 11px;
+          background: #fff3f1;
+          color: #a34239;
           font-size: 11px;
           font-weight: 750;
         }
