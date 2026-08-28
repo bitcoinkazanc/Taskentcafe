@@ -60,34 +60,22 @@ function getCategoryIcon(category: string) {
 }
 
 export default function HomePage() {
-  const [category, setCategory] = useState(
-    "Sıcak İçecekler"
-  );
+  const [category, setCategory] = useState("Sıcak İçecekler");
 
   const [products, setProducts] = useState<Product[]>([]);
-  const [productsLoading, setProductsLoading] =
-    useState(true);
-  const [productsError, setProductsError] =
-    useState("");
+  const [productsLoading, setProductsLoading] = useState(true);
+  const [productsError, setProductsError] = useState("");
 
-  const [customer, setCustomer] =
-    useState<Customer | null>(null);
-  const [loyaltyLoading, setLoyaltyLoading] =
-    useState(true);
+  const [customer, setCustomer] = useState<Customer | null>(null);
+  const [loyaltyLoading, setLoyaltyLoading] = useState(true);
 
-  const [table, setTable] =
-    useState<CafeTable | null>(null);
-  const [tableLoading, setTableLoading] =
-    useState(false);
+  const [table, setTable] = useState<CafeTable | null>(null);
+  const [tableLoading, setTableLoading] = useState(false);
 
-  const [waiterOpen, setWaiterOpen] =
-    useState(false);
-  const [waiterLoading, setWaiterLoading] =
-    useState(false);
-  const [waiterMessage, setWaiterMessage] =
-    useState("");
-  const [waiterError, setWaiterError] =
-    useState("");
+  const [waiterOpen, setWaiterOpen] = useState(false);
+  const [waiterLoading, setWaiterLoading] = useState(false);
+  const [waiterMessage, setWaiterMessage] = useState("");
+  const [waiterError, setWaiterError] = useState("");
 
   useEffect(() => {
     loadProducts();
@@ -114,27 +102,15 @@ export default function HomePage() {
         });
 
       if (error) {
-        console.error(
-          "PRODUCTS ERROR:",
-          error
-        );
-        setProductsError(
-          "Menü ürünleri yüklenemedi."
-        );
+        console.error("PRODUCTS ERROR:", error);
+        setProductsError("Menü ürünleri yüklenemedi.");
         return;
       }
 
-      setProducts(
-        (data ?? []) as Product[]
-      );
+      setProducts((data ?? []) as Product[]);
     } catch (error) {
-      console.error(
-        "PRODUCTS ERROR:",
-        error
-      );
-      setProductsError(
-        "Menü ürünleri yüklenemedi."
-      );
+      console.error("PRODUCTS ERROR:", error);
+      setProductsError("Menü ürünleri yüklenemedi.");
     } finally {
       setProductsLoading(false);
     }
@@ -153,35 +129,21 @@ export default function HomePage() {
         return;
       }
 
-      const { data, error } =
-        await supabase
-          .from("customers")
-          .select(
-            "id,name,points,level"
-          )
-          .eq(
-            "auth_user_id",
-            user.id
-          )
-          .maybeSingle();
+      const { data, error } = await supabase
+        .from("customers")
+        .select("id,name,points,level")
+        .eq("auth_user_id", user.id)
+        .maybeSingle();
 
       if (error) {
-        console.error(
-          "LOYALTY ERROR:",
-          error
-        );
+        console.error("LOYALTY ERROR:", error);
         setCustomer(null);
         return;
       }
 
-      setCustomer(
-        data as Customer | null
-      );
+      setCustomer(data as Customer | null);
     } catch (error) {
-      console.error(
-        "LOYALTY ERROR:",
-        error
-      );
+      console.error("LOYALTY ERROR:", error);
       setCustomer(null);
     } finally {
       setLoyaltyLoading(false);
@@ -190,13 +152,8 @@ export default function HomePage() {
 
   async function loadTable() {
     try {
-      const params =
-        new URLSearchParams(
-          window.location.search
-        );
-
-      const qrToken =
-        params.get("table");
+      const params = new URLSearchParams(window.location.search);
+      const qrToken = params.get("table");
 
       if (!qrToken) {
         setTable(null);
@@ -206,50 +163,28 @@ export default function HomePage() {
       setTableLoading(true);
       setWaiterError("");
 
-      const {
-        data,
-        error,
-      } = await supabase.rpc(
-        "get_cafe_table",
-        {
-          requested_qr_token:
-            qrToken,
-        }
-      );
+      const { data, error } = await supabase.rpc("get_cafe_table", {
+        requested_qr_token: qrToken,
+      });
 
       if (error) {
-        console.error(
-          "TABLE ERROR:",
-          error
-        );
-        setWaiterError(
-          "Masa bilgisi alınamadı."
-        );
+        console.error("TABLE ERROR:", error);
+        setWaiterError("Masa bilgisi alınamadı.");
         return;
       }
 
-      setTable(
-        data as CafeTable
-      );
+      setTable(data as CafeTable);
     } catch (error) {
-      console.error(
-        "TABLE ERROR:",
-        error
-      );
-      setWaiterError(
-        "Masa bilgisi alınamadı."
-      );
+      console.error("TABLE ERROR:", error);
+      setWaiterError("Masa bilgisi alınamadı.");
     } finally {
       setTableLoading(false);
     }
   }
 
-  const filteredProducts =
-    products.filter(
-      (product) =>
-        product.category ===
-        category
-    );
+  const filteredProducts = products.filter(
+    (product) => product.category === category
+  );
 
   function callWaiter() {
     if (!table) {
@@ -275,36 +210,21 @@ export default function HomePage() {
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         try {
-          const {
-            error,
-          } = await supabase.rpc(
-            "create_waiter_call",
-            {
-              requested_table_id:
-                table.id,
-              user_latitude:
-                position.coords
-                  .latitude,
-              user_longitude:
-                position.coords
-                  .longitude,
-            }
-          );
+          const { error } = await supabase.rpc("create_waiter_call", {
+            requested_table_id: table.id,
+            user_latitude: position.coords.latitude,
+            user_longitude: position.coords.longitude,
+          });
 
           if (error) {
-            throw new Error(
-              error.message
-            );
+            throw new Error(error.message);
           }
 
           setWaiterMessage(
             `Masa ${table.table_number} için garson çağrıldı.`
           );
         } catch (error) {
-          console.error(
-            "WAITER CALL ERROR:",
-            error
-          );
+          console.error("WAITER CALL ERROR:", error);
 
           setWaiterError(
             error instanceof Error
@@ -316,36 +236,20 @@ export default function HomePage() {
         }
       },
       (error) => {
-        console.error(
-          "GEOLOCATION ERROR:",
-          error
-        );
+        console.error("GEOLOCATION ERROR:", error);
 
-        if (
-          error.code ===
-          error.PERMISSION_DENIED
-        ) {
+        if (error.code === error.PERMISSION_DENIED) {
           setWaiterError(
             "Garson çağırmak için konum izni vermelisiniz."
           );
-        } else if (
-          error.code ===
-          error.POSITION_UNAVAILABLE
-        ) {
-          setWaiterError(
-            "Konumunuz belirlenemedi."
-          );
-        } else if (
-          error.code ===
-          error.TIMEOUT
-        ) {
+        } else if (error.code === error.POSITION_UNAVAILABLE) {
+          setWaiterError("Konumunuz belirlenemedi.");
+        } else if (error.code === error.TIMEOUT) {
           setWaiterError(
             "Konum alınırken zaman aşımı oluştu."
           );
         } else {
-          setWaiterError(
-            "Konumunuz alınamadı."
-          );
+          setWaiterError("Konumunuz alınamadı.");
         }
 
         setWaiterMessage("");
@@ -364,20 +268,13 @@ export default function HomePage() {
       <header className="header">
         <div className="brand">
           <div className="logo">
-            <img
-              src={logoUrl}
-              alt="Taşkent Cafe"
-            />
+            <img src={logoUrl} alt="Taşkent Cafe" />
           </div>
 
           <div className="brand-text">
-            <h1>
-              Taşkent Cafe
-            </h1>
+            <h1>Taşkent Cafe</h1>
 
-            <span>
-              📍 Mardin Kale
-            </span>
+            <span>📍 Mardin Kale</span>
           </div>
         </div>
       </header>
@@ -386,21 +283,14 @@ export default function HomePage() {
         <div className="loyalty-card-glow" />
 
         <div className="loyalty-top">
-          <div className="loyalty-icon">
-            ⭐
-          </div>
+          <div className="loyalty-icon">⭐</div>
 
           <div className="loyalty-title">
-            <span>
-              SADAKAT KULÜBÜ
-            </span>
+            <span>SADAKAT KULÜBÜ</span>
 
             <strong>
               {customer
-                ? `Merhaba, ${
-                    customer.name ||
-                    "Misafir"
-                  }`
+                ? `Merhaba, ${customer.name || "Misafir"}`
                 : "Taşkent Cafe"}
             </strong>
           </div>
@@ -413,47 +303,30 @@ export default function HomePage() {
         ) : customer ? (
           <div className="loyalty-stats">
             <div className="loyalty-stat">
-              <span>
-                PUANINIZ
-              </span>
+              <span>PUANINIZ</span>
 
-              <strong>
-                {customer.points}
-              </strong>
+              <strong>{customer.points}</strong>
             </div>
 
             <div className="loyalty-divider" />
 
             <div className="loyalty-stat">
-              <span>
-                SEVİYE
-              </span>
+              <span>SEVİYE</span>
 
-              <strong>
-                {customer.level ||
-                  "Başlangıç"}
-              </strong>
+              <strong>{customer.level || "Başlangıç"}</strong>
             </div>
           </div>
         ) : (
           <div className="loyalty-guest">
             <p>
-              Alışverişlerinden
-              puan kazan,
+              Alışverişlerinden puan kazan,
               avantajları kaçırma.
             </p>
 
-            <a
-              href="/loyalty"
-              className="loyalty-login"
-            >
-              <span>
-                Giriş
-              </span>
+            <a href="/loyalty" className="loyalty-login">
+              <span>Giriş</span>
 
-              <span className="login-arrow">
-                →
-              </span>
+              <span className="login-arrow">→</span>
             </a>
           </div>
         )}
@@ -462,9 +335,7 @@ export default function HomePage() {
       <section className="menu-section">
         <div className="section-header">
           <div>
-            <span className="eyebrow">
-              MENÜ
-            </span>
+            <span className="eyebrow">MENÜ</span>
           </div>
 
           <span className="product-count">
@@ -475,24 +346,20 @@ export default function HomePage() {
         </div>
 
         <div className="categories">
-          {categories.map(
-            (item) => (
-              <button
-                key={item}
-                type="button"
-                className={
-                  category === item
-                    ? "category active"
-                    : "category"
-                }
-                onClick={() =>
-                  setCategory(item)
-                }
-              >
-                {item}
-              </button>
-            )
-          )}
+          {categories.map((item) => (
+            <button
+              key={item}
+              type="button"
+              className={
+                category === item
+                  ? "category active"
+                  : "category"
+              }
+              onClick={() => setCategory(item)}
+            >
+              {item}
+            </button>
+          ))}
         </div>
 
         {productsLoading && (
@@ -501,117 +368,87 @@ export default function HomePage() {
           </div>
         )}
 
-        {!productsLoading &&
-          productsError && (
-            <div className="error">
-              {productsError}
-            </div>
-          )}
+        {!productsLoading && productsError && (
+          <div className="error">{productsError}</div>
+        )}
 
         {!productsLoading &&
           !productsError &&
-          filteredProducts.length ===
-            0 && (
+          filteredProducts.length === 0 && (
             <div className="empty">
               <span>🍽️</span>
 
               <strong>
-                Bu kategoride ürün
-                bulunmuyor.
+                Bu kategoride ürün bulunmuyor.
               </strong>
             </div>
           )}
 
         {!productsLoading &&
           !productsError &&
-          filteredProducts.length >
-            0 && (
+          filteredProducts.length > 0 && (
             <div className="products">
-              {filteredProducts.map(
-                (product) => (
-                  <article
-                    className="product-card"
-                    key={product.id}
-                  >
-                    <div className="product-image">
-                      {product.image_url ? (
-                        <img
-                          src={
-                            product.image_url
-                          }
-                          alt={
-                            product.name
-                          }
-                          loading="lazy"
-                        />
-                      ) : (
-                        <span>
-                          {getCategoryIcon(
-                            product.category
-                          )}
-                        </span>
+              {filteredProducts.map((product) => (
+                <article
+                  className="product-card"
+                  key={product.id}
+                >
+                  <div className="product-image">
+                    {product.image_url ? (
+                      <img
+                        src={product.image_url}
+                        alt={product.name}
+                        loading="lazy"
+                      />
+                    ) : (
+                      <span>
+                        {getCategoryIcon(product.category)}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="product-content">
+                    <div className="product-info">
+                      <span className="product-category">
+                        {product.category}
+                      </span>
+
+                      <h3>{product.name}</h3>
+
+                      {product.description && (
+                        <p>{product.description}</p>
                       )}
                     </div>
 
-                    <div className="product-content">
-                      <div className="product-info">
-                        <span className="product-category">
+                    <div className="product-bottom">
+                      <strong className="price">
+                        {Number(product.price).toLocaleString(
+                          "tr-TR",
                           {
-                            product.category
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 2,
                           }
-                        </span>
+                        )}{" "}
+                        ₺
+                      </strong>
 
-                        <h3>
-                          {
-                            product.name
-                          }
-                        </h3>
+                      <button
+                        type="button"
+                        className="add-order-button"
+                        onClick={() => {
+                          // Sipariş sistemi
+                          // sonraki aşamada
+                          // buraya bağlanacak.
+                        }}
+                      >
+                        <span className="add-icon">+</span>
 
-                        {product.description && (
-                          <p>
-                            {
-                              product.description
-                            }
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="product-bottom">
-                        <strong className="price">
-                          {Number(
-                            product.price
-                          ).toLocaleString(
-                            "tr-TR",
-                            {
-                              minimumFractionDigits: 0,
-                              maximumFractionDigits: 2,
-                            }
-                          )}{" "}
-                          ₺
-                        </strong>
-
-                        <button
-                          type="button"
-                          className="add-order-button"
-                          onClick={() => {
-                            // Sipariş sistemi
-                            // sonraki aşamada
-                            // buraya bağlanacak.
-                          }}
-                        >
-                          <span className="add-icon">
-                            +
-                          </span>
-
-                          <span>
-                            Siparişe Ekle
-                          </span>
-                        </button>
-                      </div>
+                        <span>Siparişe Ekle</span>
+                      </button>
                     </div>
-                  </article>
-                )
-              )}
+                  </div>
+                </article>
+              ))}
             </div>
           )}
       </section>
@@ -620,37 +457,24 @@ export default function HomePage() {
         {waiterOpen && (
           <div className="waiter-panel">
             <div className="waiter-header">
-              <div className="waiter-avatar">
-                👩🏻‍🍳
-              </div>
+              <div className="waiter-avatar">👩🏻‍🍳</div>
 
               <div className="waiter-header-info">
-                <strong>
-                  Garson Çağır
-                </strong>
+                <strong>Garson Çağır</strong>
 
                 {table ? (
                   <span>
-                    Masa{" "}
-                    {
-                      table.table_number
-                    }
+                    Masa {table.table_number}
                   </span>
                 ) : (
-                  <span>
-                    Taşkent Cafe
-                  </span>
+                  <span>Taşkent Cafe</span>
                 )}
               </div>
 
               <button
                 type="button"
                 className="close"
-                onClick={() =>
-                  setWaiterOpen(
-                    false
-                  )
-                }
+                onClick={() => setWaiterOpen(false)}
                 aria-label="Kapat"
               >
                 ×
@@ -660,18 +484,11 @@ export default function HomePage() {
             <div className="waiter-body">
               {waiterMessage ? (
                 <div className="success">
-                  <div className="success-icon">
-                    ✓
-                  </div>
+                  <div className="success-icon">✓</div>
 
-                  <strong>
-                    Garson çağrınız
-                    alındı.
-                  </strong>
+                  <strong>Garson çağrınız alındı.</strong>
 
-                  <span>
-                    {waiterMessage}
-                  </span>
+                  <span>{waiterMessage}</span>
                 </div>
               ) : table ? (
                 <>
@@ -684,12 +501,9 @@ export default function HomePage() {
                   <button
                     type="button"
                     className="call-button"
-                    onClick={
-                      callWaiter
-                    }
+                    onClick={callWaiter}
                     disabled={
-                      waiterLoading ||
-                      tableLoading
+                      waiterLoading || tableLoading
                     }
                   >
                     {waiterLoading
@@ -700,18 +514,13 @@ export default function HomePage() {
               ) : (
                 <>
                   <div className="no-table">
-                    <span>
-                      📱
-                    </span>
+                    <span>📱</span>
 
-                    <strong>
-                      Masa bulunamadı
-                    </strong>
+                    <strong>Masa bulunamadı</strong>
 
                     <p>
-                      Garson çağırmak
-                      için masanızdaki
-                      QR kodu okutun.
+                      Garson çağırmak için
+                      masanızdaki QR kodu okutun.
                     </p>
                   </div>
 
@@ -734,22 +543,16 @@ export default function HomePage() {
               : "waiter-button"
           }
           onClick={() =>
-            setWaiterOpen(
-              (open) => !open
-            )
+            setWaiterOpen((open) => !open)
           }
           aria-label="Garson çağır"
         >
-          <span>
-            {waiterMessage
-              ? "✓"
-              : "👩🏻‍🍳"}
+          <span className="waiter-icon">
+            {waiterMessage ? "✓" : "👩🏻‍🍳"}
           </span>
 
-          <small>
-            {waiterMessage
-              ? "Çağrıldı"
-              : "Garson"}
+          <small className="waiter-label">
+            {waiterMessage ? "Çağrıldı" : "Garson"}
           </small>
 
           {!waiterMessage && (
@@ -772,23 +575,44 @@ export default function HomePage() {
           </div>
 
           <div>
-            <strong>
-              Taşkent Cafe
-            </strong>
+            <strong>Taşkent Cafe</strong>
 
-            <span>
-              Mardin Kale
-            </span>
+            <span>Mardin Kale</span>
           </div>
         </div>
 
-        <p>
-          Keyfinize keyif katıyoruz.
-        </p>
+        <p>Keyfinize keyif katıyoruz.</p>
 
-        <small>
-          © 2026 Taşkent Cafe
-        </small>
+        <div className="social-media">
+          <a
+            href="#"
+            className="social-link"
+            aria-label="Instagram"
+            onClick={(event) => event.preventDefault()}
+          >
+            <span>◎</span>
+          </a>
+
+          <a
+            href="#"
+            className="social-link"
+            aria-label="Facebook"
+            onClick={(event) => event.preventDefault()}
+          >
+            <span>f</span>
+          </a>
+
+          <a
+            href="#"
+            className="social-link"
+            aria-label="WhatsApp"
+            onClick={(event) => event.preventDefault()}
+          >
+            <span>◔</span>
+          </a>
+        </div>
+
+        <small>© 2026 Taşkent Cafe</small>
       </footer>
 
       <style jsx global>{`
@@ -1375,18 +1199,32 @@ export default function HomePage() {
           isolation: isolate;
         }
 
-        .waiter-button > span {
+        /*
+          GARSON BUTONU:
+          İçerik üstte, halkalar arkada.
+          Önceki sürümde signal z-index:-1 olduğu
+          için halka bazı cihazlarda tamamen
+          görünmez olabiliyordu.
+        */
+
+        .waiter-icon {
           position: relative;
-          z-index: 5;
+          z-index: 3;
+          display: block;
           font-size: 25px;
           line-height: 1;
         }
 
-        .waiter-button small {
+        .waiter-label {
           position: relative;
-          z-index: 5;
+          z-index: 3;
+          display: block;
+          color: #fff;
           font-size: 8px;
+          line-height: 1;
           font-weight: 800;
+          opacity: 1;
+          visibility: visible;
         }
 
         .success-button {
@@ -1405,14 +1243,15 @@ export default function HomePage() {
           width: 64px;
           height: 64px;
           border: 2px solid
-            rgba(139, 94, 60, 0.55);
+            rgba(139, 94, 60, 0.6);
           border-radius: 50%;
           transform: translate(
             -50%,
             -50%
           );
           pointer-events: none;
-          z-index: -1;
+          z-index: 1;
+          opacity: 0;
           animation:
             signalPulse 2.4s
               ease-out infinite;
@@ -1638,9 +1477,62 @@ export default function HomePage() {
         }
 
         .footer p {
-          margin: 12px 0 5px;
+          margin: 12px 0 9px;
           color: var(--muted);
           font-size: 9px;
+        }
+
+        /*
+          SOSYAL MEDYA
+          Alt bölüm geri getirildi.
+          Link adresleri şimdilik placeholder;
+          gerçek hesap adreslerini daha sonra
+          değiştirebiliriz.
+        */
+
+        .social-media {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          margin: 0 0 10px;
+        }
+
+        .social-link {
+          width: 30px;
+          height: 30px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border: 1px solid var(--border);
+          border-radius: 50%;
+          background: #fffdfb;
+          color: var(--brown-dark);
+          text-decoration: none;
+          box-shadow:
+            0 3px 10px
+              rgba(59, 38, 24, 0.05);
+          transition:
+            transform 0.18s ease,
+            background 0.18s ease;
+        }
+
+        .social-link:hover {
+          background: #f4e9df;
+          transform: translateY(-2px);
+        }
+
+        .social-link:active {
+          transform: scale(0.94);
+        }
+
+        .social-link span {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 14px;
+          line-height: 1;
+          font-weight: 850;
         }
 
         .footer small {
