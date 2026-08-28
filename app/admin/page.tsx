@@ -28,12 +28,6 @@ export default function AdminPage() {
   const [error, setError] =
     useState("");
 
-  /*
-   * --------------------------------------------------
-   * OTURUM KONTROLÜ
-   * --------------------------------------------------
-   */
-
   useEffect(() => {
     checkSession();
   }, []);
@@ -113,12 +107,6 @@ export default function AdminPage() {
     }
   };
 
-  /*
-   * --------------------------------------------------
-   * GİRİŞ
-   * --------------------------------------------------
-   */
-
   const handleLogin = async (
     event: FormEvent<HTMLFormElement>
   ) => {
@@ -182,10 +170,6 @@ export default function AdminPage() {
         );
       }
 
-      /*
-       * API'den gelen Supabase session'ını
-       * browser client'a aktarıyoruz.
-       */
       if (
         data.session?.access_token &&
         data.session?.refresh_token
@@ -235,12 +219,6 @@ export default function AdminPage() {
     }
   };
 
-  /*
-   * --------------------------------------------------
-   * ÇIKIŞ
-   * --------------------------------------------------
-   */
-
   const handleLogout = async () => {
     await supabase.auth.signOut();
 
@@ -253,12 +231,6 @@ export default function AdminPage() {
     setPassword("");
     setError("");
   };
-
-  /*
-   * --------------------------------------------------
-   * YÜKLENİYOR
-   * --------------------------------------------------
-   */
 
   if (checking) {
     return (
@@ -343,12 +315,6 @@ export default function AdminPage() {
       </main>
     );
   }
-
-  /*
-   * ==================================================
-   * GİRİŞ EKRANI
-   * ==================================================
-   */
 
   if (!staff) {
     return (
@@ -800,12 +766,6 @@ export default function AdminPage() {
     );
   }
 
-  /*
-   * ==================================================
-   * GİRİŞ BAŞARILI — ADMIN ANA SAYFASI
-   * ==================================================
-   */
-
   return (
     <main className="dashboard-page">
 
@@ -881,6 +841,31 @@ export default function AdminPage() {
         </div>
 
         <div className="menu-grid">
+
+          {/* YENİ — ANA SAYFA YÖNETİMİ */}
+          <a
+            href="/admin/home"
+            className="menu-card"
+          >
+            <div className="menu-icon">
+              🏠
+            </div>
+
+            <div className="menu-info">
+              <strong>
+                Ana Sayfa Yönetimi
+              </strong>
+
+              <span>
+                Ana sayfa bölümlerini,
+                içerikleri ve görünümü yönet.
+              </span>
+            </div>
+
+            <b>
+              →
+            </b>
+          </a>
 
           <a
             href="/admin/staff"
