@@ -293,6 +293,7 @@ export default function AdminLoyaltyPage() {
 
   return (
     <main className="site">
+
       <header className="admin-page-header">
         <div>
           <span className="admin-page-kicker">
@@ -318,9 +319,11 @@ export default function AdminLoyaltyPage() {
       </header>
 
       <section className="loyalty-page admin-loyalty-page">
+
         {message && (
           <div className="admin-alert success">
             <span>✓</span>
+
             <div>
               <strong>
                 İşlem başarılı
@@ -336,6 +339,7 @@ export default function AdminLoyaltyPage() {
         {error && (
           <div className="admin-alert error">
             <span>!</span>
+
             <div>
               <strong>
                 İşlem gerçekleştirilemedi
@@ -349,7 +353,9 @@ export default function AdminLoyaltyPage() {
         )}
 
         <section className="points-card">
+
           <div className="points-card-header">
+
             <div className="points-icon">
               ⭐
             </div>
@@ -368,18 +374,19 @@ export default function AdminLoyaltyPage() {
                 göre puan hesabı yapılır.
               </p>
             </div>
+
           </div>
 
           <div className="points-form">
+
             <div className="form-field">
+
               <label>
                 Müşteri
               </label>
 
               <select
-                value={
-                  selectedCustomer
-                }
+                value={selectedCustomer}
                 onChange={(event) =>
                   setSelectedCustomer(
                     event.target.value
@@ -407,6 +414,7 @@ export default function AdminLoyaltyPage() {
 
               {selectedCustomerData && (
                 <div className="selected-customer">
+
                   <div className="selected-customer-avatar">
                     👤
                   </div>
@@ -422,27 +430,31 @@ export default function AdminLoyaltyPage() {
                       {
                         selectedCustomerData.points
                       }
-                    }
-                  </span>
+                    </span>
+                  </div>
+
                 </div>
               )}
+
             </div>
 
             <div className="form-field">
+
               <label>
                 Alışveriş tutarı
               </label>
 
               <div className="money-input">
-                <span>₺</span>
+
+                <span>
+                  ₺
+                </span>
 
                 <input
                   type="number"
                   min="0.01"
                   step="0.01"
-                  value={
-                    purchaseAmount
-                  }
+                  value={purchaseAmount}
                   onChange={(event) =>
                     setPurchaseAmount(
                       event.target.value
@@ -450,20 +462,24 @@ export default function AdminLoyaltyPage() {
                   }
                   placeholder="450"
                 />
+
               </div>
 
               <small>
                 Her 10 ₺ alışveriş için 1
                 puan kazanılır.
               </small>
+
             </div>
 
             <div className="points-preview">
+
               <div className="points-preview-icon">
                 ⭐
               </div>
 
               <div>
+
                 <span>
                   KAZANILACAK PUAN
                 </span>
@@ -475,19 +491,20 @@ export default function AdminLoyaltyPage() {
                 <small>
                   puan
                 </small>
+
               </div>
+
             </div>
 
             <div className="form-field">
+
               <label>
                 İşlem açıklaması
               </label>
 
               <input
                 type="text"
-                value={
-                  description
-                }
+                value={description}
                 onChange={(event) =>
                   setDescription(
                     event.target.value
@@ -495,6 +512,7 @@ export default function AdminLoyaltyPage() {
                 }
                 placeholder="Alışveriş puanı"
               />
+
             </div>
 
             <button
@@ -509,6 +527,7 @@ export default function AdminLoyaltyPage() {
                 previewPoints <= 0
               }
             >
+
               <span>
                 ⭐
               </span>
@@ -518,13 +537,19 @@ export default function AdminLoyaltyPage() {
                 : previewPoints > 0
                   ? `${previewPoints} Puan Ekle`
                   : "Puan Ekle"}
+
             </button>
+
           </div>
+
         </section>
 
         <section className="customer-section">
+
           <div className="section-title">
+
             <div>
+
               <span>
                 MÜŞTERİLER
               </span>
@@ -532,16 +557,21 @@ export default function AdminLoyaltyPage() {
               <h2>
                 Müşteri bakiyeleri
               </h2>
+
             </div>
 
             <strong>
               {customers.length}
             </strong>
+
           </div>
 
           <div className="customer-list">
+
             {customers.length === 0 ? (
+
               <div className="empty-card">
+
                 <div>
                   👤
                 </div>
@@ -555,21 +585,24 @@ export default function AdminLoyaltyPage() {
                   eklendiğinde burada
                   görünecek.
                 </p>
+
               </div>
+
             ) : (
+
               customers.map(
                 (customer) => (
                   <article
                     className="customer-card"
-                    key={
-                      customer.id
-                    }
+                    key={customer.id}
                   >
+
                     <div className="customer-avatar">
                       👤
                     </div>
 
                     <div className="customer-info">
+
                       <strong>
                         {customer.name ||
                           "Misafir"}
@@ -579,18 +612,19 @@ export default function AdminLoyaltyPage() {
                         {customer.level ||
                           "Standart"}
                       </span>
+
                     </div>
 
                     <div className="customer-points">
+
                       <strong>
-                        {
-                          customer.points
-                        }
+                        {customer.points}
                       </strong>
 
                       <span>
                         puan
                       </span>
+
                     </div>
 
                     <button
@@ -600,6 +634,7 @@ export default function AdminLoyaltyPage() {
                         setSelectedCustomer(
                           customer.id
                         );
+
                         setError(
                           "Puan silme işlemi için mevcut Supabase puan silme fonksiyonunu bağlamamız gerekiyor. Çalışan sistemi bozmamak için burada varsayımsal bir RPC kullanılmadı."
                         );
@@ -607,45 +642,21 @@ export default function AdminLoyaltyPage() {
                     >
                       − Puan Sil
                     </button>
+
                   </article>
                 )
               )
+
             )}
+
           </div>
+
         </section>
 
-        <div className="security-note">
-          <div>
-            🔐
-          </div>
-
-          <div>
-            <strong>
-              Güvenli işlem
-            </strong>
-
-            <p>
-              Puan ekleme işlemi mevcut
-              Supabase fonksiyonunuz üzerinden
-              gerçekleştirilir. Çalışan puan
-              sistemine doğrudan müdahale
-              edilmez.
-            </p>
-          </div>
-        </div>
       </section>
 
-      <footer className="footer">
-        <div className="footer-logo">
-          ☕ Taşkent Cafe
-        </div>
-
-        <small>
-          © 2026 Taşkent Cafe
-        </small>
-      </footer>
-
       <style jsx global>{`
+
         .admin-page-header {
           display: flex;
           align-items: center;
@@ -1211,35 +1222,6 @@ export default function AdminLoyaltyPage() {
           font-size: 8px;
         }
 
-        .security-note {
-          display: flex;
-          align-items: flex-start;
-          gap: 10px;
-          margin-top: 18px;
-          padding: 13px;
-          border: 1px solid #eee3d8;
-          border-radius: 15px;
-          background: #fffaf5;
-        }
-
-        .security-note > div:first-child {
-          font-size: 17px;
-        }
-
-        .security-note strong {
-          display: block;
-          color: #493a30;
-          font-size: 9px;
-          font-weight: 900;
-        }
-
-        .security-note p {
-          margin: 4px 0 0;
-          color: #998c81;
-          font-size: 8px;
-          line-height: 1.5;
-        }
-
         @media (max-width: 430px) {
           .admin-page-header {
             padding: 18px 15px 15px;
@@ -1273,7 +1255,9 @@ export default function AdminLoyaltyPage() {
             padding: 0 6px;
           }
         }
+
       `}</style>
+
     </main>
   );
 }
