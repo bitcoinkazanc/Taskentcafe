@@ -230,7 +230,7 @@ export default function HomePage() {
 
           <div>
             <h1>Taşkent Cafe</h1>
-            <span>Mardin Kale</span>
+            <span>Mardin</span>
           </div>
         </div>
       </header>
@@ -504,7 +504,15 @@ export default function HomePage() {
           }
           aria-label="Garson çağır"
         >
-          <span>
+          {!waiterMessage && (
+            <span className="signal-ring ring-one" />
+          )}
+
+          {!waiterMessage && (
+            <span className="signal-ring ring-two" />
+          )}
+
+          <span className="waiter-icon">
             {waiterMessage
               ? "✓"
               : "👩🏻‍🍳"}
@@ -984,16 +992,63 @@ export default function HomePage() {
           justify-content: center;
           gap: 2px;
           cursor: pointer;
+          isolation: isolate;
         }
 
-        .waiter-button > span {
+        .waiter-button > .waiter-icon {
+          position: relative;
+          z-index: 4;
           font-size: 25px;
           line-height: 1;
         }
 
         .waiter-button small {
+          position: relative;
+          z-index: 4;
           font-size: 8px;
           font-weight: 800;
+        }
+
+        .signal-ring {
+          position: absolute;
+          left: 50%;
+          top: 50%;
+          width: 62px;
+          height: 62px;
+          border: 2px solid
+            rgba(139, 94, 60, 0.65);
+          border-radius: 50%;
+          transform: translate(-50%, -50%)
+            scale(1);
+          pointer-events: none;
+          z-index: 1;
+          animation:
+            waiterSignal 2.2s
+            ease-out infinite;
+        }
+
+        .ring-two {
+          animation-delay: 1.1s;
+        }
+
+        @keyframes waiterSignal {
+          0% {
+            opacity: 0.65;
+            transform:
+              translate(-50%, -50%)
+              scale(1);
+          }
+
+          70% {
+            opacity: 0.18;
+          }
+
+          100% {
+            opacity: 0;
+            transform:
+              translate(-50%, -50%)
+              scale(1.8);
+          }
         }
 
         .success-button {
