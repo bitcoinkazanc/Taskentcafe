@@ -1,18 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 export default function BottomNav() {
   const pathname = usePathname();
+  const router = useRouter();
 
   const goToSection = (
     event: React.MouseEvent<HTMLAnchorElement>,
     section: string
   ) => {
-    if (pathname === "/") {
-      event.preventDefault();
+    event.preventDefault();
 
+    if (pathname === "/") {
       const element = document.getElementById(section);
 
       if (element) {
@@ -24,10 +25,14 @@ export default function BottomNav() {
 
       return;
     }
+
+    router.push(`/#${section}`);
   };
 
   return (
     <nav className="bottom-nav">
+
+      {/* ANA SAYFA */}
       <Link
         href="/"
         className={
@@ -50,6 +55,8 @@ export default function BottomNav() {
         <small>Ana Sayfa</small>
       </Link>
 
+
+      {/* MENÜ */}
       <Link
         href="/#menu"
         className="nav-item"
@@ -61,18 +68,21 @@ export default function BottomNav() {
         <small>Menü</small>
       </Link>
 
+
+      {/* SADAKAT */}
       <Link
-        href="/loyalty"
-        className={
-          pathname.startsWith("/loyalty")
-            ? "nav-item active"
-            : "nav-item"
+        href="/#loyalty"
+        className="nav-item"
+        onClick={(event) =>
+          goToSection(event, "loyalty")
         }
       >
         <span>⭐</span>
         <small>Sadakat</small>
       </Link>
 
+
+      {/* KONUM */}
       <Link
         href="/#location"
         className="nav-item"
@@ -83,6 +93,7 @@ export default function BottomNav() {
         <span>📍</span>
         <small>Konum</small>
       </Link>
+
     </nav>
   );
 }
