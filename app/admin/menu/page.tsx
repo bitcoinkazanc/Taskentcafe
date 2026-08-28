@@ -175,14 +175,10 @@ export default function AdminMenuPage() {
             .eq("id", editingId);
 
         if (updateError) {
-          throw new Error(
-            updateError.message
-          );
+          throw new Error(updateError.message);
         }
 
-        setMessage(
-          "Ürün başarıyla güncellendi."
-        );
+        setMessage("Ürün başarıyla güncellendi.");
       } else {
         const { error: insertError } =
           await supabase
@@ -190,14 +186,10 @@ export default function AdminMenuPage() {
             .insert(payload);
 
         if (insertError) {
-          throw new Error(
-            insertError.message
-          );
+          throw new Error(insertError.message);
         }
 
-        setMessage(
-          "Ürün başarıyla menüye eklendi."
-        );
+        setMessage("Ürün başarıyla menüye eklendi.");
       }
 
       resetForm();
@@ -256,12 +248,6 @@ export default function AdminMenuPage() {
       return;
     }
 
-    setMessage(
-      item.active
-        ? `"${item.name}" pasif yapıldı.`
-        : `"${item.name}" aktif yapıldı.`
-    );
-
     await loadItems();
   };
 
@@ -303,18 +289,10 @@ export default function AdminMenuPage() {
     return (
       <main className="site">
         <section className="section">
-          <div className="admin-loading-card">
-            <div className="admin-loading-icon">
-              ☕
-            </div>
-
-            <strong>
-              Menü yönetimi yükleniyor
-            </strong>
-
-            <span>
-              Lütfen bekleyin...
-            </span>
+          <div className="menu-state-card">
+            <div className="menu-state-icon">☕</div>
+            <strong>Menü yükleniyor</strong>
+            <span>Lütfen bekleyin...</span>
           </div>
         </section>
       </main>
@@ -324,56 +302,32 @@ export default function AdminMenuPage() {
   if (!authorized) {
     return (
       <main className="site">
-        <header className="header">
-          <a
-            href="/admin"
-            className="brand"
-          >
-            <div className="logo">
-              ☕
-            </div>
-
-            <div>
-              <h1>
-                Taşkent Cafe
-              </h1>
-
-              <span>
-                Menü Yönetimi
-              </span>
-            </div>
-          </a>
-        </header>
-
         <section className="section">
-          <div className="admin-access-box">
-            <div className="admin-access-icon">
-              🔒
-            </div>
+          <div className="menu-access-card">
+            <div className="menu-access-icon">🔒</div>
 
-            <span className="admin-access-eyebrow">
-              ERİŞİM ENGELLENDİ
+            <span className="eyebrow">
+              YETKİ GEREKLİ
             </span>
 
-            <h2>
-              Yetkisiz erişim
-            </h2>
+            <h2>Yetkisiz erişim</h2>
 
             <p>
-              Bu sayfaya yalnızca yetkili
+              Menü yönetimine yalnızca yetkili
               personel erişebilir.
             </p>
 
             {error && (
-              <div className="admin-alert admin-alert-error">
+              <div className="menu-alert menu-alert-error">
                 ⚠️ {error}
               </div>
             )}
 
             <a
               href="/admin"
-              className="admin-primary-button"
+              className="menu-back-main"
             >
+              <span>←</span>
               Yönetim Paneline Dön
             </a>
           </div>
@@ -382,194 +336,98 @@ export default function AdminMenuPage() {
     );
   }
 
-  const activeCount = items.filter(
-    (item) => item.active
-  ).length;
-
-  const inactiveCount =
-    items.length - activeCount;
-
   return (
     <main className="site">
-      <header className="header">
-        <a
-          href="/admin"
-          className="brand"
-        >
-          <div className="logo">
+      <header className="menu-admin-header">
+        <div className="menu-admin-title">
+          <div className="menu-admin-icon">
             ☕
           </div>
 
           <div>
-            <h1>
-              Taşkent Cafe
-            </h1>
-
-            <span>
-              Menü Yönetimi
-            </span>
+            <span>ADMİN PANELİ</span>
+            <h1>Menü Yönetimi</h1>
           </div>
-        </a>
+        </div>
 
         <a
           href="/admin"
-          className="icon-button"
+          className="menu-back-button"
           aria-label="Yönetim paneline dön"
         >
-          ←
+          <span>←</span>
+          <strong>Geri</strong>
         </a>
       </header>
 
       <section className="section admin-menu-page">
-        <div className="admin-page-top">
+        <div className="menu-page-intro">
           <div>
-            <span className="admin-page-eyebrow">
-              YÖNETİM PANELİ
+            <span className="eyebrow">
+              {editingId ? "DÜZENLEME" : "MENÜ"}
             </span>
 
             <h2>
-              Menü Yönetimi
+              {editingId
+                ? "Ürünü Düzenle"
+                : "Yeni Ürün Ekle"}
             </h2>
 
             <p>
-              Menü ürünlerini ekleyin,
-              düzenleyin ve yayın durumlarını
-              yönetin.
+              Menü ürünlerini buradan ekleyebilir,
+              düzenleyebilir ve yönetebilirsiniz.
             </p>
           </div>
 
-          <div className="admin-menu-total">
-            <strong>
-              {items.length}
-            </strong>
-
-            <span>
-              toplam ürün
-            </span>
-          </div>
-        </div>
-
-        <div className="admin-menu-stats">
-          <div className="admin-stat-card">
-            <div className="admin-stat-icon">
-              ☕
-            </div>
-
-            <div>
-              <strong>
-                {items.length}
-              </strong>
-
-              <span>
-                Toplam Ürün
-              </span>
-            </div>
-          </div>
-
-          <div className="admin-stat-card">
-            <div className="admin-stat-icon admin-stat-active">
-              ✓
-            </div>
-
-            <div>
-              <strong>
-                {activeCount}
-              </strong>
-
-              <span>
-                Aktif
-              </span>
-            </div>
-          </div>
-
-          <div className="admin-stat-card">
-            <div className="admin-stat-icon admin-stat-passive">
-              ○
-            </div>
-
-            <div>
-              <strong>
-                {inactiveCount}
-              </strong>
-
-              <span>
-                Pasif
-              </span>
-            </div>
+          <div className="menu-total-badge">
+            <strong>{items.length}</strong>
+            <span>ürün</span>
           </div>
         </div>
 
         {message && (
-          <div className="admin-alert admin-alert-success">
-            <span>
-              ✓
-            </span>
-
-            <div>
-              {message}
-            </div>
+          <div className="menu-alert menu-alert-success">
+            <span>✓</span>
+            {message}
           </div>
         )}
 
         {error && (
-          <div className="admin-alert admin-alert-error">
-            <span>
-              ⚠️
-            </span>
-
-            <div>
-              {error}
-            </div>
+          <div className="menu-alert menu-alert-error">
+            <span>!</span>
+            {error}
           </div>
         )}
 
         <div
-          className={`admin-editor-card ${
-            editingId
-              ? "admin-editor-editing"
-              : ""
+          className={`admin-menu-form-card ${
+            editingId ? "is-editing" : ""
           }`}
         >
-          <div className="admin-editor-header">
-            <div className="admin-editor-title">
-              <div className="admin-editor-icon">
-                {editingId
-                  ? "✎"
-                  : "+"}
-              </div>
-
-              <div>
-                <span>
-                  {editingId
-                    ? "ÜRÜN DÜZENLEME"
-                    : "MENÜYE ÜRÜN EKLE"}
-                </span>
-
-                <strong>
-                  {editingId
-                    ? "Ürünü Düzenle"
-                    : "Yeni Ürün Ekle"}
-                </strong>
-              </div>
+          <div className="form-card-header">
+            <div className="form-card-icon">
+              {editingId ? "✎" : "+"}
             </div>
 
-            {editingId && (
-              <button
-                type="button"
-                className="admin-close-edit"
-                onClick={resetForm}
-              >
-                İptal
-              </button>
-            )}
+            <div>
+              <strong>
+                {editingId
+                  ? "Ürün Bilgilerini Düzenle"
+                  : "Yeni Menü Ürünü"}
+              </strong>
+
+              <span>
+                {editingId
+                  ? "Mevcut ürün bilgilerini güncelleyin."
+                  : "Menünüze yeni bir ürün ekleyin."}
+              </span>
+            </div>
           </div>
 
-          <div className="admin-editor-body">
-            <div className="admin-form-grid">
-              <label className="admin-field admin-field-full">
-                <span>
-                  Ürün adı
-                </span>
+          <div className="admin-menu-form">
+            <div className="form-grid">
+              <label>
+                <span>Ürün adı</span>
 
                 <input
                   type="text"
@@ -577,48 +435,59 @@ export default function AdminMenuPage() {
                   onChange={(event) =>
                     setForm({
                       ...form,
-                      name:
-                        event.target.value,
+                      name: event.target.value,
                     })
                   }
                   placeholder="Örn. Türk Kahvesi"
                 />
               </label>
 
-              <label className="admin-field">
-                <span>
-                  Kategori
-                </span>
+              <label>
+                <span>Kategori</span>
 
                 <select
                   value={form.category}
                   onChange={(event) =>
                     setForm({
                       ...form,
-                      category:
-                        event.target.value,
+                      category: event.target.value,
                     })
                   }
                 >
-                  {categories.map(
-                    (category) => (
-                      <option
-                        key={category}
-                        value={category}
-                      >
-                        {category}
-                      </option>
-                    )
-                  )}
+                  {categories.map((category) => (
+                    <option
+                      key={category}
+                      value={category}
+                    >
+                      {category}
+                    </option>
+                  ))}
                 </select>
               </label>
+            </div>
 
-              <label className="admin-field">
-                <span>
-                  Fiyat
-                </span>
+            <label>
+              <span>Açıklama</span>
 
-                <div className="admin-price-input">
+              <textarea
+                value={form.description}
+                onChange={(event) =>
+                  setForm({
+                    ...form,
+                    description:
+                      event.target.value,
+                  })
+                }
+                placeholder="Ürün hakkında kısa bilgi..."
+                rows={3}
+              />
+            </label>
+
+            <div className="form-grid form-grid-three">
+              <label>
+                <span>Fiyat</span>
+
+                <div className="price-input">
                   <input
                     type="number"
                     min="0"
@@ -627,87 +496,18 @@ export default function AdminMenuPage() {
                     onChange={(event) =>
                       setForm({
                         ...form,
-                        price:
-                          event.target.value,
+                        price: event.target.value,
                       })
                     }
                     placeholder="120"
                   />
 
-                  <b>
-                    ₺
-                  </b>
+                  <b>₺</b>
                 </div>
               </label>
 
-              <label className="admin-field admin-field-full">
-                <span>
-                  Açıklama / Bilgi
-                </span>
-
-                <textarea
-                  value={form.description}
-                  onChange={(event) =>
-                    setForm({
-                      ...form,
-                      description:
-                        event.target.value,
-                    })
-                  }
-                  placeholder="Ürün hakkında kısa bilgi..."
-                  rows={3}
-                />
-              </label>
-
-              <label className="admin-field admin-field-full">
-                <span>
-                  Ürün resmi URL'si
-                </span>
-
-                <input
-                  type="url"
-                  value={form.image_url}
-                  onChange={(event) =>
-                    setForm({
-                      ...form,
-                      image_url:
-                        event.target.value,
-                    })
-                  }
-                  placeholder="https://..."
-                />
-              </label>
-
-              {form.image_url && (
-                <div className="admin-preview-card admin-field-full">
-                  <div className="admin-preview-image">
-                    <img
-                      src={form.image_url}
-                      alt="Ürün önizleme"
-                    />
-                  </div>
-
-                  <div>
-                    <span>
-                      GÖRSEL ÖNİZLEME
-                    </span>
-
-                    <strong>
-                      Ürün resmi
-                    </strong>
-
-                    <small>
-                      Menüde bu görsel
-                      kullanılacaktır.
-                    </small>
-                  </div>
-                </div>
-              )}
-
-              <label className="admin-field">
-                <span>
-                  Sıralama
-                </span>
+              <label>
+                <span>Sıralama</span>
 
                 <input
                   type="number"
@@ -723,40 +523,71 @@ export default function AdminMenuPage() {
                 />
               </label>
 
-              <label className="admin-active-toggle">
+              <label>
+                <span>Görsel URL</span>
+
                 <input
-                  type="checkbox"
-                  checked={form.active}
+                  type="url"
+                  value={form.image_url}
                   onChange={(event) =>
                     setForm({
                       ...form,
-                      active:
-                        event.target.checked,
+                      image_url:
+                        event.target.value,
                     })
                   }
+                  placeholder="https://..."
                 />
-
-                <span className="admin-toggle-ui">
-                  <span />
-                </span>
-
-                <span>
-                  <strong>
-                    Ana menüde göster
-                  </strong>
-
-                  <small>
-                    Ürün müşterilere
-                    gösterilsin
-                  </small>
-                </span>
               </label>
             </div>
 
-            <div className="admin-editor-actions">
+            {form.image_url && (
+              <div className="image-preview-card">
+                <img
+                  src={form.image_url}
+                  alt="Ürün önizleme"
+                />
+
+                <div>
+                  <strong>Görsel önizleme</strong>
+                  <span>
+                    Ürünün menüdeki görünümü
+                  </span>
+                </div>
+              </div>
+            )}
+
+            <label className="active-switch">
+              <input
+                type="checkbox"
+                checked={form.active}
+                onChange={(event) =>
+                  setForm({
+                    ...form,
+                    active:
+                      event.target.checked,
+                  })
+                }
+              />
+
+              <span className="switch-ui"></span>
+
+              <div>
+                <strong>
+                  Ana menüde göster
+                </strong>
+
+                <small>
+                  Ürün müşterilerin görebileceği
+                  menüde yayınlansın.
+                </small>
+              </div>
+            </label>
+
+            <div className="form-actions">
               <button
                 type="button"
-                className="admin-primary-button admin-save-button"
+                className="menu-save-button"
                 onClick={saveItem}
                 disabled={saving}
               >
@@ -771,17 +602,17 @@ export default function AdminMenuPage() {
                 {saving
                   ? "Kaydediliyor..."
                   : editingId
-                    ? "Ürünü Güncelle"
+                    ? "Değişiklikleri Kaydet"
                     : "Menüye Ekle"}
               </button>
 
               {editingId && (
                 <button
                   type="button"
-                  className="admin-secondary-button"
+                  className="menu-cancel-button"
                   onClick={resetForm}
                 >
-                  Değişiklikleri İptal Et
+                  İptal
                 </button>
               )}
             </div>
@@ -789,45 +620,37 @@ export default function AdminMenuPage() {
         </div>
 
         <section className="admin-menu-list">
-          <div className="admin-list-header">
+          <div className="list-header">
             <div>
-              <span>
-                MENÜ
+              <span className="eyebrow">
+                MENÜ ÜRÜNLERİ
               </span>
 
-              <h2>
-                Ürünler
-              </h2>
+              <h2>Ürün Listesi</h2>
             </div>
 
-            <div className="admin-list-count">
+            <span className="list-count">
               {items.length} ürün
-            </div>
+            </span>
           </div>
 
-          {items.length === 0 ? (
-            <div className="admin-empty-card">
-              <div>
-                ☕
+          <div className="admin-menu-items">
+            {items.length === 0 ? (
+              <div className="empty-menu-card">
+                <div>☕</div>
+                <strong>Henüz ürün yok</strong>
+                <span>
+                  İlk ürününüzü yukarıdaki formdan
+                  ekleyebilirsiniz.
+                </span>
               </div>
-
-              <strong>
-                Henüz ürün yok
-              </strong>
-
-              <p>
-                Yukarıdaki formu kullanarak
-                ilk menü ürününüzü ekleyin.
-              </p>
-            </div>
-          ) : (
-            <div className="admin-menu-items">
-              {items.map((item) => (
+            ) : (
+              items.map((item) => (
                 <article
                   className={`admin-menu-item ${
-                    item.active
-                      ? ""
-                      : "admin-menu-item-inactive"
+                    !item.active
+                      ? "menu-item-passive"
+                      : ""
                   }`}
                   key={item.id}
                 >
@@ -838,49 +661,38 @@ export default function AdminMenuPage() {
                         alt={item.name}
                       />
                     ) : (
-                      <div className="admin-no-image">
-                        ☕
-                      </div>
+                      <span>☕</span>
                     )}
-
-                    <span
-                      className={`admin-status-dot ${
-                        item.active
-                          ? "admin-status-active"
-                          : "admin-status-inactive"
-                      }`}
-                    />
                   </div>
 
                   <div className="admin-menu-content">
-                    <div className="admin-menu-title-row">
-                      <strong>
-                        {item.name}
-                      </strong>
+                    <div className="product-topline">
+                      <span className="product-category">
+                        {item.category}
+                      </span>
 
                       <span
-                        className={`admin-status-badge ${
+                        className={`product-status ${
                           item.active
-                            ? "admin-badge-active"
-                            : "admin-badge-inactive"
+                            ? "status-active"
+                            : "status-passive"
                         }`}
                       >
+                        <i></i>
                         {item.active
                           ? "Aktif"
                           : "Pasif"}
                       </span>
                     </div>
 
-                    <span className="admin-menu-category">
-                      {item.category}
-                    </span>
+                    <strong>{item.name}</strong>
 
                     <p>
                       {item.description ||
-                        "Bu ürün için açıklama eklenmemiş."}
+                        "Açıklama eklenmemiş."}
                     </p>
 
-                    <div className="admin-menu-meta">
+                    <div className="product-bottom">
                       <b>
                         {Number(
                           item.price
@@ -895,8 +707,7 @@ export default function AdminMenuPage() {
                       </b>
 
                       <span>
-                        Sıra:{" "}
-                        {item.sort_order}
+                        Sıra: {item.sort_order}
                       </span>
                     </div>
                   </div>
@@ -906,17 +717,15 @@ export default function AdminMenuPage() {
                       type="button"
                       className={
                         item.active
-                          ? "admin-action-status admin-action-active"
-                          : "admin-action-status admin-action-inactive"
+                          ? "action-status active"
+                          : "action-status passive"
                       }
                       onClick={() =>
                         toggleActive(item)
                       }
                     >
                       <span>
-                        {item.active
-                          ? "✓"
-                          : "○"}
+                        {item.active ? "✓" : "○"}
                       </span>
 
                       {item.active
@@ -926,36 +735,30 @@ export default function AdminMenuPage() {
 
                     <button
                       type="button"
-                      className="admin-action-edit"
+                      className="action-edit"
                       onClick={() =>
                         editItem(item)
                       }
                     >
-                      <span>
-                        ✎
-                      </span>
-
+                      <span>✎</span>
                       Düzenle
                     </button>
 
                     <button
                       type="button"
-                      className="admin-action-delete"
+                      className="action-delete"
                       onClick={() =>
                         deleteItem(item)
                       }
                     >
-                      <span>
-                        ×
-                      </span>
-
+                      <span>×</span>
                       Sil
                     </button>
                   </div>
                 </article>
-              ))}
-            </div>
-          )}
+              ))
+            )}
+          </div>
         </section>
       </section>
 
@@ -964,133 +767,157 @@ export default function AdminMenuPage() {
           ☕ Taşkent Cafe
         </div>
 
-        <p>
-          Menü yönetimi
-        </p>
+        <p>Menü Yönetimi</p>
 
-        <small>
-          © 2026 Taşkent Cafe
-        </small>
+        <small>© 2026 Taşkent Cafe</small>
       </footer>
 
       <style jsx global>{`
         .admin-menu-page {
+          padding-top: 24px;
           padding-bottom: 45px;
         }
 
-        .admin-page-top {
-          display: flex;
-          align-items: flex-end;
-          justify-content: space-between;
-          gap: 20px;
-          margin-bottom: 22px;
-        }
-
-        .admin-page-eyebrow,
-        .admin-list-header > div:first-child > span {
-          display: block;
-          color: #b36d37;
-          font-size: 8px;
-          font-weight: 900;
-          letter-spacing: 1.5px;
-        }
-
-        .admin-page-top h2 {
-          margin: 5px 0 0;
-          color: #34261e;
-          font-size: 25px;
-          line-height: 1.15;
-          letter-spacing: -0.5px;
-        }
-
-        .admin-page-top p {
-          max-width: 390px;
-          margin: 7px 0 0;
-          color: #998c81;
-          font-size: 10px;
-          line-height: 1.55;
-        }
-
-        .admin-menu-total {
-          display: flex;
-          flex-direction: column;
-          align-items: flex-end;
-          min-width: 70px;
-        }
-
-        .admin-menu-total strong {
-          color: #b36d37;
-          font-size: 23px;
-          line-height: 1;
-        }
-
-        .admin-menu-total span {
-          margin-top: 4px;
-          color: #9b8d82;
-          font-size: 8px;
-          font-weight: 700;
-        }
-
-        .admin-menu-stats {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 9px;
-          margin-bottom: 15px;
-        }
-
-        .admin-stat-card {
+        .menu-admin-header {
+          width: 100%;
+          max-width: 760px;
+          margin: 0 auto;
+          padding: 15px 18px;
           display: flex;
           align-items: center;
-          gap: 10px;
-          min-width: 0;
-          padding: 12px;
-          border: 1px solid #eee4da;
-          border-radius: 15px;
-          background: #ffffff;
-          box-shadow:
-            0 5px 18px rgba(60, 39, 25, 0.035);
+          justify-content: space-between;
+          gap: 12px;
+          border-bottom: 1px solid #eee4da;
+          background: rgba(255, 252, 248, 0.96);
+          position: sticky;
+          top: 0;
+          z-index: 20;
+          backdrop-filter: blur(12px);
         }
 
-        .admin-stat-icon {
-          width: 35px;
-          height: 35px;
-          flex: 0 0 35px;
+        .menu-admin-title {
+          display: flex;
+          align-items: center;
+          gap: 11px;
+          min-width: 0;
+        }
+
+        .menu-admin-icon {
+          width: 43px;
+          height: 43px;
+          flex: 0 0 43px;
           display: flex;
           align-items: center;
           justify-content: center;
-          border-radius: 11px;
-          background: #f7eee7;
-          color: #a86635;
-          font-size: 15px;
-          font-weight: 900;
+          border-radius: 14px;
+          background: #f4e9df;
+          color: #9d6031;
+          font-size: 19px;
+          box-shadow: inset 0 0 0 1px #eadbce;
         }
 
-        .admin-stat-active {
-          background: #edf7ef;
-          color: #4c8b5b;
+        .menu-admin-title > div:last-child {
+          min-width: 0;
         }
 
-        .admin-stat-passive {
-          background: #f1efed;
-          color: #81766f;
-        }
-
-        .admin-stat-card strong {
+        .menu-admin-title span {
           display: block;
-          color: #3b2d24;
-          font-size: 14px;
+          margin-bottom: 2px;
+          color: #ad7043;
+          font-size: 7px;
+          font-weight: 900;
+          letter-spacing: 1.2px;
+        }
+
+        .menu-admin-title h1 {
+          margin: 0;
+          color: #352820;
+          font-size: 16px;
+          font-weight: 850;
+          letter-spacing: -0.2px;
+        }
+
+        .menu-back-button {
+          height: 38px;
+          padding: 0 12px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 7px;
+          border: 1px solid #e5d8cc;
+          border-radius: 11px;
+          background: #ffffff;
+          color: #5f5148;
+          text-decoration: none;
+          box-shadow: 0 3px 10px rgba(60, 39, 25, 0.04);
+          transition:
+            transform 0.15s ease,
+            background 0.15s ease;
+        }
+
+        .menu-back-button:hover {
+          background: #fffaf5;
+          transform: translateY(-1px);
+        }
+
+        .menu-back-button span {
+          font-size: 17px;
           line-height: 1;
         }
 
-        .admin-stat-card span {
-          display: block;
-          margin-top: 4px;
-          color: #9b8d82;
-          font-size: 8px;
+        .menu-back-button strong {
+          font-size: 9px;
+          font-weight: 850;
+        }
+
+        .menu-page-intro {
+          display: flex;
+          align-items: flex-end;
+          justify-content: space-between;
+          gap: 15px;
+          margin-bottom: 18px;
+        }
+
+        .menu-page-intro h2 {
+          margin: 5px 0 4px;
+          color: #382a21;
+          font-size: 23px;
+          line-height: 1.1;
+          letter-spacing: -0.5px;
+        }
+
+        .menu-page-intro p {
+          margin: 0;
+          max-width: 430px;
+          color: #988a80;
+          font-size: 9px;
+          line-height: 1.5;
+        }
+
+        .menu-total-badge {
+          min-width: 61px;
+          padding: 9px 11px;
+          display: grid;
+          justify-items: center;
+          border: 1px solid #eaded3;
+          border-radius: 13px;
+          background: #fffaf5;
+        }
+
+        .menu-total-badge strong {
+          color: #a46232;
+          font-size: 17px;
+          line-height: 1;
+        }
+
+        .menu-total-badge span {
+          margin-top: 3px;
+          color: #a3968d;
+          font-size: 7px;
           font-weight: 700;
         }
 
-        .admin-alert {
+        .menu-alert {
           display: flex;
           align-items: center;
           gap: 9px;
@@ -1101,123 +928,118 @@ export default function AdminMenuPage() {
           font-weight: 700;
         }
 
-        .admin-alert > span {
-          font-size: 13px;
-        }
-
-        .admin-alert-success {
-          border: 1px solid #dbeee0;
-          background: #f3faf5;
-          color: #4d8059;
-        }
-
-        .admin-alert-error {
-          border: 1px solid #efd9d4;
-          background: #fff7f5;
-          color: #9b5c50;
-        }
-
-        .admin-editor-card {
-          overflow: hidden;
-          border: 1px solid #e9ded4;
-          border-radius: 21px;
-          background: #ffffff;
-          box-shadow:
-            0 9px 30px rgba(60, 39, 25, 0.055);
-        }
-
-        .admin-editor-editing {
-          border-color: #dec4ad;
-        }
-
-        .admin-editor-header {
+        .menu-alert span {
+          width: 20px;
+          height: 20px;
+          flex: 0 0 20px;
           display: flex;
           align-items: center;
-          justify-content: space-between;
-          gap: 15px;
-          padding: 16px 18px;
-          border-bottom: 1px solid #f0e8e1;
-          background: #fffdfa;
+          justify-content: center;
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.7);
+          font-size: 10px;
         }
 
-        .admin-editor-title {
+        .menu-alert-success {
+          border: 1px solid #dfe8dd;
+          background: #f5f9f3;
+          color: #55704f;
+        }
+
+        .menu-alert-error {
+          border: 1px solid #eadbd6;
+          background: #fff7f4;
+          color: #986256;
+        }
+
+        .admin-menu-form-card {
+          overflow: hidden;
+          border: 1px solid #e9ddd2;
+          border-radius: 22px;
+          background: #ffffff;
+          box-shadow:
+            0 10px 30px rgba(60, 39, 25, 0.055);
+        }
+
+        .admin-menu-form-card.is-editing {
+          border-color: #d9b79d;
+        }
+
+        .form-card-header {
           display: flex;
           align-items: center;
           gap: 11px;
+          padding: 16px 17px;
+          border-bottom: 1px solid #f0e8e1;
+          background: linear-gradient(
+            135deg,
+            #fffaf6,
+            #ffffff
+          );
         }
 
-        .admin-editor-icon {
-          width: 40px;
-          height: 40px;
+        .form-card-icon {
+          width: 39px;
+          height: 39px;
+          flex: 0 0 39px;
           display: flex;
           align-items: center;
           justify-content: center;
           border-radius: 12px;
-          background: #f7eee7;
-          color: #a86432;
-          font-size: 20px;
-          font-weight: 800;
+          background: #f4e9df;
+          color: #9f6031;
+          font-size: 19px;
+          font-weight: 700;
         }
 
-        .admin-editor-title span {
+        .form-card-header strong {
           display: block;
-          color: #b36d37;
-          font-size: 7px;
-          font-weight: 900;
-          letter-spacing: 1.1px;
+          color: #3a2b22;
+          font-size: 12px;
+          font-weight: 850;
         }
 
-        .admin-editor-title strong {
+        .form-card-header span {
           display: block;
           margin-top: 3px;
-          color: #392a20;
-          font-size: 13px;
-        }
-
-        .admin-close-edit {
-          min-height: 31px;
-          padding: 0 11px;
-          border: 1px solid #e4d8cd;
-          border-radius: 9px;
-          background: #ffffff;
-          color: #75675d;
+          color: #9d9086;
           font-size: 8px;
-          font-weight: 800;
-          cursor: pointer;
         }
 
-        .admin-editor-body {
-          padding: 18px;
+        .admin-menu-form {
+          display: grid;
+          gap: 15px;
+          padding: 17px;
         }
 
-        .admin-form-grid {
+        .form-grid {
           display: grid;
           grid-template-columns: 1fr 1fr;
-          gap: 14px;
+          gap: 13px;
         }
 
-        .admin-field {
+        .form-grid-three {
+          grid-template-columns: 0.8fr 0.65fr 1.55fr;
+        }
+
+        .admin-menu-form label:not(.active-switch) {
           display: grid;
           gap: 7px;
-          min-width: 0;
-        }
-
-        .admin-field-full {
-          grid-column: 1 / -1;
-        }
-
-        .admin-field > span {
-          color: #4a3a30;
+          color: #4b3c32;
           font-size: 9px;
-          font-weight: 900;
+          font-weight: 850;
         }
 
-        .admin-field input,
-        .admin-field select,
-        .admin-field textarea {
+        .admin-menu-form label:not(.active-switch) > span {
+          color: #4c3c32;
+        }
+
+        .admin-menu-form input,
+        .admin-menu-form select,
+        .admin-menu-form textarea {
           width: 100%;
           box-sizing: border-box;
-          border: 1px solid #e5d9ce;
+          border: 1px solid #e4d8ce;
           border-radius: 11px;
           background: #fffaf6;
           color: #30261f;
@@ -1226,259 +1048,229 @@ export default function AdminMenuPage() {
           font-size: 10px;
           transition:
             border-color 0.15s ease,
-            box-shadow 0.15s ease,
-            background 0.15s ease;
+            box-shadow 0.15s ease;
         }
 
-        .admin-field input,
-        .admin-field select {
-          height: 43px;
-          padding: 0 13px;
+        .admin-menu-form input,
+        .admin-menu-form select {
+          height: 42px;
+          padding: 0 12px;
         }
 
-        .admin-field textarea {
-          min-height: 82px;
-          padding: 12px 13px;
-          line-height: 1.5;
+        .admin-menu-form textarea {
+          min-height: 75px;
+          padding: 11px 12px;
           resize: vertical;
+          line-height: 1.45;
         }
 
-        .admin-field input:focus,
-        .admin-field select:focus,
-        .admin-field textarea:focus {
-          border-color: #bd7944;
-          background: #ffffff;
+        .admin-menu-form input::placeholder,
+        .admin-menu-form textarea::placeholder {
+          color: #b5aaa2;
+        }
+
+        .admin-menu-form input:focus,
+        .admin-menu-form select:focus,
+        .admin-menu-form textarea:focus {
+          border-color: #bb7543;
           box-shadow:
-            0 0 0 3px rgba(189, 121, 68, 0.08);
+            0 0 0 3px rgba(187, 117, 67, 0.08);
         }
 
-        .admin-price-input {
+        .price-input {
           position: relative;
         }
 
-        .admin-price-input input {
-          padding-right: 38px;
+        .price-input input {
+          padding-right: 30px;
         }
 
-        .admin-price-input b {
+        .price-input b {
           position: absolute;
+          right: 11px;
           top: 50%;
-          right: 13px;
           transform: translateY(-50%);
-          color: #b36d37;
-          font-size: 11px;
+          color: #a76638;
+          font-size: 10px;
         }
 
-        .admin-preview-card {
+        .image-preview-card {
           display: flex;
           align-items: center;
-          gap: 12px;
-          padding: 10px;
-          border: 1px solid #eee1d5;
+          gap: 11px;
+          padding: 9px;
+          border: 1px solid #eee2d8;
           border-radius: 13px;
           background: #fffaf5;
         }
 
-        .admin-preview-image {
-          width: 62px;
-          height: 62px;
-          flex: 0 0 62px;
-          overflow: hidden;
-          border-radius: 10px;
-          background: #eee1d4;
-        }
-
-        .admin-preview-image img {
-          width: 100%;
-          height: 100%;
+        .image-preview-card img {
+          width: 58px;
+          height: 58px;
+          flex: 0 0 58px;
           object-fit: cover;
+          border-radius: 10px;
+          background: #eee2d6;
         }
 
-        .admin-preview-card span {
+        .image-preview-card strong {
           display: block;
-          color: #b36d37;
+          color: #4b3a30;
+          font-size: 9px;
+        }
+
+        .image-preview-card span {
+          display: block;
+          margin-top: 3px;
+          color: #a0948a;
           font-size: 7px;
-          font-weight: 900;
-          letter-spacing: 1px;
         }
 
-        .admin-preview-card strong {
-          display: block;
-          margin-top: 3px;
-          color: #4a3a30;
-          font-size: 10px;
-        }
-
-        .admin-preview-card small {
-          display: block;
-          margin-top: 3px;
-          color: #998c81;
-          font-size: 8px;
-        }
-
-        .admin-active-toggle {
+        .active-switch {
+          position: relative;
           display: flex;
           align-items: center;
-          gap: 9px;
-          align-self: end;
-          min-height: 43px;
-          padding: 8px 10px;
-          border: 1px solid #e7ddd4;
-          border-radius: 11px;
+          gap: 10px;
+          padding: 11px 12px;
+          border: 1px solid #eee3da;
+          border-radius: 12px;
           background: #fffaf6;
           cursor: pointer;
         }
 
-        .admin-active-toggle input {
+        .active-switch input {
           position: absolute;
+          width: 1px;
+          height: 1px;
           opacity: 0;
           pointer-events: none;
         }
 
-        .admin-toggle-ui {
+        .switch-ui {
+          width: 35px;
+          height: 20px;
+          flex: 0 0 35px;
           position: relative;
-          width: 31px;
-          height: 18px;
-          flex: 0 0 31px;
           border-radius: 20px;
           background: #d9d0c9;
-          transition: background 0.15s ease;
+          transition: background 0.2s ease;
         }
 
-        .admin-toggle-ui span {
+        .switch-ui::after {
+          content: "";
           position: absolute;
           top: 3px;
           left: 3px;
-          width: 12px;
-          height: 12px;
+          width: 14px;
+          height: 14px;
           border-radius: 50%;
           background: #ffffff;
-          box-shadow:
-            0 1px 4px rgba(0, 0, 0, 0.15);
-          transition: transform 0.15s ease;
+          box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+          transition: transform 0.2s ease;
         }
 
-        .admin-active-toggle input:checked + .admin-toggle-ui {
-          background: #6e9c76;
+        .active-switch input:checked + .switch-ui {
+          background: #b86f3d;
         }
 
-        .admin-active-toggle
+        .active-switch
           input:checked
-          + .admin-toggle-ui
-          span {
-          transform: translateX(13px);
+          + .switch-ui::after {
+          transform: translateX(15px);
         }
 
-        .admin-active-toggle > span:last-child {
+        .active-switch div {
           min-width: 0;
         }
 
-        .admin-active-toggle strong {
+        .active-switch strong {
           display: block;
-          color: #493a30;
+          color: #4a392f;
           font-size: 9px;
+          font-weight: 850;
         }
 
-        .admin-active-toggle small {
+        .active-switch small {
           display: block;
-          margin-top: 2px;
-          color: #998c81;
+          margin-top: 3px;
+          color: #9d9086;
           font-size: 7px;
+          font-weight: 500;
         }
 
-        .admin-editor-actions {
+        .form-actions {
           display: flex;
+          gap: 8px;
           align-items: center;
-          gap: 9px;
-          flex-wrap: wrap;
-          margin-top: 17px;
-          padding-top: 16px;
-          border-top: 1px solid #f0e8e1;
         }
 
-        .admin-primary-button,
-        .admin-secondary-button {
-          min-height: 40px;
-          border-radius: 10px;
+        .menu-save-button {
+          min-height: 41px;
           padding: 0 16px;
-          font-family: inherit;
-          font-size: 9px;
-          font-weight: 900;
-          text-decoration: none;
-          cursor: pointer;
-          transition:
-            transform 0.12s ease,
-            opacity 0.12s ease,
-            box-shadow 0.12s ease;
-        }
-
-        .admin-primary-button {
           display: inline-flex;
           align-items: center;
           justify-content: center;
           gap: 7px;
           border: 0;
-          background: #ad6734;
+          border-radius: 11px;
+          background: #a96435;
           color: #ffffff;
+          cursor: pointer;
+          font-family: inherit;
+          font-size: 9px;
+          font-weight: 850;
           box-shadow:
-            0 6px 15px rgba(173, 103, 52, 0.18);
+            0 5px 13px rgba(139, 83, 44, 0.17);
         }
 
-        .admin-primary-button:hover {
-          box-shadow:
-            0 8px 18px rgba(173, 103, 52, 0.25);
-        }
-
-        .admin-primary-button:active,
-        .admin-secondary-button:active,
-        .admin-menu-item-actions button:active {
-          transform: scale(0.98);
-        }
-
-        .admin-primary-button:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-
-        .admin-save-button {
-          min-width: 145px;
-        }
-
-        .admin-save-button > span {
+        .menu-save-button span {
           font-size: 13px;
         }
 
-        .admin-secondary-button {
+        .menu-save-button:disabled {
+          opacity: 0.6;
+          cursor: wait;
+        }
+
+        .menu-cancel-button {
+          min-height: 41px;
+          padding: 0 15px;
           border: 1px solid #e1d5ca;
+          border-radius: 11px;
           background: #ffffff;
           color: #66584d;
+          cursor: pointer;
+          font-family: inherit;
+          font-size: 9px;
+          font-weight: 800;
         }
 
         .admin-menu-list {
           margin-top: 31px;
         }
 
-        .admin-list-header {
+        .list-header {
           display: flex;
           align-items: flex-end;
           justify-content: space-between;
-          gap: 15px;
-          margin-bottom: 12px;
+          gap: 10px;
+          margin-bottom: 13px;
         }
 
-        .admin-list-header h2 {
+        .list-header h2 {
           margin: 5px 0 0;
-          color: #392a20;
-          font-size: 18px;
+          color: #382a21;
+          font-size: 20px;
+          letter-spacing: -0.3px;
         }
 
-        .admin-list-count {
-          padding: 7px 10px;
-          border-radius: 9px;
-          background: #f7eee7;
-          color: #9d6032;
+        .list-count {
+          padding: 6px 9px;
+          border-radius: 8px;
+          background: #f4ece5;
+          color: #8f6548;
           font-size: 8px;
-          font-weight: 900;
+          font-weight: 850;
         }
 
         .admin-menu-items {
@@ -1487,74 +1279,49 @@ export default function AdminMenuPage() {
         }
 
         .admin-menu-item {
-          position: relative;
           display: flex;
           align-items: center;
-          gap: 13px;
+          gap: 12px;
           padding: 11px;
-          border: 1px solid #eee4da;
+          border: 1px solid #e9ded4;
           border-radius: 17px;
           background: #ffffff;
           box-shadow:
-            0 4px 15px rgba(60, 39, 25, 0.035);
+            0 5px 18px rgba(60, 39, 25, 0.035);
           transition:
-            border-color 0.15s ease,
+            transform 0.15s ease,
             box-shadow 0.15s ease;
         }
 
         .admin-menu-item:hover {
-          border-color: #dfcdbd;
+          transform: translateY(-1px);
           box-shadow:
-            0 7px 20px rgba(60, 39, 25, 0.055);
+            0 8px 22px rgba(60, 39, 25, 0.055);
         }
 
-        .admin-menu-item-inactive {
+        .menu-item-passive {
           opacity: 0.72;
           background: #fcfbfa;
         }
 
         .admin-menu-image {
-          position: relative;
           width: 78px;
           height: 78px;
           flex: 0 0 78px;
-          overflow: visible;
-          border-radius: 14px;
-          background: #eee1d4;
-        }
-
-        .admin-menu-image img,
-        .admin-no-image {
-          width: 100%;
-          height: 100%;
-          border-radius: 14px;
-          object-fit: cover;
-        }
-
-        .admin-no-image {
           display: flex;
           align-items: center;
           justify-content: center;
-          color: #a78f7d;
-          font-size: 26px;
+          overflow: hidden;
+          border-radius: 14px;
+          background: #f3e9df;
+          color: #a66a3e;
+          font-size: 25px;
         }
 
-        .admin-status-dot {
-          position: absolute;
-          right: -3px;
-          bottom: -3px;
-          width: 13px;
-          height: 13px;
-          border: 2px solid #ffffff;
-          border-radius: 50%;
-        }
-
-        .admin-status-active {
-          background: #6e9c76;
-        }
-
-        .admin-status-inactive {
-          background: #aaa19b;
+        .admin-menu-image img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
         }
 
         .admin-menu-content {
@@ -1562,73 +1329,95 @@ export default function AdminMenuPage() {
           min-width: 0;
         }
 
-        .admin-menu-title-row {
+        .product-topline {
           display: flex;
           align-items: center;
-          gap: 7px;
-          min-width: 0;
+          gap: 6px;
+          margin-bottom: 4px;
         }
 
-        .admin-menu-title-row strong {
-          min-width: 0;
+        .product-category {
           overflow: hidden;
-          color: #392a20;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          color: #ae6b3c;
+          font-size: 7px;
+          font-weight: 850;
+          text-transform: uppercase;
+          letter-spacing: 0.4px;
+        }
+
+        .product-status {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          padding: 3px 6px;
+          border-radius: 6px;
+          font-size: 6px;
+          font-weight: 850;
+          white-space: nowrap;
+        }
+
+        .product-status i {
+          width: 5px;
+          height: 5px;
+          border-radius: 50%;
+          display: block;
+        }
+
+        .status-active {
+          background: #edf5ec;
+          color: #5f7659;
+        }
+
+        .status-active i {
+          background: #6f9468;
+        }
+
+        .status-passive {
+          background: #f1eeeb;
+          color: #84776e;
+        }
+
+        .status-passive i {
+          background: #9d928a;
+        }
+
+        .admin-menu-content > strong {
+          display: block;
+          overflow: hidden;
+          color: #382a21;
           font-size: 13px;
+          font-weight: 850;
           text-overflow: ellipsis;
           white-space: nowrap;
         }
 
-        .admin-status-badge {
-          flex: 0 0 auto;
-          padding: 4px 6px;
-          border-radius: 6px;
-          font-size: 6px;
-          font-weight: 900;
-        }
-
-        .admin-badge-active {
-          background: #edf7ef;
-          color: #51825a;
-        }
-
-        .admin-badge-inactive {
-          background: #efedeb;
-          color: #776e68;
-        }
-
-        .admin-menu-category {
-          display: inline-block;
-          margin-top: 4px;
-          color: #b36d37;
-          font-size: 8px;
-          font-weight: 800;
-        }
-
         .admin-menu-content p {
-          display: -webkit-box;
+          margin: 4px 0 0;
           overflow: hidden;
-          margin: 5px 0 0;
-          color: #998c81;
+          color: #9b8e84;
           font-size: 8px;
-          line-height: 1.45;
+          line-height: 1.4;
+          display: -webkit-box;
           -webkit-line-clamp: 2;
           -webkit-box-orient: vertical;
         }
 
-        .admin-menu-meta {
+        .product-bottom {
           display: flex;
           align-items: center;
-          gap: 9px;
+          gap: 8px;
           margin-top: 6px;
         }
 
-        .admin-menu-meta b {
-          color: #ad6734;
+        .product-bottom b {
+          color: #a96435;
           font-size: 12px;
         }
 
-        .admin-menu-meta span {
-          color: #aaa097;
+        .product-bottom span {
+          color: #b0a49b;
           font-size: 7px;
         }
 
@@ -1636,237 +1425,267 @@ export default function AdminMenuPage() {
           display: flex;
           flex-direction: column;
           gap: 5px;
-          flex: 0 0 78px;
+          flex: 0 0 72px;
         }
 
         .admin-menu-item-actions button {
-          display: flex;
+          width: 100%;
+          min-height: 29px;
+          display: inline-flex;
           align-items: center;
           justify-content: center;
           gap: 4px;
-          width: 100%;
-          min-height: 30px;
-          padding: 0 6px;
+          border: 1px solid #e5dbd2;
           border-radius: 8px;
+          background: #fffaf6;
+          color: #67594f;
+          cursor: pointer;
           font-family: inherit;
           font-size: 7px;
-          font-weight: 900;
-          cursor: pointer;
-          transition:
-            transform 0.12s ease,
-            background 0.12s ease;
+          font-weight: 800;
         }
 
         .admin-menu-item-actions button span {
           font-size: 10px;
         }
 
-        .admin-action-status {
-          border: 1px solid #dfe6df;
+        .action-status.active {
+          background: #f5f9f3;
+          border-color: #dfe8dc;
+          color: #61785a;
         }
 
-        .admin-action-active {
-          background: #f2faf4;
-          color: #4e8258;
+        .action-status.passive {
+          color: #84766d;
         }
 
-        .admin-action-inactive {
-          background: #f3f1ef;
-          color: #756c66;
+        .action-edit:hover {
+          border-color: #d6b79f;
+          color: #9c5f34;
         }
 
-        .admin-action-edit {
-          border: 1px solid #e4d7cb;
-          background: #fffaf5;
-          color: #80634d;
+        .action-delete {
+          color: #9b655d !important;
         }
 
-        .admin-action-delete {
-          border: 1px solid #ead8d4;
-          background: #fff8f7;
-          color: #a06156;
+        .action-delete:hover {
+          background: #fff6f4 !important;
+          border-color: #ead5d0 !important;
         }
 
-        .admin-empty-card {
+        .empty-menu-card {
+          display: grid;
+          justify-items: center;
           padding: 35px 20px;
-          border: 1px dashed #ded1c6;
+          border: 1px dashed #dfd2c7;
           border-radius: 18px;
-          background: #fffdfb;
+          background: #fffaf6;
           text-align: center;
         }
 
-        .admin-empty-card > div {
-          width: 54px;
-          height: 54px;
-          margin: 0 auto 10px;
+        .empty-menu-card > div {
+          width: 50px;
+          height: 50px;
           display: flex;
           align-items: center;
           justify-content: center;
+          margin-bottom: 10px;
+          border-radius: 15px;
+          background: #f3e9df;
+          color: #a66a3e;
+          font-size: 22px;
+        }
+
+        .empty-menu-card strong {
+          color: #493a30;
+          font-size: 11px;
+        }
+
+        .empty-menu-card span {
+          margin-top: 4px;
+          color: #9d9086;
+          font-size: 8px;
+        }
+
+        .menu-state-card {
+          display: grid;
+          justify-items: center;
+          padding: 35px 20px;
+          border: 1px solid #eee4da;
+          border-radius: 20px;
+          background: #ffffff;
+          text-align: center;
+        }
+
+        .menu-state-icon {
+          width: 54px;
+          height: 54px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-bottom: 10px;
           border-radius: 16px;
-          background: #f7eee7;
-          color: #a66a3d;
+          background: #f4e9df;
           font-size: 23px;
         }
 
-        .admin-empty-card strong {
-          color: #4a3a30;
+        .menu-state-card strong {
+          color: #403127;
           font-size: 12px;
         }
 
-        .admin-empty-card p {
-          max-width: 280px;
-          margin: 6px auto 0;
-          color: #998c81;
-          font-size: 9px;
-          line-height: 1.5;
+        .menu-state-card span {
+          margin-top: 4px;
+          color: #a0958c;
+          font-size: 8px;
         }
 
-        .admin-access-box {
+        .menu-access-card {
           padding: 35px 20px;
           border: 1px solid #eee4da;
           border-radius: 22px;
           background: #ffffff;
           text-align: center;
           box-shadow:
-            0 8px 25px rgba(60, 39, 25, 0.04);
+            0 8px 25px rgba(60, 39, 25, 0.045);
         }
 
-        .admin-access-icon {
-          width: 64px;
-          height: 64px;
-          margin: 0 auto 13px;
+        .menu-access-icon {
+          width: 65px;
+          height: 65px;
           display: flex;
           align-items: center;
           justify-content: center;
+          margin: 0 auto 14px;
           border-radius: 50%;
-          background: #f7eee7;
+          background: #f4e9df;
           font-size: 27px;
         }
 
-        .admin-access-eyebrow {
-          color: #b36d37;
-          font-size: 7px;
-          font-weight: 900;
-          letter-spacing: 1.2px;
-        }
-
-        .admin-access-box h2 {
-          margin: 6px 0 0;
-          color: #392a20;
+        .menu-access-card h2 {
+          margin: 5px 0 7px;
+          color: #382a21;
           font-size: 20px;
         }
 
-        .admin-access-box p {
+        .menu-access-card p {
           max-width: 320px;
-          margin: 8px auto 18px;
+          margin: 0 auto 18px;
           color: #998c81;
           font-size: 10px;
-          line-height: 1.55;
+          line-height: 1.6;
         }
 
-        .admin-access-box .admin-alert {
-          justify-content: center;
-          margin-bottom: 15px;
+        .menu-access-card .menu-alert {
+          justify-content: flex-start;
           text-align: left;
         }
 
-        .admin-loading-card {
-          display: flex;
-          flex-direction: column;
+        .menu-back-main {
+          min-height: 40px;
+          padding: 0 15px;
+          display: inline-flex;
           align-items: center;
           justify-content: center;
-          min-height: 230px;
-          padding: 25px;
-          border: 1px solid #eee4da;
-          border-radius: 21px;
-          background: #ffffff;
-        }
-
-        .admin-loading-icon {
-          width: 54px;
-          height: 54px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          margin-bottom: 11px;
-          border-radius: 16px;
-          background: #f7eee7;
-          font-size: 23px;
-        }
-
-        .admin-loading-card strong {
-          color: #4a3a30;
-          font-size: 12px;
-        }
-
-        .admin-loading-card span {
-          margin-top: 4px;
-          color: #998c81;
+          gap: 7px;
+          border-radius: 10px;
+          background: #a96435;
+          color: #ffffff;
+          text-decoration: none;
           font-size: 9px;
+          font-weight: 850;
         }
 
-        @media (max-width: 620px) {
-          .admin-page-top {
-            align-items: flex-start;
+        .menu-back-main span {
+          font-size: 15px;
+        }
+
+        @media (max-width: 600px) {
+          .menu-admin-header {
+            padding: 13px 14px;
           }
 
-          .admin-page-top h2 {
-            font-size: 22px;
+          .menu-admin-icon {
+            width: 39px;
+            height: 39px;
+            flex-basis: 39px;
           }
 
-          .admin-menu-total {
-            padding-top: 4px;
+          .menu-admin-title h1 {
+            font-size: 14px;
           }
 
-          .admin-menu-stats {
-            gap: 7px;
+          .menu-back-button {
+            height: 36px;
+            padding: 0 10px;
           }
 
-          .admin-stat-card {
-            padding: 9px;
-            gap: 7px;
+          .menu-page-intro h2 {
+            font-size: 21px;
           }
 
-          .admin-stat-icon {
-            width: 30px;
-            height: 30px;
-            flex-basis: 30px;
-            border-radius: 9px;
-            font-size: 12px;
-          }
-
-          .admin-stat-card strong {
-            font-size: 12px;
-          }
-
-          .admin-stat-card span {
-            font-size: 7px;
-          }
-
-          .admin-form-grid {
+          .form-grid,
+          .form-grid-three {
             grid-template-columns: 1fr;
-          }
-
-          .admin-field-full {
-            grid-column: auto;
-          }
-
-          .admin-active-toggle {
-            align-self: auto;
           }
 
           .admin-menu-item {
             align-items: flex-start;
-            gap: 9px;
           }
 
           .admin-menu-image {
-            width: 62px;
-            height: 62px;
-            flex-basis: 62px;
+            width: 64px;
+            height: 64px;
+            flex-basis: 64px;
           }
 
-          .admin-menu-title-row strong {
+          .admin-menu-item-actions {
+            flex-basis: 68px;
+          }
+
+          .admin-menu-item-actions button {
+            font-size: 6.5px;
+          }
+        }
+
+        @media (max-width: 420px) {
+          .menu-admin-title span {
+            font-size: 6px;
+          }
+
+          .menu-admin-title h1 {
+            font-size: 13px;
+          }
+
+          .menu-back-button strong {
+            display: none;
+          }
+
+          .menu-back-button {
+            width: 36px;
+            padding: 0;
+          }
+
+          .menu-page-intro {
+            align-items: center;
+          }
+
+          .menu-page-intro p {
+            font-size: 8px;
+          }
+
+          .admin-menu-item {
+            gap: 8px;
+            padding: 9px;
+          }
+
+          .admin-menu-image {
+            width: 58px;
+            height: 58px;
+            flex-basis: 58px;
+          }
+
+          .admin-menu-content > strong {
             font-size: 11px;
           }
 
@@ -1875,63 +1694,12 @@ export default function AdminMenuPage() {
           }
 
           .admin-menu-item-actions {
-            flex-basis: 67px;
+            flex-basis: 61px;
           }
 
           .admin-menu-item-actions button {
-            min-height: 28px;
+            min-height: 27px;
             font-size: 6px;
-          }
-
-          .admin-menu-item-actions button span {
-            font-size: 8px;
-          }
-
-          .admin-status-badge {
-            display: none;
-          }
-        }
-
-        @media (max-width: 400px) {
-          .admin-menu-stats {
-            grid-template-columns: 1fr;
-          }
-
-          .admin-stat-card {
-            min-height: 38px;
-          }
-
-          .admin-menu-item {
-            display: grid;
-            grid-template-columns: 54px 1fr;
-          }
-
-          .admin-menu-image {
-            width: 54px;
-            height: 54px;
-            flex-basis: 54px;
-            grid-row: span 2;
-          }
-
-          .admin-menu-item-actions {
-            grid-column: 1 / -1;
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            width: 100%;
-          }
-
-          .admin-menu-meta {
-            margin-top: 4px;
-          }
-
-          .admin-editor-actions {
-            flex-direction: column;
-            align-items: stretch;
-          }
-
-          .admin-save-button,
-          .admin-secondary-button {
-            width: 100%;
           }
         }
       `}</style>
