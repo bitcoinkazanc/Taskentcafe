@@ -3,97 +3,113 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
+const navItems = [
+  {
+    label: "Ana Sayfa",
+    icon: "⌂",
+    href: "/",
+    section: null,
+  },
+  {
+    label: "Menü",
+    icon: "☕",
+    href: "/#menu",
+    section: "menu",
+  },
+  {
+    label: "Sadakat",
+    icon: "⭐",
+    href: "/#loyalty",
+    section: "loyalty",
+  },
+  {
+    label: "Konum",
+    icon: "📍",
+    href: "/#location",
+    section: "location",
+  },
+];
+
 export default function BottomNav() {
   const pathname = usePathname();
   const router = useRouter();
 
-  const goToSection = (
+  const handleSectionClick = (
     event: React.MouseEvent<HTMLAnchorElement>,
     section: string
   ) => {
     event.preventDefault();
 
-    if (pathname === "/") {
-      const element = document.getElementById(section);
-
-      if (element) {
-        element.scrollIntoView({
-          behavior: "smooth",
-          block: "start",
-        });
-      }
-
+    if (pathname !== "/") {
+      router.push(`/#${section}`);
       return;
     }
 
-    router.push(`/#${section}`);
+    const element = document.getElementById(section);
+
+    if (!element) {
+      return;
+    }
+
+    element.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  };
+
+  const handleHomeClick = (
+    event: React.MouseEvent<HTMLAnchorElement>
+  ) => {
+    if (pathname !== "/") {
+      return;
+    }
+
+    event.preventDefault();
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
   };
 
   return (
     <nav className="bottom-nav">
+      {navItems.map((item) => {
+        const active =
+          item.section === null
+            ? pathname === "/"
+            : pathname === "/" &&
+              typeof window !== "undefined" &&
+              window.location.hash === `#${item.section}`;
 
-      {/* ANA SAYFA */}
-      <Link
-        href="/"
-        className={
-          pathname === "/"
-            ? "nav-item active"
-            : "nav-item"
-        }
-        onClick={(event) => {
-          if (pathname === "/") {
-            event.preventDefault();
+        return (
+          <Link
+            key={item.label}
+            href={item.href}
+            className={
+              active
+                ? "nav-item active"
+                : "nav-item"
+            }
+            onClick={(event) => {
+              if (item.section) {
+                handleSectionClick(
+                  event,
+                  item.section
+                );
+              } else {
+                handleHomeClick(event);
+              }
+            }}
+          >
+            <span className="nav-icon">
+              {item.icon}
+            </span>
 
-            window.scrollTo({
-              top: 0,
-              behavior: "smooth",
-            });
-          }
-        }}
-      >
-        <span>⌂</span>
-        <small>Ana Sayfa</small>
-      </Link>
-
-
-      {/* MENÜ */}
-      <Link
-        href="/#menu"
-        className="nav-item"
-        onClick={(event) =>
-          goToSection(event, "menu")
-        }
-      >
-        <span>☕</span>
-        <small>Menü</small>
-      </Link>
-
-
-      {/* SADAKAT */}
-      <Link
-        href="/#loyalty"
-        className="nav-item"
-        onClick={(event) =>
-          goToSection(event, "loyalty")
-        }
-      >
-        <span>⭐</span>
-        <small>Sadakat</small>
-      </Link>
-
-
-      {/* KONUM */}
-      <Link
-        href="/#location"
-        className="nav-item"
-        onClick={(event) =>
-          goToSection(event, "location")
-        }
-      >
-        <span>📍</span>
-        <small>Konum</small>
-      </Link>
-
+            <small>{item.label}</small>
+          </Link>
+        );
+      })}
     </nav>
   );
 }
