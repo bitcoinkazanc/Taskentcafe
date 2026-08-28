@@ -30,6 +30,11 @@ type CafeTable = {
   active: boolean;
 };
 
+type CartItem = {
+  product: Product;
+  quantity: number;
+};
+
 const logoUrl =
   "https://raw.githubusercontent.com/bitcoinkazanc/Taskentcafe/main/taskent-logo.png";
 
@@ -54,6 +59,7 @@ function getCategoryIcon(category: string) {
 
 export default function HomePage() {
   const [category, setCategory] = useState("Sıcak İçecekler");
+
   const [products, setProducts] = useState<Product[]>([]);
   const [productsLoading, setProductsLoading] = useState(true);
   const [productsError, setProductsError] = useState("");
@@ -65,6 +71,13 @@ export default function HomePage() {
   const [waiterLoading, setWaiterLoading] = useState(false);
   const [waiterMessage, setWaiterMessage] = useState("");
   const [waiterError, setWaiterError] = useState("");
+
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [cartOpen, setCartOpen] = useState(false);
+
+  const [orderSending, setOrderSending] = useState(false);
+  const [orderMessage, setOrderMessage] = useState("");
+  const [orderError, setOrderError] = useState("");
 
   useEffect(() => {
     async function loadProducts() {
@@ -130,6 +143,145 @@ export default function HomePage() {
   const filteredProducts = products.filter(
     (product) => product.category === category
   );
+
+  const cartCount = cart.reduce(
+    (total, item) => total + item.quantity,
+    0
+  );
+
+  const cartTotal = cart.reduce(
+    (total, item) =>
+      total + Number(item.product.price) * item.quantity,
+    0
+  );
+
+  function addToCart(product: Product) {
+    setOrderMessage("");
+    setOrderError("");
+
+    if (!table) {
+      setOrderError(
+        "Sipariş vermek için masanızdaki QR kodu okutmalısınız."
+      );
+      setCartOpen(true);
+      return;
+    }
+
+    setCart((currentCart) => {
+      const existing = currentCart.find(
+        (item) => item.product.id === product.id
+      );
+
+      if (existing) {
+        return currentCart.map((item) =>
+          item.product.id === product.id
+            ? {
+                ...item,
+                quantity: item.quantity + 1,
+              }
+            : item
+        );
+      }
+
+      return [
+        ...currentCart,
+        {
+          product,
+          quantity: 1,
+        },
+      ];
+    });
+
+    setCartOpen(true);
+  }
+
+  function increaseQuantity(productId: string) {
+    setCart((currentCart) =>
+      currentCart.map((item) =>
+        item.product.id === productId
+          ? {
+              ...item,
+              quantity: item.quantity + 1,
+            }
+          : item
+      )
+    );
+  }
+
+  function decreaseQuantity(productId: string) {
+    setCart((currentCart) =>
+      currentCart
+        .map((item) =>
+          item.product.id === productId
+            ? {
+                ...item,
+                quantity: item.quantity - 1,
+              }
+            : item
+        )
+        .filter((item) => item.quantity > 0)
+    );
+  }
+
+  function clearCart() {
+    setCart([]);
+  }
+
+  async function submitOrder() {
+    if (!table) {
+      setOrderError(
+        "Sipariş vermek için masanızdaki QR kodu okutmalısınız."
+      );
+      return;
+    }
+
+    if (cart.length === 0) {
+      setOrderError("Sepetiniz boş.");
+      return;
+    }
+
+    try {
+      setOrderSending(true);
+      setOrderMessage("");
+      setOrderError("");
+
+      const requestedItems = cart.map((item) => ({
+        menu_item_id: item.product.id,
+        quantity: item.quantity,
+        payment_type: "tl",
+      }));
+
+      const { error } = await supabase.rpc(
+        "create_customer_order",
+        {
+          requested_qr_token: table.qr_token,
+          requested_items: requestedItems,
+          requested_note: null,
+        }
+      );
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      setCart([]);
+      setCartOpen(false);
+
+      setOrderMessage(
+        `Siparişiniz alındı. Masa ${table.table_number} için garsona iletildi.`
+      );
+    } catch (error) {
+      console.error("ORDER ERROR:", error);
+
+      setOrderError(
+        error instanceof Error
+          ? error.message
+          : "Sipariş gönderilemedi."
+      );
+    } finally {
+      setOrderSending(false);
+    }
+  }
 
   function callWaiter() {
     if (!table) {
@@ -261,6 +413,44 @@ export default function HomePage() {
         </div>
       </a>
 
+      {orderMessage && (
+        <div className="order-success">
+          <span>✓</span>
+
+          <div>
+            <strong>Sipariş alındı</strong>
+            <p>{orderMessage}</p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setOrderMessage("")}
+            aria-label="Kapat"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
+      {orderError && (
+        <div className="order-error">
+          <span>!</span>
+
+          <div>
+            <strong>Sipariş</strong>
+            <p>{orderError}</p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setOrderError("")}
+            aria-label="Kapat"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
       <section className="menu-section">
         <div className="section-header">
           <div>
@@ -380,7 +570,9 @@ export default function HomePage() {
                         <button
                           type="button"
                           className="add-order-button"
-                          onClick={() => {}}
+                          onClick={() =>
+                            addToCart(product)
+                          }
                         >
                           <span>+</span>
                           Siparişe Ekle
@@ -393,6 +585,202 @@ export default function HomePage() {
             </div>
           )}
       </section>
+
+      {cartOpen && (
+        <div
+          className="cart-overlay"
+          onClick={() => setCartOpen(false)}
+        >
+          <div
+            className="cart-panel"
+            onClick={(event) =>
+              event.stopPropagation()
+            }
+          >
+            <div className="cart-header">
+              <div>
+                <span>TAŞKENT CAFE</span>
+                <h2>Sipariş Sepeti</h2>
+              </div>
+
+              <button
+                type="button"
+                className="cart-close"
+                onClick={() =>
+                  setCartOpen(false)
+                }
+                aria-label="Sepeti kapat"
+              >
+                ×
+              </button>
+            </div>
+
+            {table && (
+              <div className="cart-table">
+                <span>MASA</span>
+                <strong>
+                  {table.table_number}
+                </strong>
+              </div>
+            )}
+
+            <div className="cart-items">
+              {cart.length === 0 ? (
+                <div className="cart-empty">
+                  <span>🛒</span>
+
+                  <strong>
+                    Sepetiniz boş
+                  </strong>
+
+                  <p>
+                    Menüden ürün ekleyerek
+                    siparişinizi oluşturabilirsiniz.
+                  </p>
+                </div>
+              ) : (
+                cart.map((item) => (
+                  <div
+                    className="cart-item"
+                    key={item.product.id}
+                  >
+                    <div className="cart-item-image">
+                      {item.product.image_url ? (
+                        <img
+                          src={
+                            item.product.image_url
+                          }
+                          alt={
+                            item.product.name
+                          }
+                        />
+                      ) : (
+                        <span>
+                          {getCategoryIcon(
+                            item.product.category
+                          )}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="cart-item-info">
+                      <strong>
+                        {item.product.name}
+                      </strong>
+
+                      <span>
+                        {Number(
+                          item.product.price
+                        ).toLocaleString(
+                          "tr-TR",
+                          {
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 2,
+                          }
+                        )}{" "}
+                        ₺
+                      </span>
+                    </div>
+
+                    <div className="quantity">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          decreaseQuantity(
+                            item.product.id
+                          )
+                        }
+                      >
+                        −
+                      </button>
+
+                      <strong>
+                        {item.quantity}
+                      </strong>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          increaseQuantity(
+                            item.product.id
+                          )
+                        }
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {cart.length > 0 && (
+              <>
+                <div className="cart-total">
+                  <span>Toplam</span>
+
+                  <strong>
+                    {cartTotal.toLocaleString(
+                      "tr-TR",
+                      {
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 2,
+                      }
+                    )}{" "}
+                    ₺
+                  </strong>
+                </div>
+
+                <button
+                  type="button"
+                  className="clear-cart"
+                  onClick={clearCart}
+                >
+                  Sepeti Temizle
+                </button>
+
+                <button
+                  type="button"
+                  className="submit-order"
+                  onClick={submitOrder}
+                  disabled={orderSending}
+                >
+                  {orderSending
+                    ? "Sipariş gönderiliyor..."
+                    : `Siparişi Gönder • ${cartTotal.toLocaleString(
+                        "tr-TR",
+                        {
+                          minimumFractionDigits: 0,
+                          maximumFractionDigits: 2,
+                        }
+                      )} ₺`}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {cartCount > 0 && !cartOpen && (
+        <button
+          type="button"
+          className="floating-cart"
+          onClick={() => setCartOpen(true)}
+          aria-label="Sepeti aç"
+        >
+          <span className="floating-cart-icon">
+            🛒
+          </span>
+
+          <span className="floating-cart-count">
+            {cartCount}
+          </span>
+
+          <span className="floating-cart-text">
+            Sepet
+          </span>
+        </button>
+      )}
 
       <div className="waiter-widget">
         {waiterOpen && (
@@ -504,15 +892,7 @@ export default function HomePage() {
           }
           aria-label="Garson çağır"
         >
-          {!waiterMessage && (
-            <span className="signal-ring ring-one" />
-          )}
-
-          {!waiterMessage && (
-            <span className="signal-ring ring-two" />
-          )}
-
-          <span className="waiter-icon">
+          <span>
             {waiterMessage
               ? "✓"
               : "👩🏻‍🍳"}
@@ -906,6 +1286,80 @@ export default function HomePage() {
           transform: scale(0.97);
         }
 
+        .order-success,
+        .order-error {
+          margin: 0 0 14px;
+          padding: 12px 13px;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          border-radius: 14px;
+        }
+
+        .order-success {
+          background: #e8f3e8;
+          color: #47704b;
+        }
+
+        .order-error {
+          background: #f7e7df;
+          color: #8a5135;
+        }
+
+        .order-success > span,
+        .order-error > span {
+          width: 27px;
+          height: 27px;
+          flex: 0 0 27px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 50%;
+          color: #fff;
+          font-size: 12px;
+          font-weight: 800;
+        }
+
+        .order-success > span {
+          background: #4d9364;
+        }
+
+        .order-error > span {
+          background: #b96f38;
+        }
+
+        .order-success div,
+        .order-error div {
+          flex: 1;
+          min-width: 0;
+        }
+
+        .order-success strong,
+        .order-error strong {
+          display: block;
+          font-size: 11px;
+        }
+
+        .order-success p,
+        .order-error p {
+          margin: 3px 0 0;
+          font-size: 9px;
+          line-height: 1.4;
+        }
+
+        .order-success button,
+        .order-error button {
+          width: 25px;
+          height: 25px;
+          flex: 0 0 25px;
+          border: 0;
+          border-radius: 8px;
+          background: rgba(0,0,0,.05);
+          color: inherit;
+          font-size: 18px;
+          cursor: pointer;
+        }
+
         .loading {
           min-height: 220px;
           display: flex;
@@ -958,6 +1412,312 @@ export default function HomePage() {
           line-height: 1.45;
         }
 
+        .cart-overlay {
+          position: fixed;
+          inset: 0;
+          z-index: 2000;
+          display: flex;
+          align-items: flex-end;
+          justify-content: center;
+          padding: 18px;
+          background: rgba(35, 24, 18, 0.48);
+          backdrop-filter: blur(5px);
+        }
+
+        .cart-panel {
+          width: 100%;
+          max-width: 560px;
+          max-height: 88vh;
+          overflow-y: auto;
+          border-radius: 24px;
+          background: #fffaf5;
+          box-shadow:
+            0 25px 70px
+            rgba(31, 20, 13, 0.3);
+        }
+
+        .cart-header {
+          padding: 18px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 15px;
+          border-bottom: 1px solid #eee2d8;
+        }
+
+        .cart-header span {
+          display: block;
+          color: #a18169;
+          font-size: 8px;
+          font-weight: 800;
+          letter-spacing: 1.2px;
+        }
+
+        .cart-header h2 {
+          margin: 4px 0 0;
+          color: #382a21;
+          font-family: Georgia, "Times New Roman", serif;
+          font-size: 22px;
+        }
+
+        .cart-close {
+          width: 36px;
+          height: 36px;
+          border: 0;
+          border-radius: 11px;
+          background: #eee2d8;
+          color: #654936;
+          font-size: 23px;
+          cursor: pointer;
+        }
+
+        .cart-table {
+          margin: 14px 15px 0;
+          padding: 10px 12px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          border-radius: 12px;
+          background: #f3e8de;
+        }
+
+        .cart-table span {
+          color: #947d6c;
+          font-size: 8px;
+          font-weight: 800;
+          letter-spacing: 1px;
+        }
+
+        .cart-table strong {
+          color: #5d3823;
+          font-size: 13px;
+        }
+
+        .cart-items {
+          padding: 10px 15px;
+        }
+
+        .cart-item {
+          min-height: 70px;
+          padding: 9px 0;
+          display: flex;
+          align-items: center;
+          gap: 9px;
+          border-bottom: 1px solid #f0e7df;
+        }
+
+        .cart-item:last-child {
+          border-bottom: 0;
+        }
+
+        .cart-item-image {
+          width: 48px;
+          height: 48px;
+          flex: 0 0 48px;
+          overflow: hidden;
+          border-radius: 12px;
+          background: #f1e6dc;
+        }
+
+        .cart-item-image img {
+          width: 100%;
+          height: 100%;
+          display: block;
+          object-fit: cover;
+        }
+
+        .cart-item-image span {
+          width: 100%;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 22px;
+        }
+
+        .cart-item-info {
+          min-width: 0;
+          flex: 1;
+        }
+
+        .cart-item-info strong {
+          display: block;
+          overflow: hidden;
+          color: #45362c;
+          font-size: 11px;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .cart-item-info span {
+          display: block;
+          margin-top: 4px;
+          color: #b56d38;
+          font-size: 10px;
+          font-weight: 800;
+        }
+
+        .quantity {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+
+        .quantity button {
+          width: 27px;
+          height: 27px;
+          border: 0;
+          border-radius: 8px;
+          background: #eee2d8;
+          color: #654936;
+          font-size: 17px;
+          cursor: pointer;
+        }
+
+        .quantity strong {
+          min-width: 18px;
+          text-align: center;
+          color: #493a30;
+          font-size: 11px;
+        }
+
+        .cart-empty {
+          padding: 35px 20px;
+          text-align: center;
+        }
+
+        .cart-empty > span {
+          display: block;
+          font-size: 36px;
+        }
+
+        .cart-empty strong {
+          display: block;
+          margin-top: 8px;
+          color: #493a30;
+          font-size: 13px;
+        }
+
+        .cart-empty p {
+          margin: 5px 0 0;
+          color: #9a8b7d;
+          font-size: 9px;
+          line-height: 1.5;
+        }
+
+        .cart-total {
+          margin: 0 15px;
+          padding: 15px 0;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          border-top: 1px solid #eadfd5;
+        }
+
+        .cart-total span {
+          color: #8f8176;
+          font-size: 11px;
+          font-weight: 700;
+        }
+
+        .cart-total strong {
+          color: #8b5e3c;
+          font-size: 19px;
+        }
+
+        .clear-cart {
+          width: calc(100% - 30px);
+          height: 38px;
+          margin: 0 15px 9px;
+          border: 1px solid #eadfd5;
+          border-radius: 11px;
+          background: #fff;
+          color: #806b5b;
+          font-size: 9px;
+          font-weight: 800;
+          cursor: pointer;
+        }
+
+        .submit-order {
+          width: calc(100% - 30px);
+          height: 47px;
+          margin: 0 15px 17px;
+          border: 0;
+          border-radius: 13px;
+          background:
+            linear-gradient(
+              145deg,
+              #8b5e3c,
+              #5d3823
+            );
+          color: #fff;
+          font-size: 11px;
+          font-weight: 800;
+          cursor: pointer;
+          box-shadow:
+            0 8px 20px
+            rgba(91, 56, 35, 0.2);
+        }
+
+        .submit-order:disabled {
+          opacity: 0.6;
+          cursor: wait;
+        }
+
+        .floating-cart {
+          position: fixed;
+          right: 18px;
+          bottom: 74px;
+          z-index: 1100;
+          min-width: 82px;
+          height: 52px;
+          padding: 0 12px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          border: 0;
+          border-radius: 18px;
+          background:
+            linear-gradient(
+              145deg,
+              #8b5e3c,
+              #5d3823
+            );
+          color: #fff;
+          box-shadow:
+            0 9px 25px
+            rgba(55, 31, 17, 0.28);
+          cursor: pointer;
+        }
+
+        .floating-cart-icon {
+          font-size: 20px;
+        }
+
+        .floating-cart-count {
+          position: absolute;
+          top: -5px;
+          right: -5px;
+          min-width: 20px;
+          height: 20px;
+          padding: 0 5px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 50%;
+          background: #b96f38;
+          color: #fff;
+          font-size: 9px;
+          font-weight: 800;
+          border: 2px solid #fffaf5;
+        }
+
+        .floating-cart-text {
+          font-size: 9px;
+          font-weight: 800;
+        }
+
         .waiter-widget {
           position: fixed;
           left: 18px;
@@ -992,63 +1752,16 @@ export default function HomePage() {
           justify-content: center;
           gap: 2px;
           cursor: pointer;
-          isolation: isolate;
         }
 
-        .waiter-button > .waiter-icon {
-          position: relative;
-          z-index: 4;
+        .waiter-button > span {
           font-size: 25px;
           line-height: 1;
         }
 
         .waiter-button small {
-          position: relative;
-          z-index: 4;
           font-size: 8px;
           font-weight: 800;
-        }
-
-        .signal-ring {
-          position: absolute;
-          left: 50%;
-          top: 50%;
-          width: 62px;
-          height: 62px;
-          border: 2px solid
-            rgba(139, 94, 60, 0.65);
-          border-radius: 50%;
-          transform: translate(-50%, -50%)
-            scale(1);
-          pointer-events: none;
-          z-index: 1;
-          animation:
-            waiterSignal 2.2s
-            ease-out infinite;
-        }
-
-        .ring-two {
-          animation-delay: 1.1s;
-        }
-
-        @keyframes waiterSignal {
-          0% {
-            opacity: 0.65;
-            transform:
-              translate(-50%, -50%)
-              scale(1);
-          }
-
-          70% {
-            opacity: 0.18;
-          }
-
-          100% {
-            opacity: 0;
-            transform:
-              translate(-50%, -50%)
-              scale(1.8);
-          }
         }
 
         .success-button {
@@ -1237,6 +1950,14 @@ export default function HomePage() {
             min-width: 58px;
             padding: 0 11px;
           }
+
+          .floating-cart {
+            right: 14px;
+          }
+
+          .cart-overlay {
+            padding: 10px;
+          }
         }
 
         @media (max-width: 360px) {
@@ -1274,6 +1995,20 @@ export default function HomePage() {
           .waiter-widget {
             left: 14px;
             bottom: 68px;
+          }
+
+          .floating-cart {
+            right: 14px;
+            bottom: 68px;
+          }
+
+          .quantity {
+            gap: 4px;
+          }
+
+          .quantity button {
+            width: 25px;
+            height: 25px;
           }
         }
       `}</style>
