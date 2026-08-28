@@ -31,8 +31,15 @@ type CafeTable = {
   active: boolean;
 };
 
+type Customer = {
+  id: string;
+  name: string | null;
+  points: number;
+  level: string;
+};
+
 const logoUrl =
-  "https://raw.githubusercontent.com/bitcoinkazanc/Taskentcafe/main/Taskent-logo.jpg";
+  "https://raw.githubusercontent.com/bitcoinkazanc/Taskentcafe/main/taskent-logo.png";
 
 function getCategoryIcon(category: string) {
   switch (category) {
@@ -55,9 +62,13 @@ function getCategoryIcon(category: string) {
 
 export default function HomePage() {
   const [category, setCategory] = useState("Tümü");
+
   const [products, setProducts] = useState<Product[]>([]);
   const [productsLoading, setProductsLoading] = useState(true);
   const [productsError, setProductsError] = useState("");
+
+  const [customer, setCustomer] = useState<Customer | null>(null);
+  const [loyaltyLoading, setLoyaltyLoading] = useState(true);
 
   const [table, setTable] = useState<CafeTable | null>(null);
   const [tableLoading, setTableLoading] = useState(false);
@@ -68,7 +79,13 @@ export default function HomePage() {
   const [waiterError, setWaiterError] = useState("");
 
   useEffect(() => {
-    async function loadProducts() {
+    loadProducts();
+    loadLoyalty();
+    loadTable();
+  }, []);
+
+  async function loadProducts() {
+    try {
       setProductsLoading(true);
       setProductsError("");
 
@@ -78,58 +95,106 @@ export default function HomePage() {
           "id,name,category,description,price,image_url,active,sort_order"
         )
         .eq("active", true)
-        .order("sort_order", { ascending: true })
-        .order("created_at", { ascending: false });
-
-      if (error) {
-        console.error(error);
-        setProductsError("Menü ürünleri yüklenemedi.");
-      } else {
-        setProducts((data || []) as Product[]);
-      }
-
-      setProductsLoading(false);
-    }
-
-    loadProducts();
-  }, []);
-
-  useEffect(() => {
-    async function loadTable() {
-      try {
-        const params = new URLSearchParams(window.location.search);
-        const qrToken = params.get("table");
-
-        if (!qrToken) return;
-
-        setTableLoading(true);
-
-        const { data, error } = await supabase.rpc("get_cafe_table", {
-          requested_qr_token: qrToken,
+        .order("sort_order", {
+          ascending: true,
+        })
+        .order("created_at", {
+          ascending: false,
         });
 
-        if (error) {
-          console.error(error);
-          setWaiterError("Masa bilgisi alınamadı.");
-          return;
-        }
-
-        setTable(data as CafeTable);
-      } catch (error) {
-        console.error(error);
-        setWaiterError("Masa bilgisi alınamadı.");
-      } finally {
-        setTableLoading(false);
+      if (error) {
+        console.error("PRODUCTS ERROR:", error);
+        setProductsError("Menü ürünleri yüklenemedi.");
+        return;
       }
-    }
 
-    loadTable();
-  }, []);
+      setProducts((data ?? []) as Product[]);
+    } catch (error) {
+      console.error("PRODUCTS ERROR:", error);
+      setProductsError("Menü ürünleri yüklenemedi.");
+    } finally {
+      setProductsLoading(false);
+    }
+  }
+
+  async function loadLoyalty() {
+    try {
+      setLoyaltyLoading(true);
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        setCustomer(null);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("customers")
+        .select("id,name,points,level")
+        .eq("auth_user_id", user.id)
+        .maybeSingle();
+
+      if (error) {
+        console.error("LOYALTY ERROR:", error);
+        setCustomer(null);
+        return;
+      }
+
+      setCustomer(data as Customer | null);
+    } catch (error) {
+      console.error("LOYALTY ERROR:", error);
+      setCustomer(null);
+    } finally {
+      setLoyaltyLoading(false);
+    }
+  }
+
+  async function loadTable() {
+    try {
+      const params = new URLSearchParams(
+        window.location.search
+      );
+
+      const qrToken = params.get("table");
+
+      if (!qrToken) {
+        setTable(null);
+        return;
+      }
+
+      setTableLoading(true);
+      setWaiterError("");
+
+      const { data, error } = await supabase.rpc(
+        "get_cafe_table",
+        {
+          requested_qr_token: qrToken,
+        }
+      );
+
+      if (error) {
+        console.error("TABLE ERROR:", error);
+        setWaiterError("Masa bilgisi alınamadı.");
+        return;
+      }
+
+      setTable(data as CafeTable);
+    } catch (error) {
+      console.error("TABLE ERROR:", error);
+      setWaiterError("Masa bilgisi alınamadı.");
+    } finally {
+      setTableLoading(false);
+    }
+  }
 
   const filteredProducts =
     category === "Tümü"
       ? products
-      : products.filter((product) => product.category === category);
+      : products.filter(
+          (product) => product.category === category
+        );
 
   function callWaiter() {
     if (!table) {
@@ -141,7 +206,9 @@ export default function HomePage() {
     }
 
     if (!navigator.geolocation) {
-      setWaiterError("Cihazınız konum özelliğini desteklemiyor.");
+      setWaiterError(
+        "Cihazınız konum özelliğini desteklemiyor."
+      );
       setWaiterMessage("");
       return;
     }
@@ -153,11 +220,16 @@ export default function HomePage() {
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         try {
-          const { error } = await supabase.rpc("create_waiter_call", {
-            requested_table_id: table.id,
-            user_latitude: position.coords.latitude,
-            user_longitude: position.coords.longitude,
-          });
+          const { error } = await supabase.rpc(
+            "create_waiter_call",
+            {
+              requested_table_id: table.id,
+              user_latitude:
+                position.coords.latitude,
+              user_longitude:
+                position.coords.longitude,
+            }
+          );
 
           if (error) {
             throw new Error(error.message);
@@ -167,7 +239,10 @@ export default function HomePage() {
             `Masa ${table.table_number} için garson çağrıldı.`
           );
         } catch (error) {
-          console.error(error);
+          console.error(
+            "WAITER CALL ERROR:",
+            error
+          );
 
           setWaiterError(
             error instanceof Error
@@ -179,16 +254,35 @@ export default function HomePage() {
         }
       },
       (error) => {
-        console.error(error);
+        console.error(
+          "GEOLOCATION ERROR:",
+          error
+        );
 
-        if (error.code === error.PERMISSION_DENIED) {
-          setWaiterError("Garson çağırmak için konum izni vermelisiniz.");
-        } else if (error.code === error.POSITION_UNAVAILABLE) {
-          setWaiterError("Konumunuz belirlenemedi.");
-        } else if (error.code === error.TIMEOUT) {
-          setWaiterError("Konum alınırken zaman aşımı oluştu.");
+        if (
+          error.code ===
+          error.PERMISSION_DENIED
+        ) {
+          setWaiterError(
+            "Garson çağırmak için konum izni vermelisiniz."
+          );
+        } else if (
+          error.code ===
+          error.POSITION_UNAVAILABLE
+        ) {
+          setWaiterError(
+            "Konumunuz belirlenemedi."
+          );
+        } else if (
+          error.code === error.TIMEOUT
+        ) {
+          setWaiterError(
+            "Konum alınırken zaman aşımı oluştu."
+          );
         } else {
-          setWaiterError("Konumunuz alınamadı.");
+          setWaiterError(
+            "Konumunuz alınamadı."
+          );
         }
 
         setWaiterMessage("");
@@ -207,37 +301,91 @@ export default function HomePage() {
       <header className="header">
         <div className="brand">
           <div className="logo">
-            <img src={logoUrl} alt="Taşkent Cafe" />
+            <img
+              src={logoUrl}
+              alt="Taşkent Cafe"
+            />
           </div>
 
-          <div>
+          <div className="brand-text">
             <h1>Taşkent Cafe</h1>
-            <span>Mardin Kale</span>
+            <span>📍 Mardin Kale</span>
           </div>
         </div>
       </header>
 
-      <a href="/loyalty" className="loyalty-card">
-        <div className="loyalty-card-icon">⭐</div>
+      <section className="loyalty-card">
+        <div className="loyalty-card-glow" />
 
-        <div className="loyalty-card-content">
-          <span>SADAKAT KULÜBÜ</span>
-          <strong>Puanlarını biriktir, avantajları yakala</strong>
-          <small>Sadakat hesabına giriş yapmak için dokun</small>
+        <div className="loyalty-top">
+          <div className="loyalty-icon">
+            ⭐
+          </div>
+
+          <div className="loyalty-title">
+            <span>SADAKAT KULÜBÜ</span>
+            <strong>
+              {customer
+                ? `Merhaba, ${
+                    customer.name || "Misafir"
+                  }`
+                : "Taşkent Cafe"}
+            </strong>
+          </div>
         </div>
 
-        <div className="loyalty-card-arrow">›</div>
-      </a>
+        {loyaltyLoading ? (
+          <div className="loyalty-loading">
+            Bilgiler yükleniyor...
+          </div>
+        ) : customer ? (
+          <div className="loyalty-stats">
+            <div className="loyalty-stat">
+              <span>PUANINIZ</span>
+              <strong>
+                {customer.points}
+              </strong>
+            </div>
+
+            <div className="loyalty-divider" />
+
+            <div className="loyalty-stat">
+              <span>SEVİYE</span>
+              <strong>
+                {customer.level || "Başlangıç"}
+              </strong>
+            </div>
+          </div>
+        ) : (
+          <div className="loyalty-guest">
+            <p>
+              Alışverişlerinden puan kazan,
+              avantajları kaçırma.
+            </p>
+
+            <a href="/loyalty">
+              Sadakat Kulübüne Katıl →
+            </a>
+          </div>
+        )}
+      </section>
 
       <section className="menu-section">
         <div className="section-header">
           <div>
-            <span className="eyebrow">MENÜ</span>
-            <h2>Lezzetlerimiz</h2>
+            <span className="eyebrow">
+              MENÜ
+            </span>
+
+            <h2>
+              Lezzetlerimiz
+            </h2>
           </div>
 
           <span className="product-count">
-            {productsLoading ? "..." : `${filteredProducts.length} ürün`}
+            {productsLoading
+              ? "..."
+              : `${filteredProducts.length} ürün`}
           </span>
         </div>
 
@@ -246,8 +394,14 @@ export default function HomePage() {
             <button
               key={item}
               type="button"
-              className={category === item ? "category active" : "category"}
-              onClick={() => setCategory(item)}
+              className={
+                category === item
+                  ? "category active"
+                  : "category"
+              }
+              onClick={() =>
+                setCategory(item)
+              }
             >
               {item}
             </button>
@@ -260,16 +414,23 @@ export default function HomePage() {
           </div>
         )}
 
-        {!productsLoading && productsError && (
-          <div className="error">{productsError}</div>
-        )}
+        {!productsLoading &&
+          productsError && (
+            <div className="error">
+              {productsError}
+            </div>
+          )}
 
         {!productsLoading &&
           !productsError &&
           filteredProducts.length === 0 && (
             <div className="empty">
               <span>🍽️</span>
-              <strong>Bu kategoride ürün bulunmuyor.</strong>
+
+              <strong>
+                Bu kategoride ürün
+                bulunmuyor.
+              </strong>
             </div>
           )}
 
@@ -277,43 +438,65 @@ export default function HomePage() {
           !productsError &&
           filteredProducts.length > 0 && (
             <div className="products">
-              {filteredProducts.map((product) => (
-                <article className="product-card" key={product.id}>
-                  <div className="product-image">
-                    {product.image_url ? (
-                      <img
-                        src={product.image_url}
-                        alt={product.name}
-                        loading="lazy"
-                      />
-                    ) : (
-                      <span>{getCategoryIcon(product.category)}</span>
-                    )}
-                  </div>
-
-                  <div className="product-content">
-                    <div>
-                      <span className="product-category">
-                        {product.category}
-                      </span>
-
-                      <h3>{product.name}</h3>
-
-                      {product.description && (
-                        <p>{product.description}</p>
+              {filteredProducts.map(
+                (product) => (
+                  <article
+                    className="product-card"
+                    key={product.id}
+                  >
+                    <div className="product-image">
+                      {product.image_url ? (
+                        <img
+                          src={
+                            product.image_url
+                          }
+                          alt={product.name}
+                          loading="lazy"
+                        />
+                      ) : (
+                        <span>
+                          {getCategoryIcon(
+                            product.category
+                          )}
+                        </span>
                       )}
                     </div>
 
-                    <strong className="price">
-                      {Number(product.price).toLocaleString("tr-TR", {
-                        minimumFractionDigits: 0,
-                        maximumFractionDigits: 2,
-                      })}{" "}
-                      ₺
-                    </strong>
-                  </div>
-                </article>
-              ))}
+                    <div className="product-content">
+                      <div>
+                        <span className="product-category">
+                          {product.category}
+                        </span>
+
+                        <h3>
+                          {product.name}
+                        </h3>
+
+                        {product.description && (
+                          <p>
+                            {
+                              product.description
+                            }
+                          </p>
+                        )}
+                      </div>
+
+                      <strong className="price">
+                        {Number(
+                          product.price
+                        ).toLocaleString(
+                          "tr-TR",
+                          {
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 2,
+                          }
+                        )}{" "}
+                        ₺
+                      </strong>
+                    </div>
+                  </article>
+                )
+              )}
             </div>
           )}
       </section>
@@ -322,17 +505,34 @@ export default function HomePage() {
         {waiterOpen && (
           <div className="waiter-panel">
             <div className="waiter-header">
-              <div className="waiter-avatar">👩🏻‍🍳</div>
+              <div className="waiter-avatar">
+                👩🏻‍🍳
+              </div>
 
-              <div>
-                <strong>Garson</strong>
-                {table && <span>Masa {table.table_number}</span>}
+              <div className="waiter-header-info">
+                <strong>
+                  Garson Çağır
+                </strong>
+
+                {table ? (
+                  <span>
+                    Masa{" "}
+                    {table.table_number}
+                  </span>
+                ) : (
+                  <span>
+                    Taşkent Cafe
+                  </span>
+                )}
               </div>
 
               <button
                 type="button"
                 className="close"
-                onClick={() => setWaiterOpen(false)}
+                onClick={() =>
+                  setWaiterOpen(false)
+                }
+                aria-label="Kapat"
               >
                 ×
               </button>
@@ -341,22 +541,37 @@ export default function HomePage() {
             <div className="waiter-body">
               {waiterMessage ? (
                 <div className="success">
-                  <div className="success-icon">✓</div>
-                  <strong>Garson çağrınız alındı.</strong>
-                  <span>{waiterMessage}</span>
+                  <div className="success-icon">
+                    ✓
+                  </div>
+
+                  <strong>
+                    Garson çağrınız alındı.
+                  </strong>
+
+                  <span>
+                    {waiterMessage}
+                  </span>
                 </div>
               ) : table ? (
                 <>
-                  {waiterError && <div className="error">{waiterError}</div>}
+                  {waiterError && (
+                    <div className="error">
+                      {waiterError}
+                    </div>
+                  )}
 
                   <button
                     type="button"
                     className="call-button"
                     onClick={callWaiter}
-                    disabled={waiterLoading || tableLoading}
+                    disabled={
+                      waiterLoading ||
+                      tableLoading
+                    }
                   >
                     {waiterLoading
-                      ? "Konum kontrol ediliyor..."
+                      ? "📍 Konum kontrol ediliyor..."
                       : "📣 Garson Çağır"}
                   </button>
                 </>
@@ -364,13 +579,23 @@ export default function HomePage() {
                 <>
                   <div className="no-table">
                     <span>📱</span>
-                    <strong>Masa bulunamadı</strong>
+
+                    <strong>
+                      Masa bulunamadı
+                    </strong>
+
                     <p>
-                      Garson çağırmak için masanızdaki QR kodu okutun.
+                      Garson çağırmak için
+                      masanızdaki QR kodu
+                      okutun.
                     </p>
                   </div>
 
-                  {waiterError && <div className="error">{waiterError}</div>}
+                  {waiterError && (
+                    <div className="error">
+                      {waiterError}
+                    </div>
+                  )}
                 </>
               )}
             </div>
@@ -384,19 +609,71 @@ export default function HomePage() {
               ? "waiter-button success-button"
               : "waiter-button"
           }
-          onClick={() => setWaiterOpen((open) => !open)}
+          onClick={() =>
+            setWaiterOpen(
+              (open) => !open
+            )
+          }
           aria-label="Garson çağır"
         >
-          <span>{waiterMessage ? "✓" : "👩🏻‍🍳"}</span>
-          <small>{waiterMessage ? "Çağrıldı" : "Garson"}</small>
+          <span>
+            {waiterMessage
+              ? "✓"
+              : "👩🏻‍🍳"}
+          </span>
+
+          <small>
+            {waiterMessage
+              ? "Çağrıldı"
+              : "Garson"}
+          </small>
+
+          {!waiterMessage && (
+            <>
+              <i className="signal signal-one" />
+              <i className="signal signal-two" />
+              <i className="signal signal-three" />
+            </>
+          )}
         </button>
       </div>
+
+      <footer className="footer">
+        <div className="footer-brand">
+          <div className="footer-logo">
+            <img
+              src={logoUrl}
+              alt="Taşkent Cafe"
+            />
+          </div>
+
+          <div>
+            <strong>
+              Taşkent Cafe
+            </strong>
+
+            <span>
+              Mardin Kale
+            </span>
+          </div>
+        </div>
+
+        <p>
+          Keyfinize keyif katıyoruz.
+        </p>
+
+        <small>
+          © 2026 Taşkent Cafe
+        </small>
+      </footer>
 
       <style jsx global>{`
         :root {
           --brown-dark: #382a21;
           --brown: #8b5e3c;
+          --brown-light: #b96f38;
           --cream: #fffaf5;
+          --page: #f8f2ec;
           --text: #33271f;
           --muted: #8f8176;
           --border: #eadfd5;
@@ -412,7 +689,7 @@ export default function HomePage() {
 
         body {
           margin: 0;
-          background: #f8f2ec;
+          background: var(--page);
           color: var(--text);
           font-family:
             -apple-system,
@@ -421,12 +698,15 @@ export default function HomePage() {
             sans-serif;
         }
 
-        button {
+        button,
+        input,
+        select,
+        textarea {
           font-family: inherit;
         }
 
-        a {
-          text-decoration: none;
+        button {
+          -webkit-tap-highlight-color: transparent;
         }
 
         .site {
@@ -434,13 +714,13 @@ export default function HomePage() {
           max-width: 620px;
           min-height: 100vh;
           margin: 0 auto;
-          padding: 0 18px 120px;
+          padding: 0 18px 130px;
         }
 
         .header {
           display: flex;
           align-items: center;
-          padding: 22px 2px 18px;
+          padding: 20px 2px 17px;
         }
 
         .brand {
@@ -450,14 +730,17 @@ export default function HomePage() {
         }
 
         .logo {
-          width: 58px;
-          height: 58px;
-          flex: 0 0 58px;
+          width: 62px;
+          height: 62px;
+          flex: 0 0 62px;
           overflow: hidden;
           border-radius: 50%;
           background: #fff;
-          border: 2px solid rgba(91, 57, 35, 0.1);
-          box-shadow: 0 5px 18px rgba(45, 28, 18, 0.12);
+          border: 2px solid
+            rgba(91, 57, 35, 0.1);
+          box-shadow:
+            0 5px 18px
+              rgba(45, 28, 18, 0.13);
         }
 
         .logo img {
@@ -467,104 +750,173 @@ export default function HomePage() {
           object-fit: cover;
         }
 
-        .brand h1 {
+        .brand-text h1 {
           margin: 0;
           color: var(--brown-dark);
-          font-size: 21px;
+          font-size: 22px;
           line-height: 1.1;
-          font-weight: 800;
-          letter-spacing: -0.5px;
+          font-weight: 850;
+          letter-spacing: -0.6px;
         }
 
-        .brand span {
+        .brand-text span {
           display: block;
           margin-top: 5px;
           color: var(--muted);
           font-size: 11px;
-          font-weight: 600;
+          font-weight: 650;
         }
 
         .loyalty-card {
           position: relative;
+          overflow: hidden;
+          margin: 5px 0 28px;
+          padding: 18px;
+          border-radius: 22px;
+          background:
+            linear-gradient(
+              135deg,
+              #4a3428 0%,
+              #382a21 55%,
+              #2c211a 100%
+            );
+          color: #fff;
+          box-shadow:
+            0 12px 28px
+              rgba(55, 34, 21, 0.19);
+        }
+
+        .loyalty-card-glow {
+          position: absolute;
+          width: 150px;
+          height: 150px;
+          right: -65px;
+          top: -75px;
+          border-radius: 50%;
+          background: rgba(
+            255,
+            255,
+            255,
+            0.08
+          );
+        }
+
+        .loyalty-top {
+          position: relative;
           display: flex;
           align-items: center;
-          gap: 12px;
-          width: 100%;
-          min-height: 94px;
-          margin: 4px 0 28px;
-          padding: 16px 15px;
-          overflow: hidden;
-          border-radius: 20px;
-          background: linear-gradient(135deg, #4b3426 0%, #8b5e3c 100%);
-          color: #fff;
-          box-shadow: 0 10px 25px rgba(70, 43, 26, 0.2);
+          gap: 11px;
         }
 
-        .loyalty-card::after {
-          content: "";
-          position: absolute;
-          width: 130px;
-          height: 130px;
-          right: -45px;
-          top: -55px;
-          border-radius: 50%;
-          background: rgba(255, 255, 255, 0.07);
-        }
-
-        .loyalty-card-icon {
-          position: relative;
-          z-index: 1;
-          width: 48px;
-          height: 48px;
-          flex: 0 0 48px;
+        .loyalty-icon {
+          width: 43px;
+          height: 43px;
           display: flex;
           align-items: center;
           justify-content: center;
-          border-radius: 15px;
-          background: rgba(255, 255, 255, 0.13);
-          font-size: 25px;
+          border-radius: 14px;
+          background: rgba(
+            255,
+            255,
+            255,
+            0.1
+          );
+          font-size: 22px;
         }
 
-        .loyalty-card-content {
-          position: relative;
-          z-index: 1;
-          flex: 1;
-          min-width: 0;
-        }
-
-        .loyalty-card-content span {
+        .loyalty-title span {
           display: block;
-          margin-bottom: 4px;
-          color: #e6cbb7;
+          color: #d6c4b6;
           font-size: 8px;
-          font-weight: 800;
+          font-weight: 850;
           letter-spacing: 1.4px;
         }
 
-        .loyalty-card-content strong {
+        .loyalty-title strong {
           display: block;
-          font-size: 14px;
-          line-height: 1.25;
+          margin-top: 4px;
+          font-size: 15px;
+          font-weight: 800;
         }
 
-        .loyalty-card-content small {
-          display: block;
-          margin-top: 5px;
-          color: #dfcfc2;
-          font-size: 9px;
-          line-height: 1.35;
-        }
-
-        .loyalty-card-arrow {
+        .loyalty-loading {
           position: relative;
-          z-index: 1;
-          color: #ead9cb;
-          font-size: 27px;
-          line-height: 1;
+          margin-top: 17px;
+          padding-top: 15px;
+          border-top: 1px solid
+            rgba(255, 255, 255, 0.1);
+          color: #cdbeb3;
+          font-size: 10px;
+        }
+
+        .loyalty-stats {
+          position: relative;
+          display: flex;
+          align-items: center;
+          margin-top: 18px;
+          padding-top: 15px;
+          border-top: 1px solid
+            rgba(255, 255, 255, 0.1);
+        }
+
+        .loyalty-stat {
+          flex: 1;
+        }
+
+        .loyalty-stat span {
+          display: block;
+          color: #bfaea1;
+          font-size: 7px;
+          font-weight: 800;
+          letter-spacing: 1px;
+        }
+
+        .loyalty-stat strong {
+          display: block;
+          margin-top: 4px;
+          color: #fff;
+          font-size: 19px;
+          font-weight: 850;
+        }
+
+        .loyalty-divider {
+          width: 1px;
+          height: 31px;
+          margin: 0 18px;
+          background: rgba(
+            255,
+            255,
+            255,
+            0.12
+          );
+        }
+
+        .loyalty-guest {
+          position: relative;
+          margin-top: 16px;
+          padding-top: 14px;
+          border-top: 1px solid
+            rgba(255, 255, 255, 0.1);
+        }
+
+        .loyalty-guest p {
+          margin: 0;
+          color: #d6c7bd;
+          font-size: 10px;
+          line-height: 1.5;
+        }
+
+        .loyalty-guest a {
+          display: inline-block;
+          margin-top: 10px;
+          color: #fff;
+          text-decoration: none;
+          font-size: 9px;
+          font-weight: 800;
         }
 
         .menu-section {
-          margin-top: 4px;
+          margin-top: 0;
         }
 
         .section-header {
@@ -579,7 +931,7 @@ export default function HomePage() {
           display: block;
           color: var(--brown);
           font-size: 10px;
-          font-weight: 800;
+          font-weight: 850;
           letter-spacing: 1.5px;
         }
 
@@ -632,7 +984,9 @@ export default function HomePage() {
           background: var(--brown-dark);
           border-color: var(--brown-dark);
           color: #fff;
-          box-shadow: 0 5px 13px rgba(56, 42, 33, 0.18);
+          box-shadow:
+            0 5px 13px
+              rgba(56, 42, 33, 0.18);
         }
 
         .products {
@@ -647,7 +1001,9 @@ export default function HomePage() {
           border: 1px solid var(--border);
           border-radius: 18px;
           background: #fffdfb;
-          box-shadow: 0 5px 17px rgba(59, 38, 24, 0.06);
+          box-shadow:
+            0 5px 17px
+              rgba(59, 38, 24, 0.06);
         }
 
         .product-image {
@@ -733,7 +1089,8 @@ export default function HomePage() {
           border-radius: 50%;
           border: 3px solid #e9ddd3;
           border-top-color: var(--brown);
-          animation: spin 0.8s linear infinite;
+          animation:
+            spin 0.8s linear infinite;
         }
 
         @keyframes spin {
@@ -775,7 +1132,7 @@ export default function HomePage() {
         .waiter-widget {
           position: fixed;
           left: 18px;
-          bottom: 82px;
+          bottom: 24px;
           z-index: 1000;
           display: flex;
           flex-direction: column;
@@ -785,14 +1142,21 @@ export default function HomePage() {
 
         .waiter-button {
           position: relative;
-          width: 62px;
-          height: 62px;
+          width: 64px;
+          height: 64px;
           padding: 0;
           border: 0;
           border-radius: 50%;
-          background: linear-gradient(145deg, #8b5e3c, #5d3823);
+          background:
+            linear-gradient(
+              145deg,
+              #9a6844,
+              #5d3823
+            );
           color: #fff;
-          box-shadow: 0 8px 25px rgba(55, 31, 17, 0.28);
+          box-shadow:
+            0 8px 25px
+              rgba(55, 31, 17, 0.3);
           display: flex;
           flex-direction: column;
           align-items: center;
@@ -802,60 +1166,72 @@ export default function HomePage() {
           isolation: isolate;
         }
 
-        .waiter-button::before,
-        .waiter-button::after {
-          content: "";
-          position: absolute;
-          inset: -5px;
-          border: 2px solid rgba(139, 94, 60, 0.48);
-          border-radius: 50%;
-          pointer-events: none;
-          z-index: -1;
-          animation: waiterSignal 2.2s ease-out infinite;
-        }
-
-        .waiter-button::after {
-          animation-delay: 1.1s;
-        }
-
-        .waiter-button > span,
-        .waiter-button small {
-          position: relative;
-          z-index: 2;
-        }
-
         .waiter-button > span {
+          position: relative;
+          z-index: 5;
           font-size: 25px;
           line-height: 1;
         }
 
         .waiter-button small {
+          position: relative;
+          z-index: 5;
           font-size: 8px;
           font-weight: 800;
         }
 
         .success-button {
-          background: linear-gradient(145deg, #4d9364, #28633c);
+          background:
+            linear-gradient(
+              145deg,
+              #4d9364,
+              #28633c
+            );
         }
 
-        .success-button::before,
-        .success-button::after {
-          border-color: rgba(77, 147, 100, 0.48);
+        .signal {
+          position: absolute;
+          left: 50%;
+          top: 50%;
+          width: 64px;
+          height: 64px;
+          border: 2px solid
+            rgba(139, 94, 60, 0.55);
+          border-radius: 50%;
+          transform: translate(
+            -50%,
+            -50%
+          );
+          pointer-events: none;
+          z-index: -1;
+          animation: signalPulse 2.4s
+            ease-out infinite;
         }
 
-        @keyframes waiterSignal {
+        .signal-two {
+          animation-delay: 0.8s;
+        }
+
+        .signal-three {
+          animation-delay: 1.6s;
+        }
+
+        @keyframes signalPulse {
           0% {
-            transform: scale(0.95);
-            opacity: 0.8;
+            width: 64px;
+            height: 64px;
+            opacity: 0.65;
           }
 
           70% {
-            transform: scale(1.45);
+            width: 105px;
+            height: 105px;
             opacity: 0;
           }
 
           100% {
-            transform: scale(1.45);
+            width: 105px;
+            height: 105px;
             opacity: 0;
           }
         }
@@ -867,7 +1243,9 @@ export default function HomePage() {
           border: 1px solid #eee2d7;
           border-radius: 20px;
           background: var(--cream);
-          box-shadow: 0 18px 50px rgba(43, 28, 18, 0.2);
+          box-shadow:
+            0 18px 50px
+              rgba(43, 28, 18, 0.2);
         }
 
         .waiter-header {
@@ -887,21 +1265,26 @@ export default function HomePage() {
           align-items: center;
           justify-content: center;
           border-radius: 13px;
-          background: rgba(255, 255, 255, 0.1);
+          background: rgba(
+            255,
+            255,
+            255,
+            0.1
+          );
           font-size: 20px;
         }
 
-        .waiter-header > div:nth-child(2) {
+        .waiter-header-info {
           flex: 1;
           min-width: 0;
         }
 
-        .waiter-header strong {
+        .waiter-header-info strong {
           display: block;
           font-size: 12px;
         }
 
-        .waiter-header span {
+        .waiter-header-info span {
           display: block;
           margin-top: 3px;
           color: #cdbfb4;
@@ -913,7 +1296,12 @@ export default function HomePage() {
           height: 30px;
           border: 0;
           border-radius: 9px;
-          background: rgba(255, 255, 255, 0.1);
+          background: rgba(
+            255,
+            255,
+            255,
+            0.1
+          );
           color: #fff;
           font-size: 20px;
           cursor: pointer;
@@ -996,6 +1384,60 @@ export default function HomePage() {
           line-height: 1.5;
         }
 
+        .footer {
+          margin-top: 50px;
+          padding: 24px 4px 0;
+          border-top: 1px solid
+            var(--border);
+          text-align: center;
+        }
+
+        .footer-brand {
+          display: inline-flex;
+          align-items: center;
+          gap: 9px;
+          text-align: left;
+        }
+
+        .footer-logo {
+          width: 39px;
+          height: 39px;
+          overflow: hidden;
+          border-radius: 50%;
+          background: #fff;
+        }
+
+        .footer-logo img {
+          width: 100%;
+          height: 100%;
+          display: block;
+          object-fit: cover;
+        }
+
+        .footer-brand strong {
+          display: block;
+          color: var(--brown-dark);
+          font-size: 11px;
+        }
+
+        .footer-brand span {
+          display: block;
+          margin-top: 2px;
+          color: var(--muted);
+          font-size: 8px;
+        }
+
+        .footer p {
+          margin: 12px 0 5px;
+          color: var(--muted);
+          font-size: 9px;
+        }
+
+        .footer small {
+          color: #aa9d92;
+          font-size: 8px;
+        }
+
         @media (max-width: 480px) {
           .site {
             padding-left: 15px;
@@ -1011,13 +1453,9 @@ export default function HomePage() {
             min-width: 105px;
           }
 
-          .loyalty-card {
-            min-height: 90px;
-            margin-bottom: 25px;
-          }
-
-          .loyalty-card-content strong {
-            font-size: 13px;
+          .waiter-widget {
+            left: 15px;
+            bottom: 20px;
           }
         }
 
@@ -1040,13 +1478,7 @@ export default function HomePage() {
           }
 
           .loyalty-card {
-            padding: 14px 12px;
-          }
-
-          .loyalty-card-icon {
-            width: 43px;
-            height: 43px;
-            flex-basis: 43px;
+            padding: 15px;
           }
         }
       `}</style>
