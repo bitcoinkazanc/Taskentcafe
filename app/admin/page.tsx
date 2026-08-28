@@ -842,31 +842,6 @@ export default function AdminPage() {
 
         <div className="menu-grid">
 
-          {/* YENİ — ANA SAYFA YÖNETİMİ */}
-          <a
-            href="/admin/home"
-            className="menu-card"
-          >
-            <div className="menu-icon">
-              🏠
-            </div>
-
-            <div className="menu-info">
-              <strong>
-                Ana Sayfa Yönetimi
-              </strong>
-
-              <span>
-                Ana sayfa bölümlerini,
-                içerikleri ve görünümü yönet.
-              </span>
-            </div>
-
-            <b>
-              →
-            </b>
-          </a>
-
           <a
             href="/admin/staff"
             className="menu-card"
