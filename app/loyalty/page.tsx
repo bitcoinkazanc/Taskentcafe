@@ -236,8 +236,7 @@ export default function LoyaltyPage() {
           </a>
 
           <a href="/" className="loyalty-back">
-            <span className="back-icon">←</span>
-            <span>Ana Sayfa</span>
+            Ana Sayfa
           </a>
         </header>
 
@@ -317,8 +316,7 @@ export default function LoyaltyPage() {
           href="/"
           className="loyalty-back"
         >
-          <span className="back-icon">←</span>
-          <span>Ana Sayfa</span>
+          Ana Sayfa
         </a>
 
       </header>
@@ -776,54 +774,32 @@ export default function LoyaltyPage() {
         }
 
         .loyalty-back {
-          height: 38px;
-          padding: 0 13px 0 10px;
+          height: 36px;
+          padding: 0 14px;
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          gap: 7px;
-          border: 1px solid #e5d8cc;
-          border-radius: 12px;
-          background: rgba(255,255,255,.92);
-          color: #604938;
+          border: 1px solid #e2d4c8;
+          border-radius: 11px;
+          background: #fff;
+          color: #654936;
           font-size: 10px;
           font-weight: 800;
           white-space: nowrap;
-          box-shadow:
-            0 3px 10px rgba(67,44,26,.06),
-            inset 0 1px 0 rgba(255,255,255,.9);
+          box-shadow: 0 3px 10px rgba(55,35,22,.06);
           transition:
             background .2s ease,
-            border-color .2s ease,
-            transform .2s ease,
-            box-shadow .2s ease;
+            box-shadow .2s ease,
+            transform .2s ease;
         }
 
         .loyalty-back:hover {
-          background: #fff;
-          border-color: #d8c8b9;
-          box-shadow:
-            0 5px 14px rgba(67,44,26,.09),
-            inset 0 1px 0 rgba(255,255,255,.9);
-          transform: translateY(-1px);
+          background: #f8f0e9;
+          box-shadow: 0 5px 14px rgba(55,35,22,.09);
         }
 
         .loyalty-back:active {
           transform: scale(.97);
-        }
-
-        .back-icon {
-          width: 22px;
-          height: 22px;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          border-radius: 7px;
-          background: #f3e9df;
-          color: #8b5e3c;
-          font-size: 15px;
-          line-height: 1;
-          font-weight: 900;
         }
 
         .loyalty-content {
@@ -1472,20 +1448,6 @@ export default function LoyaltyPage() {
           .reward-button {
             padding-left: 9px;
             padding-right: 9px;
-          }
-
-          .loyalty-back {
-            height: 36px;
-            padding-left: 8px;
-            padding-right: 10px;
-            gap: 5px;
-            font-size: 9px;
-          }
-
-          .back-icon {
-            width: 21px;
-            height: 21px;
-            font-size: 14px;
           }
         }
 
