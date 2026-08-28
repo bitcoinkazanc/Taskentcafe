@@ -60,23 +60,13 @@ export default function HomePage() {
   const [productsLoading, setProductsLoading] = useState(true);
   const [productsError, setProductsError] = useState("");
 
-  const [table, setTable] =
-    useState<CafeTable | null>(null);
+  const [table, setTable] = useState<CafeTable | null>(null);
+  const [tableLoading, setTableLoading] = useState(false);
 
-  const [tableLoading, setTableLoading] =
-    useState(false);
-
-  const [waiterLoading, setWaiterLoading] =
-    useState(false);
-
-  const [waiterMessage, setWaiterMessage] =
-    useState("");
-
-  const [waiterError, setWaiterError] =
-    useState("");
-
-  const [waiterOpen, setWaiterOpen] =
-    useState(false);
+  const [waiterLoading, setWaiterLoading] = useState(false);
+  const [waiterMessage, setWaiterMessage] = useState("");
+  const [waiterError, setWaiterError] = useState("");
+  const [waiterOpen, setWaiterOpen] = useState(false);
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -84,47 +74,25 @@ export default function HomePage() {
         setProductsLoading(true);
         setProductsError("");
 
-        const {
-          data,
-          error,
-        } = await supabase
+        const { data, error } = await supabase
           .from("products")
           .select(
             "id,name,category,description,price,image_url,active,sort_order"
           )
           .eq("active", true)
-          .order("sort_order", {
-            ascending: true,
-          })
-          .order("created_at", {
-            ascending: false,
-          });
+          .order("sort_order", { ascending: true })
+          .order("created_at", { ascending: false });
 
         if (error) {
-          console.error(
-            "PRODUCT LOAD ERROR:",
-            error
-          );
-
-          setProductsError(
-            "Menü ürünleri yüklenemedi."
-          );
-
+          console.error("PRODUCT LOAD ERROR:", error);
+          setProductsError("Menü ürünleri yüklenemedi.");
           return;
         }
 
-        setProducts(
-          (data || []) as Product[]
-        );
+        setProducts((data || []) as Product[]);
       } catch (error) {
-        console.error(
-          "PRODUCT ERROR:",
-          error
-        );
-
-        setProductsError(
-          "Menü ürünleri yüklenemedi."
-        );
+        console.error("PRODUCT ERROR:", error);
+        setProductsError("Menü ürünleri yüklenemedi.");
       } finally {
         setProductsLoading(false);
       }
@@ -136,21 +104,13 @@ export default function HomePage() {
   const filteredProducts =
     category === "Tümü"
       ? products
-      : products.filter(
-          (product) =>
-            product.category === category
-        );
+      : products.filter((product) => product.category === category);
 
   useEffect(() => {
     const loadTable = async () => {
       try {
-        const params =
-          new URLSearchParams(
-            window.location.search
-          );
-
-        const qrToken =
-          params.get("table");
+        const params = new URLSearchParams(window.location.search);
+        const qrToken = params.get("table");
 
         if (!qrToken) {
           return;
@@ -158,42 +118,20 @@ export default function HomePage() {
 
         setTableLoading(true);
 
-        const {
-          data,
-          error,
-        } = await supabase.rpc(
-          "get_cafe_table",
-          {
-            requested_qr_token:
-              qrToken,
-          }
-        );
+        const { data, error } = await supabase.rpc("get_cafe_table", {
+          requested_qr_token: qrToken,
+        });
 
         if (error) {
-          console.error(
-            "TABLE LOAD ERROR:",
-            error
-          );
-
-          setWaiterError(
-            "Masa bilgisi alınamadı."
-          );
-
+          console.error("TABLE LOAD ERROR:", error);
+          setWaiterError("Masa bilgisi alınamadı.");
           return;
         }
 
-        setTable(
-          data as CafeTable
-        );
+        setTable(data as CafeTable);
       } catch (error) {
-        console.error(
-          "TABLE ERROR:",
-          error
-        );
-
-        setWaiterError(
-          "Masa bilgisi alınamadı."
-        );
+        console.error("TABLE ERROR:", error);
+        setWaiterError("Masa bilgisi alınamadı.");
       } finally {
         setTableLoading(false);
       }
@@ -207,7 +145,6 @@ export default function HomePage() {
       setWaiterError(
         "Garson çağırmak için masanıza ait QR koddan giriş yapmalısınız."
       );
-
       setWaiterMessage("");
       return;
     }
@@ -216,7 +153,6 @@ export default function HomePage() {
       setWaiterError(
         "Cihazınız konum özelliğini desteklemiyor."
       );
-
       setWaiterMessage("");
       return;
     }
@@ -228,44 +164,22 @@ export default function HomePage() {
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         try {
-          const latitude =
-            position.coords.latitude;
-
-          const longitude =
-            position.coords.longitude;
-
-          const {
-            error,
-          } = await supabase.rpc(
-            "create_waiter_call",
-            {
-              requested_table_id:
-                table.id,
-
-              user_latitude:
-                latitude,
-
-              user_longitude:
-                longitude,
-            }
-          );
+          const { error } = await supabase.rpc("create_waiter_call", {
+            requested_table_id: table.id,
+            user_latitude: position.coords.latitude,
+            user_longitude: position.coords.longitude,
+          });
 
           if (error) {
-            throw new Error(
-              error.message
-            );
+            throw new Error(error.message);
           }
 
           setWaiterMessage(
             `Garsonunuz Masa ${table.table_number} için çağrıldı.`
           );
-
           setWaiterError("");
         } catch (error) {
-          console.error(
-            "WAITER CALL ERROR:",
-            error
-          );
+          console.error("WAITER CALL ERROR:", error);
 
           setWaiterError(
             error instanceof Error
@@ -279,34 +193,21 @@ export default function HomePage() {
         }
       },
       (error) => {
-        console.error(
-          "LOCATION ERROR:",
-          error
-        );
+        console.error("LOCATION ERROR:", error);
 
-        let message =
-          "Konumunuz alınamadı.";
+        let message = "Konumunuz alınamadı.";
 
-        if (
-          error.code ===
-          error.PERMISSION_DENIED
-        ) {
+        if (error.code === error.PERMISSION_DENIED) {
           message =
             "Garson çağırmak için konum izni vermelisiniz.";
         }
 
-        if (
-          error.code ===
-          error.POSITION_UNAVAILABLE
-        ) {
+        if (error.code === error.POSITION_UNAVAILABLE) {
           message =
             "Konumunuz belirlenemedi. Lütfen GPS'i açıp tekrar deneyin.";
         }
 
-        if (
-          error.code ===
-          error.TIMEOUT
-        ) {
+        if (error.code === error.TIMEOUT) {
           message =
             "Konum alınırken zaman aşımı oluştu. Lütfen tekrar deneyin.";
         }
@@ -325,50 +226,45 @@ export default function HomePage() {
 
   return (
     <main className="site">
-
-      {/* =========================
-          ÜST LOGO
-      ========================= */}
-
-      <header className="header">
-
+      <header className="hero-header">
         <div className="brand">
-
           <div className="logo">
-            <img
-              src={logoUrl}
-              alt="Taşkent Cafe"
-            />
+            <img src={logoUrl} alt="Taşkent Cafe" />
           </div>
 
-          <div>
-            <h1>
-              Taşkent Cafe
-            </h1>
-
-            <span>
-              Keyif burada başlar
-            </span>
+          <div className="brand-text">
+            <h1>Taşkent Cafe</h1>
+            <span>Keyif burada başlar</span>
           </div>
-
         </div>
 
+        <div className="hero-location">
+          <span>📍</span>
+          <span>Mardin Kale</span>
+        </div>
       </header>
 
+      <section className="welcome">
+        <span className="welcome-eyebrow">
+          HOŞ GELDİNİZ
+        </span>
 
-      {/* =========================
-          SADAKAT KULÜBÜ
-      ========================= */}
+        <h2>
+          Kahvenizi seçin,
+          <br />
+          keyfinize bakın.
+        </h2>
 
-      <section
-        className="loyalty"
-        id="loyalty"
-      >
+        <p>
+          Taze kahveler, lezzetli atıştırmalıklar
+          ve güzel sohbetler için doğru yerdesiniz.
+        </p>
+      </section>
 
-        <div className="loyalty-content">
-
-          <span className="eyebrow light">
-            SADAKAT KULÜBÜ
+      <section className="loyalty-card" id="loyalty">
+        <div className="loyalty-card-content">
+          <span className="loyalty-label">
+            ⭐ SADAKAT KULÜBÜ
           </span>
 
           <h2>
@@ -378,9 +274,8 @@ export default function HomePage() {
           </h2>
 
           <p>
-            Alışverişlerinden puan
-            biriktir, özel ödüllerin ve
-            avantajların tadını çıkar.
+            Puan biriktirin, özel ödüllerin ve
+            avantajların tadını çıkarın.
           </p>
 
           <a
@@ -388,321 +283,197 @@ export default function HomePage() {
             className="loyalty-button"
           >
             Sadakat Kulübüne Katıl
+            <span>→</span>
           </a>
-
         </div>
 
-        <div className="loyalty-icon">
+        <div className="loyalty-decoration">
           ⭐
         </div>
-
       </section>
 
-
-      {/* =========================
-          MENÜ
-      ========================= */}
-
-      <section
-        className="section"
-        id="menu"
-      >
-
+      <section className="menu-section" id="menu">
         <div className="section-heading">
-
           <div>
-
-            <span className="eyebrow">
+            <span className="section-eyebrow">
               TAŞKENT CAFE
             </span>
 
-            <h2>
-              Menümüz
-            </h2>
+            <h2>Menümüz</h2>
 
+            <p>
+              Size özel hazırlanan lezzetler
+            </p>
           </div>
 
-          <span className="menu-count">
+          <div className="product-count">
             {productsLoading
               ? "..."
               : `${filteredProducts.length} ürün`}
-          </span>
-
+          </div>
         </div>
-
 
         <div className="categories">
-
-          {categories.map(
-            (item) => (
-              <button
-                key={item}
-                type="button"
-                className={
-                  category === item
-                    ? "category active"
-                    : "category"
-                }
-                onClick={() =>
-                  setCategory(item)
-                }
-              >
-                {item}
-              </button>
-            )
-          )}
-
+          {categories.map((item) => (
+            <button
+              key={item}
+              type="button"
+              className={
+                category === item
+                  ? "category active"
+                  : "category"
+              }
+              onClick={() => setCategory(item)}
+            >
+              {item}
+            </button>
+          ))}
         </div>
 
-
         {productsLoading && (
-
           <div className="menu-loading">
             <div className="loading-spinner" />
-            <span>
-              Menü yükleniyor...
-            </span>
+            <strong>Menümüz hazırlanıyor...</strong>
           </div>
-
         )}
 
-
-        {!productsLoading &&
-          productsError && (
-
-            <div className="menu-error">
-              ⚠️ {productsError}
-            </div>
-
-          )}
-
+        {!productsLoading && productsError && (
+          <div className="menu-error">
+            ⚠️ {productsError}
+          </div>
+        )}
 
         {!productsLoading &&
           !productsError &&
           filteredProducts.length === 0 && (
-
             <div className="menu-empty">
-              <div>
-                🍽️
-              </div>
-
+              <div>🍽️</div>
               <strong>
                 Bu kategoride ürün bulunmuyor.
               </strong>
-
               <span>
                 Yakında yeni ürünler eklenecek.
               </span>
             </div>
-
           )}
-
 
         {!productsLoading &&
           !productsError &&
           filteredProducts.length > 0 && (
-
             <div className="products">
+              {filteredProducts.map((product) => (
+                <article
+                  className="product-card"
+                  key={product.id}
+                >
+                  <div className="product-image">
+                    {product.image_url ? (
+                      <img
+                        src={product.image_url}
+                        alt={product.name}
+                        loading="lazy"
+                      />
+                    ) : (
+                      <span>
+                        {getCategoryIcon(product.category)}
+                      </span>
+                    )}
+                  </div>
 
-              {filteredProducts.map(
-                (product) => (
+                  <div className="product-content">
+                    <div className="product-info">
+                      <span className="product-category">
+                        {product.category}
+                      </span>
 
-                  <article
-                    className="product-card"
-                    key={product.id}
-                  >
+                      <h3>{product.name}</h3>
 
-                    <div className="product-image">
-
-                      {product.image_url ? (
-
-                        <img
-                          src={product.image_url}
-                          alt={product.name}
-                          loading="lazy"
-                        />
-
-                      ) : (
-
-                        <span>
-                          {getCategoryIcon(
-                            product.category
-                          )}
-                        </span>
-
+                      {product.description && (
+                        <p>{product.description}</p>
                       )}
-
                     </div>
 
+                    <div className="product-bottom">
+                      <strong>
+                        {Number(product.price).toLocaleString(
+                          "tr-TR",
+                          {
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 2,
+                          }
+                        )}{" "}
+                        ₺
+                      </strong>
 
-                    <div className="product-content">
-
-                      <div>
-
-                        <h3>
-                          {product.name}
-                        </h3>
-
-                        <p>
-                          {product.description ||
-                            ""}
-                        </p>
-
-                      </div>
-
-
-                      <div className="product-bottom">
-
-                        <strong>
-                          {Number(
-                            product.price
-                          ).toLocaleString(
-                            "tr-TR",
-                            {
-                              minimumFractionDigits: 0,
-                              maximumFractionDigits: 2,
-                            }
-                          )}{" "}
-                          ₺
-                        </strong>
-
-                        <button
-                          type="button"
-                          className="plus-button"
-                          aria-label={`${product.name} detay`}
-                        >
-                          +
-                        </button>
-
-                      </div>
-
+                      <button
+                        type="button"
+                        className="plus-button"
+                        aria-label={`${product.name} detay`}
+                      >
+                        +
+                      </button>
                     </div>
-
-                  </article>
-
-                )
-              )}
-
+                  </div>
+                </article>
+              ))}
             </div>
-
           )}
-
       </section>
 
-
-      {/* =========================
-          KONUM
-      ========================= */}
-
-      <section
-        className="info-section"
-        id="location"
-      >
-
+      <section className="location-section" id="location">
         <div className="section-heading">
-
           <div>
-
-            <span className="eyebrow">
+            <span className="section-eyebrow">
               BİZİ ZİYARET ET
             </span>
 
-            <h2>
+            <h2>Taşkent Cafe</h2>
+
+            <p>
+              Mardin'in kalbinde sizi bekliyoruz.
+            </p>
+          </div>
+        </div>
+
+        <div className="location-card">
+          <div className="location-icon">
+            📍
+          </div>
+
+          <div>
+            <span>ADRES</span>
+            <strong>Mardin Kale</strong>
+            <p>
               Taşkent Cafe
-            </h2>
-
+            </p>
           </div>
-
         </div>
 
-
-        <div className="info-card">
-
-          <div className="info-row">
-
-            <span>
-              📍
-            </span>
-
+        <div className="info-grid">
+          <div className="info-card">
+            <span>🕐</span>
             <div>
-
-              <strong>
-                Konum
-              </strong>
-
-              <p>
-                Mardin Kale
-              </p>
-
+              <strong>Çalışma Saatleri</strong>
+              <p>Her gün 09:00 – 00:00</p>
             </div>
-
           </div>
 
-
-          <div className="info-row">
-
-            <span>
-              🕐
-            </span>
-
+          <div className="info-card">
+            <span>📞</span>
             <div>
-
-              <strong>
-                Çalışma Saatleri
-              </strong>
-
-              <p>
-                Her gün 09:00 – 00:00
-              </p>
-
+              <strong>İletişim</strong>
+              <p>05XX XXX XX XX</p>
             </div>
-
           </div>
-
-
-          <div className="info-row">
-
-            <span>
-              📞
-            </span>
-
-            <div>
-
-              <strong>
-                İletişim
-              </strong>
-
-              <p>
-                05XX XXX XX XX
-              </p>
-
-            </div>
-
-          </div>
-
         </div>
-
       </section>
 
-
-      {/* =========================
-          ALT BİLGİ
-      ========================= */}
-
       <footer className="footer">
-
         <div className="footer-logo">
-
-          <img
-            src={logoUrl}
-            alt="Taşkent Cafe"
-          />
-
+          <img src={logoUrl} alt="Taşkent Cafe" />
         </div>
 
-        <strong>
-          Taşkent Cafe
-        </strong>
+        <strong>Taşkent Cafe</strong>
 
         <p>
           Kahve, lezzet ve güzel sohbet.
@@ -711,166 +482,103 @@ export default function HomePage() {
         <small>
           © 2026 Taşkent Cafe
         </small>
-
       </footer>
 
-
-      {/* =========================
-          GARSON ÇAĞIRMA
-          SOL TARAFTA
-      ========================= */}
-
       <div className="waiter-widget">
-
         {waiterOpen && (
-
           <div className="waiter-panel">
-
             <div className="waiter-panel-header">
-
               <div className="waiter-avatar-small">
                 👩🏻‍🍳
               </div>
 
-              <div>
-
-                <strong>
-                  Garson Hizmeti
-                </strong>
-
+              <div className="waiter-header-text">
+                <strong>Garson Hizmeti</strong>
                 <span>
                   Size nasıl yardımcı olabiliriz?
                 </span>
-
               </div>
 
               <button
                 type="button"
                 className="waiter-close"
-                onClick={() =>
-                  setWaiterOpen(false)
-                }
+                onClick={() => setWaiterOpen(false)}
                 aria-label="Kapat"
               >
                 ×
               </button>
-
             </div>
 
-
             <div className="waiter-panel-body">
-
               {table ? (
-
                 <>
-
                   <div className="waiter-table-info">
-
-                    <span>
-                      Masanız
-                    </span>
-
+                    <span>Masanız</span>
                     <strong>
-                      Masa{" "}
-                      {table.table_number}
+                      Masa {table.table_number}
                     </strong>
-
                   </div>
 
-
                   {waiterMessage ? (
-
                     <div className="waiter-success-box">
-
                       <div className="waiter-success-icon">
                         ✓
                       </div>
 
                       <div>
-
                         <strong>
                           Garsonunuz geliyor
                         </strong>
 
                         <p>
-                          Masa{" "}
-                          {table.table_number}{" "}
-                          için çağrınız
-                          alındı.
+                          Masa {table.table_number} için
+                          çağrınız alındı.
                         </p>
-
                       </div>
-
                     </div>
-
                   ) : (
-
                     <>
-
                       <p className="waiter-panel-text">
                         Masanıza bir garson
-                        göndermemizi ister
-                        misiniz?
+                        göndermemizi ister misiniz?
                       </p>
 
-
                       {waiterError && (
-
                         <div className="waiter-error-box">
                           ⚠️ {waiterError}
                         </div>
-
                       )}
-
 
                       <button
                         type="button"
                         className="waiter-call-button"
-                        onClick={
-                          callWaiter
-                        }
+                        onClick={callWaiter}
                         disabled={
                           waiterLoading ||
                           tableLoading
                         }
                       >
-
                         <span>
-
                           {waiterLoading
                             ? "Konum kontrol ediliyor..."
                             : "📣 Garson Çağır"}
-
                         </span>
 
                         {!waiterLoading && (
-                          <span>
-                            →
-                          </span>
+                          <span>→</span>
                         )}
-
                       </button>
 
-
                       <small className="waiter-location-note">
-                        📍 Cafe içinde
-                        olduğunuz konum
-                        kontrolüyle
-                        doğrulanır.
+                        📍 Cafe içinde olduğunuz
+                        konum kontrolüyle doğrulanır.
                       </small>
-
                     </>
-
                   )}
-
                 </>
-
               ) : (
-
                 <>
-
                   <div className="waiter-panel-empty">
-
                     <div className="waiter-empty-icon">
                       📱
                     </div>
@@ -880,33 +588,22 @@ export default function HomePage() {
                     </strong>
 
                     <p>
-                      Garson çağırabilmek
-                      için masanızdaki QR
-                      kodu okutmanız
-                      gerekiyor.
+                      Garson çağırabilmek için
+                      masanızdaki QR kodu
+                      okutmanız gerekiyor.
                     </p>
-
                   </div>
 
-
                   {waiterError && (
-
                     <div className="waiter-error-box">
                       ⚠️ {waiterError}
                     </div>
-
                   )}
-
                 </>
-
               )}
-
             </div>
-
           </div>
-
         )}
-
 
         <button
           type="button"
@@ -916,47 +613,69 @@ export default function HomePage() {
               : "waiter-floating-button"
           }
           onClick={() =>
-            setWaiterOpen(
-              !waiterOpen
-            )
+            setWaiterOpen(!waiterOpen)
           }
           aria-label="Garson çağır"
         >
-
           <span className="waiter-floating-icon">
-
-            {waiterMessage
-              ? "✓"
-              : "👩🏻‍🍳"}
-
+            {waiterMessage ? "✓" : "👩🏻‍🍳"}
           </span>
 
           <span className="waiter-floating-label">
-
             {waiterMessage
               ? "Garson geliyor"
               : "Garson"}
-
           </span>
 
-          {!waiterOpen &&
-            !waiterMessage && (
-
-              <span className="waiter-pulse" />
-
-            )}
-
+          {!waiterOpen && !waiterMessage && (
+            <span className="waiter-pulse" />
+          )}
         </button>
-
       </div>
 
-
       <style jsx global>{`
+        :root {
+          --brown-dark: #382a21;
+          --brown: #8b5e3c;
+          --brown-light: #b96f38;
+          --cream: #fffaf5;
+          --cream-dark: #f4e9df;
+          --text: #33271f;
+          --muted: #8f8176;
+          --border: #eadfd5;
+        }
 
-        .header {
+        html {
+          scroll-behavior: smooth;
+          scroll-padding-top: 20px;
+        }
+
+        body {
+          margin: 0;
+          background: #f8f2ec;
+          color: var(--text);
+          font-family:
+            -apple-system,
+            BlinkMacSystemFont,
+            "Segoe UI",
+            sans-serif;
+        }
+
+        .site {
+          width: 100%;
+          max-width: 620px;
+          margin: 0 auto;
+          min-height: 100vh;
+          padding: 0 18px 110px;
+          box-sizing: border-box;
+        }
+
+        .hero-header {
+          padding: 24px 2px 18px;
           display: flex;
           align-items: center;
-          justify-content: flex-start;
+          justify-content: space-between;
+          gap: 15px;
         }
 
         .brand {
@@ -966,16 +685,15 @@ export default function HomePage() {
         }
 
         .logo {
-          width: 52px;
-          height: 52px;
-          min-width: 52px;
-          border-radius: 50%;
+          width: 58px;
+          height: 58px;
+          flex: 0 0 58px;
           overflow: hidden;
-          background: #ffffff;
+          border-radius: 50%;
+          background: #fff;
           border: 2px solid rgba(91, 57, 35, 0.12);
           box-shadow:
-            0 4px 14px
-              rgba(45, 28, 18, 0.12);
+            0 5px 18px rgba(45, 28, 18, 0.13);
         }
 
         .logo img {
@@ -986,12 +704,257 @@ export default function HomePage() {
           border-radius: 50%;
         }
 
-        /* =========================
-           MENÜ GÖRSELLERİ
-        ========================= */
+        .brand-text h1 {
+          margin: 0;
+          color: var(--brown-dark);
+          font-size: 21px;
+          font-weight: 800;
+          letter-spacing: -0.5px;
+        }
+
+        .brand-text span {
+          display: block;
+          margin-top: 4px;
+          color: var(--muted);
+          font-size: 11px;
+          font-weight: 500;
+        }
+
+        .hero-location {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          color: #806f62;
+          font-size: 10px;
+          font-weight: 700;
+          white-space: nowrap;
+        }
+
+        .welcome {
+          padding: 25px 4px 23px;
+        }
+
+        .welcome-eyebrow,
+        .section-eyebrow {
+          display: block;
+          color: var(--brown);
+          font-size: 10px;
+          font-weight: 800;
+          letter-spacing: 1.6px;
+        }
+
+        .welcome h2 {
+          margin: 9px 0 11px;
+          color: var(--brown-dark);
+          font-size: 32px;
+          line-height: 1.08;
+          letter-spacing: -1.2px;
+          font-weight: 850;
+        }
+
+        .welcome p {
+          max-width: 450px;
+          margin: 0;
+          color: #806f62;
+          font-size: 13px;
+          line-height: 1.65;
+        }
+
+        .loyalty-card {
+          position: relative;
+          overflow: hidden;
+          min-height: 230px;
+          margin: 6px 0 38px;
+          padding: 25px;
+          border-radius: 24px;
+          background:
+            radial-gradient(
+              circle at 90% 15%,
+              rgba(255, 255, 255, 0.18),
+              transparent 28%
+            ),
+            linear-gradient(
+              135deg,
+              #70492f,
+              #3d2a20
+            );
+          color: #fff;
+          box-shadow:
+            0 14px 35px rgba(65, 38, 22, 0.2);
+          box-sizing: border-box;
+        }
+
+        .loyalty-card-content {
+          position: relative;
+          z-index: 2;
+        }
+
+        .loyalty-label {
+          font-size: 10px;
+          font-weight: 800;
+          letter-spacing: 1.4px;
+          color: #e8c8ad;
+        }
+
+        .loyalty-card h2 {
+          margin: 12px 0 10px;
+          font-size: 25px;
+          line-height: 1.1;
+          letter-spacing: -0.7px;
+        }
+
+        .loyalty-card p {
+          max-width: 320px;
+          margin: 0 0 18px;
+          color: #d8c6b8;
+          font-size: 11px;
+          line-height: 1.55;
+        }
+
+        .loyalty-button {
+          display: inline-flex;
+          align-items: center;
+          gap: 12px;
+          min-height: 42px;
+          padding: 0 16px;
+          border-radius: 12px;
+          background: #fff;
+          color: #4b3325;
+          text-decoration: none;
+          font-size: 11px;
+          font-weight: 800;
+          box-shadow:
+            0 6px 18px rgba(0, 0, 0, 0.12);
+          transition:
+            transform 0.2s ease,
+            box-shadow 0.2s ease;
+        }
+
+        .loyalty-button:active {
+          transform: scale(0.97);
+        }
+
+        .loyalty-button span {
+          font-size: 16px;
+        }
+
+        .loyalty-decoration {
+          position: absolute;
+          right: -12px;
+          bottom: -32px;
+          width: 145px;
+          height: 145px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 70px;
+          background: rgba(255, 255, 255, 0.07);
+          transform: rotate(-8deg);
+        }
+
+        .menu-section,
+        .location-section {
+          scroll-margin-top: 15px;
+        }
+
+        .section-heading {
+          display: flex;
+          align-items: flex-end;
+          justify-content: space-between;
+          gap: 15px;
+          margin-bottom: 19px;
+        }
+
+        .section-heading h2 {
+          margin: 5px 0 4px;
+          color: var(--brown-dark);
+          font-size: 28px;
+          line-height: 1.1;
+          letter-spacing: -0.8px;
+        }
+
+        .section-heading p {
+          margin: 0;
+          color: var(--muted);
+          font-size: 11px;
+        }
+
+        .product-count {
+          padding: 7px 10px;
+          border-radius: 20px;
+          background: #eee2d8;
+          color: #765e4e;
+          font-size: 10px;
+          font-weight: 800;
+          white-space: nowrap;
+        }
+
+        .categories {
+          display: flex;
+          gap: 8px;
+          overflow-x: auto;
+          padding: 3px 1px 12px;
+          margin-bottom: 12px;
+          scrollbar-width: none;
+          -webkit-overflow-scrolling: touch;
+        }
+
+        .categories::-webkit-scrollbar {
+          display: none;
+        }
+
+        .category {
+          flex: 0 0 auto;
+          min-height: 38px;
+          padding: 0 14px;
+          border: 1px solid var(--border);
+          border-radius: 20px;
+          background: rgba(255, 255, 255, 0.78);
+          color: #77665a;
+          font-size: 11px;
+          font-weight: 700;
+          cursor: pointer;
+          transition:
+            background 0.2s ease,
+            color 0.2s ease,
+            transform 0.2s ease;
+        }
+
+        .category.active {
+          background: var(--brown-dark);
+          border-color: var(--brown-dark);
+          color: #fff;
+          box-shadow:
+            0 5px 13px rgba(56, 42, 33, 0.18);
+        }
+
+        .category:active {
+          transform: scale(0.96);
+        }
+
+        .products {
+          display: grid;
+          gap: 13px;
+        }
+
+        .product-card {
+          display: flex;
+          min-height: 128px;
+          overflow: hidden;
+          border: 1px solid #eadfd6;
+          border-radius: 18px;
+          background: #fffdfb;
+          box-shadow:
+            0 5px 17px rgba(59, 38, 24, 0.06);
+        }
 
         .product-image {
+          width: 118px;
+          min-width: 118px;
+          min-height: 128px;
           overflow: hidden;
+          background: #f1e6dc;
         }
 
         .product-image img {
@@ -1010,23 +973,87 @@ export default function HomePage() {
           font-size: 42px;
         }
 
+        .product-content {
+          flex: 1;
+          min-width: 0;
+          padding: 15px 15px 13px;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+        }
+
+        .product-category {
+          display: block;
+          margin-bottom: 5px;
+          color: #a18169;
+          font-size: 8px;
+          font-weight: 800;
+          text-transform: uppercase;
+          letter-spacing: 0.8px;
+        }
+
+        .product-info h3 {
+          margin: 0;
+          color: #3d3028;
+          font-size: 15px;
+          line-height: 1.25;
+          font-weight: 800;
+        }
+
+        .product-info p {
+          margin: 5px 0 0;
+          color: #918177;
+          font-size: 10px;
+          line-height: 1.45;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+
+        .product-bottom {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 10px;
+          margin-top: 9px;
+        }
+
+        .product-bottom strong {
+          color: var(--brown);
+          font-size: 16px;
+          font-weight: 850;
+        }
+
+        .plus-button {
+          width: 30px;
+          height: 30px;
+          border: 0;
+          border-radius: 50%;
+          background: #f0e2d6;
+          color: #6f4a33;
+          font-size: 19px;
+          line-height: 1;
+          cursor: pointer;
+        }
+
         .menu-loading {
-          min-height: 180px;
+          min-height: 210px;
           display: flex;
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          gap: 10px;
-          color: #8f8176;
+          gap: 12px;
+          color: #7d6c60;
           font-size: 11px;
         }
 
         .loading-spinner {
-          width: 28px;
-          height: 28px;
+          width: 31px;
+          height: 31px;
           border-radius: 50%;
-          border: 3px solid #eadfd5;
-          border-top-color: #8b5e3c;
+          border: 3px solid #e9ddd3;
+          border-top-color: var(--brown);
           animation: menuSpinner 0.8s linear infinite;
         }
 
@@ -1037,48 +1064,164 @@ export default function HomePage() {
         }
 
         .menu-error {
-          margin-top: 18px;
-          padding: 13px;
-          border-radius: 12px;
-          background: #f6e7df;
-          color: #8a5135;
+          padding: 15px;
+          border-radius: 14px;
+          background: #f5e5dd;
+          color: #8b5034;
           text-align: center;
-          font-size: 10px;
+          font-size: 11px;
         }
 
         .menu-empty {
-          min-height: 160px;
+          min-height: 190px;
           display: flex;
           flex-direction: column;
           align-items: center;
           justify-content: center;
           text-align: center;
-          gap: 7px;
+          gap: 8px;
           color: #8f8176;
         }
 
         .menu-empty > div {
-          font-size: 32px;
+          font-size: 38px;
         }
 
         .menu-empty strong {
           color: #493a30;
-          font-size: 12px;
+          font-size: 13px;
         }
 
         .menu-empty span {
-          font-size: 9px;
+          font-size: 10px;
         }
 
-        /* =========================
-           GARSON
-        ========================= */
+        .location-section {
+          margin-top: 48px;
+        }
+
+        .location-card {
+          display: flex;
+          align-items: center;
+          gap: 15px;
+          padding: 20px;
+          border-radius: 20px;
+          background: #fffdfb;
+          border: 1px solid var(--border);
+          box-shadow:
+            0 5px 18px rgba(59, 38, 24, 0.05);
+        }
+
+        .location-icon {
+          width: 52px;
+          height: 52px;
+          flex: 0 0 52px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 16px;
+          background: #f1e3d7;
+          font-size: 25px;
+        }
+
+        .location-card span {
+          display: block;
+          color: #a18169;
+          font-size: 8px;
+          font-weight: 800;
+          letter-spacing: 1px;
+        }
+
+        .location-card strong {
+          display: block;
+          margin-top: 5px;
+          color: #493a30;
+          font-size: 15px;
+        }
+
+        .location-card p {
+          margin: 3px 0 0;
+          color: #8f8176;
+          font-size: 10px;
+        }
+
+        .info-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 10px;
+          margin-top: 10px;
+        }
+
+        .info-card {
+          display: flex;
+          align-items: flex-start;
+          gap: 10px;
+          padding: 15px;
+          border-radius: 16px;
+          background: #fffdfb;
+          border: 1px solid var(--border);
+        }
+
+        .info-card > span {
+          font-size: 19px;
+        }
+
+        .info-card strong {
+          display: block;
+          color: #4d3b30;
+          font-size: 10px;
+        }
+
+        .info-card p {
+          margin: 4px 0 0;
+          color: #8f8176;
+          font-size: 9px;
+          line-height: 1.4;
+        }
+
+        .footer {
+          margin-top: 45px;
+          padding: 30px 10px 10px;
+          text-align: center;
+          border-top: 1px solid #e6d9ce;
+        }
+
+        .footer-logo {
+          width: 48px;
+          height: 48px;
+          margin: 0 auto 10px;
+          overflow: hidden;
+          border-radius: 50%;
+          border: 2px solid rgba(91, 57, 35, 0.1);
+        }
+
+        .footer-logo img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
+        .footer strong {
+          display: block;
+          color: var(--brown-dark);
+          font-size: 14px;
+        }
+
+        .footer p {
+          margin: 5px 0 14px;
+          color: #918177;
+          font-size: 10px;
+        }
+
+        .footer small {
+          color: #aa9a8d;
+          font-size: 9px;
+        }
 
         .waiter-widget {
           position: fixed;
           left: 18px;
-          right: auto;
-          bottom: 24px;
+          bottom: 82px;
           z-index: 1000;
           display: flex;
           flex-direction: column;
@@ -1094,8 +1237,8 @@ export default function HomePage() {
 
         .waiter-floating-button {
           position: relative;
-          width: 68px;
-          height: 68px;
+          width: 62px;
+          height: 62px;
           border: 0;
           border-radius: 50%;
           background: linear-gradient(
@@ -1103,27 +1246,13 @@ export default function HomePage() {
             #8b5e3c,
             #5d3823
           );
-          color: #ffffff;
+          color: #fff;
           box-shadow:
-            0 8px 25px
-              rgba(55, 31, 17, 0.30),
-            0 2px 6px
-              rgba(0, 0, 0, 0.15);
+            0 8px 25px rgba(55, 31, 17, 0.28);
           cursor: pointer;
           display: flex;
           align-items: center;
           justify-content: center;
-          transition:
-            transform 0.2s ease,
-            box-shadow 0.2s ease;
-        }
-
-        .waiter-floating-button:hover {
-          transform: translateY(-2px);
-        }
-
-        .waiter-floating-button:active {
-          transform: scale(0.94);
         }
 
         .waiter-floating-button.success {
@@ -1135,28 +1264,24 @@ export default function HomePage() {
         }
 
         .waiter-floating-icon {
-          font-size: 30px;
+          font-size: 28px;
           line-height: 1;
-          display: flex;
-          align-items: center;
-          justify-content: center;
         }
 
         .waiter-floating-label {
           position: absolute;
-          left: 74px;
+          left: 70px;
           white-space: nowrap;
-          background: #ffffff;
+          padding: 7px 10px;
+          border-radius: 18px;
+          background: #fff;
           color: #3a291f;
-          font-size: 12px;
-          font-weight: 700;
-          padding: 7px 11px;
-          border-radius: 20px;
+          font-size: 11px;
+          font-weight: 800;
           box-shadow:
-            0 4px 16px
-              rgba(0, 0, 0, 0.12);
+            0 4px 16px rgba(0, 0, 0, 0.12);
           opacity: 0;
-          transform: translateX(-6px);
+          transform: translateX(-5px);
           transition:
             opacity 0.2s ease,
             transform 0.2s ease;
@@ -1173,8 +1298,7 @@ export default function HomePage() {
           position: absolute;
           inset: -5px;
           border-radius: 50%;
-          border: 2px solid
-            rgba(139, 94, 60, 0.35);
+          border: 2px solid rgba(139, 94, 60, 0.3);
           animation: waiterPulse 1.8s infinite;
         }
 
@@ -1198,15 +1322,12 @@ export default function HomePage() {
         .waiter-panel {
           width: 310px;
           max-width: calc(100vw - 36px);
-          border-radius: 20px;
           overflow: hidden;
+          border: 1px solid #eee2d7;
+          border-radius: 20px;
           background: #fffaf5;
           box-shadow:
-            0 18px 50px
-              rgba(43, 28, 18, 0.20),
-            0 4px 14px
-              rgba(0, 0, 0, 0.08);
-          border: 1px solid #eee2d7;
+            0 18px 50px rgba(43, 28, 18, 0.2);
         }
 
         .waiter-panel-header {
@@ -1215,28 +1336,22 @@ export default function HomePage() {
           align-items: center;
           gap: 10px;
           background: #382a21;
-          color: white;
+          color: #fff;
         }
 
         .waiter-avatar-small {
           width: 40px;
           height: 40px;
           flex: 0 0 40px;
-          border-radius: 13px;
-          background: rgba(
-            255,
-            255,
-            255,
-            0.1
-          );
           display: flex;
           align-items: center;
           justify-content: center;
+          border-radius: 13px;
+          background: rgba(255, 255, 255, 0.1);
           font-size: 20px;
         }
 
-        .waiter-panel-header
-          > div:nth-child(2) {
+        .waiter-header-text {
           flex: 1;
           min-width: 0;
         }
@@ -1258,13 +1373,8 @@ export default function HomePage() {
           height: 30px;
           border: 0;
           border-radius: 9px;
-          background: rgba(
-            255,
-            255,
-            255,
-            0.1
-          );
-          color: white;
+          background: rgba(255, 255, 255, 0.1);
+          color: #fff;
           font-size: 20px;
           line-height: 1;
           cursor: pointer;
@@ -1276,8 +1386,8 @@ export default function HomePage() {
 
         .waiter-table-info {
           display: flex;
-          justify-content: space-between;
           align-items: center;
+          justify-content: space-between;
           padding: 11px 12px;
           border-radius: 12px;
           background: #f3e8dd;
@@ -1294,7 +1404,7 @@ export default function HomePage() {
         }
 
         .waiter-panel-text {
-          margin-top: 13px;
+          margin: 13px 0 0;
           color: #74675d;
           font-size: 10px;
           line-height: 1.5;
@@ -1302,18 +1412,18 @@ export default function HomePage() {
 
         .waiter-call-button {
           width: 100%;
-          height: 40px;
+          height: 42px;
           margin-top: 12px;
           padding: 0 13px;
           border: 0;
           border-radius: 11px;
           background: #b96f38;
-          color: white;
+          color: #fff;
           display: flex;
           align-items: center;
           justify-content: space-between;
           font-size: 10px;
-          font-weight: 700;
+          font-weight: 800;
           cursor: pointer;
         }
 
@@ -1344,13 +1454,13 @@ export default function HomePage() {
           width: 34px;
           height: 34px;
           flex: 0 0 34px;
-          border-radius: 50%;
-          background: #4d9364;
-          color: white;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-weight: 700;
+          border-radius: 50%;
+          background: #4d9364;
+          color: #fff;
+          font-weight: 800;
         }
 
         .waiter-success-box strong {
@@ -1359,7 +1469,7 @@ export default function HomePage() {
         }
 
         .waiter-success-box p {
-          margin-top: 3px;
+          margin: 3px 0 0;
           font-size: 9px;
         }
 
@@ -1374,13 +1484,13 @@ export default function HomePage() {
         }
 
         .waiter-panel-empty {
-          text-align: center;
           padding: 10px 5px 4px;
+          text-align: center;
         }
 
         .waiter-empty-icon {
-          font-size: 30px;
           margin-bottom: 8px;
+          font-size: 30px;
         }
 
         .waiter-panel-empty strong {
@@ -1389,35 +1499,63 @@ export default function HomePage() {
         }
 
         .waiter-panel-empty p {
-          margin-top: 6px;
+          margin: 6px 0 0;
           color: #998c81;
           font-size: 9px;
           line-height: 1.5;
         }
 
-        @media (min-width: 700px) {
-          .waiter-widget {
-            left: calc(
-              50% - 280px
-            );
-            right: auto;
-            bottom: 36px;
+        @media (max-width: 480px) {
+          .site {
+            padding-left: 15px;
+            padding-right: 15px;
+          }
+
+          .hero-header {
+            padding-top: 18px;
+          }
+
+          .hero-location {
+            display: none;
+          }
+
+          .welcome h2 {
+            font-size: 30px;
+          }
+
+          .loyalty-card {
+            padding: 22px;
+          }
+
+          .product-image {
+            width: 105px;
+            min-width: 105px;
           }
         }
 
-        @media (max-width: 380px) {
+        @media (max-width: 360px) {
+          .product-image {
+            width: 92px;
+            min-width: 92px;
+          }
+
+          .product-content {
+            padding: 12px;
+          }
+
+          .product-info h3 {
+            font-size: 14px;
+          }
+
+          .info-grid {
+            grid-template-columns: 1fr;
+          }
+
           .waiter-widget {
             left: 14px;
-            bottom: 18px;
-          }
-
-          .waiter-panel {
-            width: 290px;
           }
         }
-
       `}</style>
-
     </main>
   );
 }
