@@ -1,5 +1,5 @@
 import "./globals.css";
-import BottomNav from "../components/BottomNav";
+import BottomNav from "./BottomNav";
 
 export const metadata = {
   title: "Taşkent Cafe",
