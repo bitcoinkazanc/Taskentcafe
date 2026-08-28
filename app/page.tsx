@@ -217,6 +217,18 @@ export default function HomePage() {
         </div>
       </header>
 
+      <a href="/loyalty" className="loyalty-card">
+        <div className="loyalty-card-icon">⭐</div>
+
+        <div className="loyalty-card-content">
+          <span>SADAKAT KULÜBÜ</span>
+          <strong>Puanlarını biriktir, avantajları yakala</strong>
+          <small>Sadakat hesabına giriş yapmak için dokun</small>
+        </div>
+
+        <div className="loyalty-card-arrow">›</div>
+      </a>
+
       <section className="menu-section">
         <div className="section-header">
           <div>
@@ -413,6 +425,10 @@ export default function HomePage() {
           font-family: inherit;
         }
 
+        a {
+          text-decoration: none;
+        }
+
         .site {
           width: 100%;
           max-width: 620px;
@@ -424,7 +440,7 @@ export default function HomePage() {
         .header {
           display: flex;
           align-items: center;
-          padding: 22px 2px 24px;
+          padding: 22px 2px 18px;
         }
 
         .brand {
@@ -466,6 +482,85 @@ export default function HomePage() {
           color: var(--muted);
           font-size: 11px;
           font-weight: 600;
+        }
+
+        .loyalty-card {
+          position: relative;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          width: 100%;
+          min-height: 94px;
+          margin: 4px 0 28px;
+          padding: 16px 15px;
+          overflow: hidden;
+          border-radius: 20px;
+          background: linear-gradient(135deg, #4b3426 0%, #8b5e3c 100%);
+          color: #fff;
+          box-shadow: 0 10px 25px rgba(70, 43, 26, 0.2);
+        }
+
+        .loyalty-card::after {
+          content: "";
+          position: absolute;
+          width: 130px;
+          height: 130px;
+          right: -45px;
+          top: -55px;
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.07);
+        }
+
+        .loyalty-card-icon {
+          position: relative;
+          z-index: 1;
+          width: 48px;
+          height: 48px;
+          flex: 0 0 48px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 15px;
+          background: rgba(255, 255, 255, 0.13);
+          font-size: 25px;
+        }
+
+        .loyalty-card-content {
+          position: relative;
+          z-index: 1;
+          flex: 1;
+          min-width: 0;
+        }
+
+        .loyalty-card-content span {
+          display: block;
+          margin-bottom: 4px;
+          color: #e6cbb7;
+          font-size: 8px;
+          font-weight: 800;
+          letter-spacing: 1.4px;
+        }
+
+        .loyalty-card-content strong {
+          display: block;
+          font-size: 14px;
+          line-height: 1.25;
+        }
+
+        .loyalty-card-content small {
+          display: block;
+          margin-top: 5px;
+          color: #dfcfc2;
+          font-size: 9px;
+          line-height: 1.35;
+        }
+
+        .loyalty-card-arrow {
+          position: relative;
+          z-index: 1;
+          color: #ead9cb;
+          font-size: 27px;
+          line-height: 1;
         }
 
         .menu-section {
@@ -915,6 +1010,15 @@ export default function HomePage() {
             width: 105px;
             min-width: 105px;
           }
+
+          .loyalty-card {
+            min-height: 90px;
+            margin-bottom: 25px;
+          }
+
+          .loyalty-card-content strong {
+            font-size: 13px;
+          }
         }
 
         @media (max-width: 360px) {
@@ -933,6 +1037,16 @@ export default function HomePage() {
 
           .waiter-widget {
             left: 14px;
+          }
+
+          .loyalty-card {
+            padding: 14px 12px;
+          }
+
+          .loyalty-card-icon {
+            width: 43px;
+            height: 43px;
+            flex-basis: 43px;
           }
         }
       `}</style>
